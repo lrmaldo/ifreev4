@@ -19,6 +19,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/profile', Profile::class)->name('settings.profile');
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
+
+    // Rutas para administración de usuarios, roles y permisos
+    Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+        Route::get('/users', App\Livewire\Admin\Users\Index::class)->name('admin.users.index');
+        Route::get('/roles', App\Livewire\Admin\Roles\Index::class)->name('admin.roles.index');
+        Route::get('/permissions', App\Livewire\Admin\Permissions\Index::class)->name('admin.permissions.index');
+    });
 });
 
 require __DIR__.'/auth.php';

@@ -2,11 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Model;
 
-class Cliente extends Pivot
+class Cliente extends Model
 {
-    //
     protected $table = 'clientes'; // Specify the table name if it's different from the default
     protected $fillable = [
         'razon social',

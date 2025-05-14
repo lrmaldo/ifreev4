@@ -58,4 +58,12 @@ class User extends Authenticatable
             ->map(fn (string $name) => Str::of($name)->substr(0, 1))
             ->implode('');
     }
+
+    /**
+     * Get the cliente that owns the user
+     */
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class);
+    }
 }

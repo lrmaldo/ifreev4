@@ -18,30 +18,30 @@ class RolesAndPermissionsSeeder extends Seeder
     {
        app()['cache']->forget('spatie.permission.cache');
 
-        // Create permissions
-        Permission::create(['name' => 'create users']);
-        Permission::create(['name' => 'edit users']);
-        Permission::create(['name' => 'delete users']);
-        Permission::create(['name' => 'view users']);
-
-        // Create roles and assign existing permissions
-        $role = Role::create(['name' => 'admin']);
-        $role->givePermissionTo('create users');
-        $role->givePermissionTo('edit users');
-        $role->givePermissionTo('delete users');
-        $role->givePermissionTo('view users');
-
          // Crear permisos
         $permissions = [
+            // Zonas
             'crear zonas',
             'editar zonas',
             'eliminar zonas',
+            // Estadísticas y publicidad
             'ver estadísticas',
             'ver publicidad',
             'administrar hotspot',
+            // Usuarios
             'ver usuarios',
             'crear usuarios',
             'editar usuarios',
+            // Roles
+            'crear roles',
+            'editar roles',
+            'eliminar roles',
+            'ver roles',
+            // Permisos
+            'crear permisos',
+            'editar permisos',
+            'eliminar permisos',
+            'ver permisos',
         ];
 
         foreach ($permissions as $perm) {

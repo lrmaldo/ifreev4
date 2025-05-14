@@ -23,8 +23,22 @@
     --color-zinc-900: #171717;
     --color-zinc-950: #0a0a0a;
 
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
+    /* Color primario personalizado */
+    --color-primary: rgb(255, 63, 0);
+    --color-primary-50: #fff5f0;
+    --color-primary-100: #ffece3;
+    --color-primary-200: #ffd5c2;
+    --color-primary-300: #ffb399;
+    --color-primary-400: #ff8056;
+    --color-primary-500: #ff5e2c;
+    --color-primary-600: #ff3f00;
+    --color-primary-700: #e63300;
+    --color-primary-800: #cc2d00;
+    --color-primary-900: #a82900;
+    --color-primary-950: #591100;
+
+    --color-accent: var(--color-primary-600);
+    --color-accent-content: var(--color-primary-600);
     --color-accent-foreground: var(--color-white);
 }
 
@@ -47,18 +61,127 @@
     }
 }
 
+/* Estilos para los campos de formularios y sus etiquetas */
 [data-flux-field]:not(ui-radio, ui-checkbox) {
     @apply grid gap-2;
 }
 
 [data-flux-label] {
-    @apply  !mb-0 !leading-tight;
+    @apply !mb-0 !leading-tight;
 }
 
+/* Estilos para los campos de entrada con enfoque */
 input:focus[data-flux-control],
 textarea:focus[data-flux-control],
 select:focus[data-flux-control] {
-    @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+    @apply outline-hidden ring-2 ring-primary-600 ring-offset-2 ring-offset-white;
+}
+
+/* Estilos específicos para inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"],
+input[type="color"] {
+    @apply h-10 px-3 py-2 rounded-md border border-gray-300 text-sm text-gray-800 placeholder-gray-400;
+    @apply focus:ring-2 focus:ring-primary-600 focus:border-primary-600 focus:outline-none;
+    @apply disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed;
+    @apply dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200 dark:placeholder-zinc-500;
+    @apply dark:focus:border-primary-500 dark:focus:ring-primary-500;
+}
+
+/* Estilos mejorados para los formularios en modales */
+.form-input,
+.form-textarea,
+.form-select,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+select,
+textarea {
+    @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-600 focus:ring-primary-600 sm:text-sm transition-all duration-200;
+}
+
+/* Estilo para las etiquetas de formulario */
+label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+/* Estilos para grupos de formularios */
+.form-group {
+    @apply mb-4;
+}
+
+/* Estilos para los botones */
+.btn,
+button[type="submit"],
+button[type="button"] {
+    @apply inline-flex items-center justify-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-150 ease-in-out;
+}
+
+.btn-primary {
+    @apply bg-primary-600 text-white border-transparent hover:bg-primary-700 focus:ring-primary-500;
+}
+
+.btn-secondary {
+    @apply bg-white text-gray-700 border-gray-300 hover:bg-gray-50 focus:ring-primary-500;
+}
+
+.btn-danger {
+    @apply bg-red-600 text-white border-transparent hover:bg-red-700 focus:ring-red-500;
+}
+
+/* Estilos para los checkboxes y radios */
+input[type="checkbox"],
+input[type="radio"] {
+    @apply h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-600 transition-colors duration-150;
+}
+
+/* Contenedor de checkboxes */
+.checkbox-container {
+    @apply mt-2 space-y-2 border rounded-md p-3 bg-gray-50 max-h-48 overflow-y-auto;
+}
+
+/* Estilos para mensajes de error */
+.error-message {
+    @apply text-sm text-red-600 mt-1;
+}
+
+/* Estilos específicos para modales */
+.modal-header {
+    @apply text-lg font-medium text-gray-900 border-b border-gray-200 px-6 py-4;
+}
+
+.modal-body {
+    @apply px-6 py-4;
+}
+
+.modal-footer {
+    @apply flex justify-end space-x-3 px-6 py-4 bg-gray-50 border-t border-gray-200;
+}
+
+/* Estilos para los selects */
+select {
+    @apply pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-600 focus:border-primary-600 sm:text-sm rounded-md bg-white;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    appearance: none;
 }
 
 @layer utilities {
@@ -91,6 +214,74 @@ select:focus[data-flux-control] {
 @keyframes carousel-3 { 0%, 66% { opacity: 0; } 67%, 100% { opacity: 1; } }
 @keyframes pulse-slow { 0%, 100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.6; } }
 
-/* \[:where(&)\]:size-4 {
-    @apply size-4;
-} */
+/* Estilos para campos deshabilitados */
+input:disabled,
+select:disabled,
+textarea:disabled {
+    @apply bg-gray-100 text-gray-500 cursor-not-allowed;
+}
+
+/* Estilos con el color primario para elementos interactivos */
+.text-primary {
+    @apply text-primary-600;
+}
+
+.bg-primary {
+    @apply bg-primary-600;
+}
+
+.hover\:bg-primary:hover {
+    @apply hover:bg-primary-700;
+}
+
+.focus\:ring-primary:focus {
+    @apply focus:ring-primary-600;
+}
+
+.focus\:border-primary:focus {
+    @apply focus:border-primary-600;
+}
+
+/* Override de colores en botones y enlaces */
+.btn-primary,
+.bg-blue-50 {
+    @apply bg-primary-50;
+}
+
+.text-blue-600,
+.text-blue-700,
+.hover\:text-blue-900:hover {
+    @apply text-primary-600 hover:text-primary-800;
+}
+
+.border-blue-200,
+.hover\:bg-blue-100:hover {
+    @apply border-primary-200 hover:bg-primary-100;
+}
+
+.focus\:ring-blue-500:focus,
+.focus\:border-blue-500:focus {
+    @apply focus:ring-primary-500 focus:border-primary-500;
+}
+
+/* Estilos específicos para los componentes x-input y modales */
+[x-dialog-modal] input,
+[x-dialog-modal] select,
+[x-dialog-modal] textarea {
+    @apply border-gray-300 focus:border-primary-600 focus:ring-primary-600 rounded-md shadow-sm transition-colors duration-150 w-full;
+}
+
+/* Overrides para Livewire/Flux modal inputs */
+.dialog-modal input,
+.dialog-modal select,
+.dialog-modal textarea,
+dialog input,
+dialog select,
+dialog textarea {
+    @apply border-gray-300 focus:border-primary-600 focus:ring-primary-600;
+}
+
+/* Aseguramos que los bordes de inputs sean visibles */
+input, select, textarea {
+    @apply border border-gray-300;
+}
