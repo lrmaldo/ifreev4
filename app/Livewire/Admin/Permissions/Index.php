@@ -110,6 +110,18 @@ class Index extends Component
         $this->confirmingPermissionDeletion = false;
     }
 
+    public function cancelDelete()
+    {
+        $this->confirmingPermissionDeletion = false;
+    }
+    
+    public function getPermissionsProperty()
+    {
+        return Permission::where('name', 'like', '%' . $this->search . '%')
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->paginate($this->perPage);
+    }
+
     public function render()
     {
         $permissions = Permission::where('name', 'like', '%' . $this->search . '%')
@@ -119,5 +131,33 @@ class Index extends Component
         return view('livewire.admin.permissions.index', [
             'permissions' => $permissions,
         ]);
+    }
+
+    public function getGroupedPermissionsProperty()
+    {
+        $permissions = Permission::where('name', 'like', '%' . $this->search . '%')
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->get();
+        
+        $grouped = [];
+        
+        foreach ($permissions as $permission) {
+            $parts = explode(' ', $permission->name, 2);
+            $action = $parts[0] ?? 'otros';
+            
+            if (!isset($grouped[$action])) {
+                $grouped[$action] = [];
+            }
+            
+            $grouped[$action][] = [
+                'id' => $permission->id,
+                'name' => $permission->name,
+                'target' => count($parts) > 1 ? $parts[1] : '',
+            ];
+        }
+        
+        ksort($grouped);
+        
+        return $grouped;
     }
 }
