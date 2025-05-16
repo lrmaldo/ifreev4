@@ -66,4 +66,12 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Cliente::class);
     }
+
+    /**
+     * Get the zonas that belong to the user
+     */
+    public function zonas()
+    {
+        return $this->hasMany(Zona::class);
+    }
 }

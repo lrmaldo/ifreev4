@@ -25,6 +25,18 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/users', App\Livewire\Admin\Users\Index::class)->name('admin.users.index');
         Route::get('/roles', App\Livewire\Admin\Roles\Index::class)->name('admin.roles.index');
         Route::get('/permissions', App\Livewire\Admin\Permissions\Index::class)->name('admin.permissions.index');
+        Route::get('/zonas', App\Livewire\Admin\Zonas\Index::class)->name('admin.zonas.index');
+        Route::get('/zonas/download/{zonaId}/{fileType}', function ($zonaId, $fileType) {
+            return app()->call([app()->make(App\Livewire\Admin\Zonas\Index::class), 'downloadMikrotikFile'], ['zonaId' => $zonaId, 'fileType' => $fileType]);
+        })->name('admin.zonas.download');
+    });
+
+    // Rutas para clientes y admins (acceso a zonas)
+    Route::middleware(['role:cliente|admin'])->group(function () {
+        Route::get('/zonas', App\Livewire\Admin\Zonas\Index::class)->name('cliente.zonas.index');
+        Route::get('/zonas/download/{zonaId}/{fileType}', function ($zonaId, $fileType) {
+            return app()->call([app()->make(App\Livewire\Admin\Zonas\Index::class), 'downloadMikrotikFile'], ['zonaId' => $zonaId, 'fileType' => $fileType]);
+        })->name('cliente.zonas.download');
     });
 });
 
