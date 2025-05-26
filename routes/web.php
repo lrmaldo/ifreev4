@@ -22,18 +22,34 @@ Route::middleware(['auth'])->group(function () {
 
     // Rutas para administración de usuarios, roles y permisos
     Route::middleware(['role:admin'])->prefix('admin')->group(function () {
-        Route::get('/users', App\Livewire\Admin\Users\Index::class)->name('admin.users.index');
-        Route::get('/roles', App\Livewire\Admin\Roles\Index::class)->name('admin.roles.index');
-        Route::get('/permissions', App\Livewire\Admin\Permissions\Index::class)->name('admin.permissions.index');
-        Route::get('/zonas', App\Livewire\Admin\Zonas\Index::class)->name('admin.zonas.index');
+        Route::get('/users', function() {
+            return view('users');
+        })->name('admin.users.index');
+        Route::get('/roles', function() {
+            return view('roles');
+        })->name('admin.roles.index');
+        Route::get('/permissions', function() {
+            return view('permissions');
+        })->name('admin.permissions.index');
+        Route::get('/zonas', function() {
+            return view('zonas');
+        })->name('admin.zonas.index');
         Route::get('/zonas/download/{zonaId}/{fileType}', function ($zonaId, $fileType) {
             return app()->call([app()->make(App\Livewire\Admin\Zonas\Index::class), 'downloadMikrotikFile'], ['zonaId' => $zonaId, 'fileType' => $fileType]);
         })->name('admin.zonas.download');
+        Route::get('/forms', function() {
+            return view('forms');
+        })->name('admin.forms.index');
+        Route::get('/clientes', function() {
+            return view('clientes');
+        })->name('admin.clientes.index');
     });
 
     // Rutas para clientes y admins (acceso a zonas)
     Route::middleware(['role:cliente|admin'])->group(function () {
-        Route::get('/zonas', App\Livewire\Admin\Zonas\Index::class)->name('cliente.zonas.index');
+        Route::get('/zonas', function() {
+            return view('zonas');
+        })->name('cliente.zonas.index');
         Route::get('/zonas/download/{zonaId}/{fileType}', function ($zonaId, $fileType) {
             return app()->call([app()->make(App\Livewire\Admin\Zonas\Index::class), 'downloadMikrotikFile'], ['zonaId' => $zonaId, 'fileType' => $fileType]);
         })->name('cliente.zonas.download');

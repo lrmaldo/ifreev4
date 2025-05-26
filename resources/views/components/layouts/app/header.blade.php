@@ -15,6 +15,33 @@
                 <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:navbar.item>
+
+                @hasrole('admin')
+                <flux:navbar.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>
+                    {{ __('Usuarios') }}
+                </flux:navbar.item>
+                <flux:navbar.item icon="user-cog" :href="route('admin.roles.index')" :current="request()->routeIs('admin.roles.*')" wire:navigate>
+                    {{ __('Roles') }}
+                </flux:navbar.item>
+                <flux:navbar.item icon="key-square" :href="route('admin.permissions.index')" :current="request()->routeIs('admin.permissions.*')" wire:navigate>
+                    {{ __('Permisos') }}
+                </flux:navbar.item>
+                <flux:navbar.item icon="map-pin" :href="route('admin.zonas.index')" :current="request()->routeIs('admin.zonas.*')" wire:navigate>
+                    {{ __('Zonas') }}
+                </flux:navbar.item>
+                <flux:navbar.item icon="file-text" :href="route('admin.forms.index')" :current="request()->routeIs('admin.forms.*')" wire:navigate>
+                    {{ __('Formularios') }}
+                </flux:navbar.item>
+                <flux:navbar.item icon="users" :href="route('admin.clientes.index')" :current="request()->routeIs('admin.clientes.*')" wire:navigate>
+                    {{ __('Clientes') }}
+                </flux:navbar.item>
+                @endhasrole
+
+                @hasrole('cliente')
+                <flux:navbar.item icon="map-pin" :href="route('cliente.zonas.index')" :current="request()->routeIs('cliente.zonas.*')" wire:navigate>
+                    {{ __('Mis Zonas') }}
+                </flux:navbar.item>
+                @endhasrole
             </flux:navbar>
 
             <flux:spacer />
@@ -101,6 +128,33 @@
                     <flux:navlist.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                       {{ __('Dashboard') }}
                     </flux:navlist.item>
+
+                    @hasrole('admin')
+                    <flux:navlist.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>
+                        {{ __('Usuarios') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="user-cog" :href="route('admin.roles.index')" :current="request()->routeIs('admin.roles.*')" wire:navigate>
+                        {{ __('Roles') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="key-square" :href="route('admin.permissions.index')" :current="request()->routeIs('admin.permissions.*')" wire:navigate>
+                        {{ __('Permisos') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="map-pin" :href="route('admin.zonas.index')" :current="request()->routeIs('admin.zonas.*')" wire:navigate>
+                        {{ __('Zonas') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="file-text" :href="route('admin.forms.index')" :current="request()->routeIs('admin.forms.*')" wire:navigate>
+                        {{ __('Formularios') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="users" :href="route('admin.clientes.index')" :current="request()->routeIs('admin.clientes.*')" wire:navigate>
+                        {{ __('Clientes') }}
+                    </flux:navlist.item>
+                    @endhasrole
+
+                    @hasrole('cliente')
+                    <flux:navlist.item icon="map-pin" :href="route('cliente.zonas.index')" :current="request()->routeIs('cliente.zonas.*')" wire:navigate>
+                        {{ __('Mis Zonas') }}
+                    </flux:navlist.item>
+                    @endhasrole
                 </flux:navlist.group>
             </flux:navlist>
 

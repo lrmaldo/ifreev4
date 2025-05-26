@@ -12,25 +12,7 @@
         });
     </script>
 
-    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div class="sm:flex sm:items-center sm:justify-between mb-6">
-            <div class="flex-1 min-w-0">
-                <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:leading-9 sm:truncate">
-                    Gestión de Zonas
-                </h2>
-            </div>
-            <div class="mt-4 flex sm:mt-0 sm:ml-4">
-                <button
-                    wire:click="openModal()"
-                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                    <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Nueva Zona
-                </button>
-            </div>
-        </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <!-- Mensajes flash -->
         @if (session()->has('message'))
@@ -147,7 +129,7 @@
                                     >
                                         Editar
                                     </button>
-                                    
+
                                     <div class="relative" x-data="{ open: false }">
                                         <button @click="open = !open" class="text-blue-600 hover:text-blue-900 focus:outline-none">
                                             Archivos Mikrotik
@@ -163,7 +145,7 @@
                                                 <a href="{{ route('admin.zonas.download', ['zonaId' => $zona->id, 'fileType' => 'alogin']) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                                     Descargar alogin.html
                                                 </a>
-                                                <button 
+                                                <button
                                                     wire:click.prevent="openInstructionsModal({{ $zona->id }})"
                                                     class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                                 >
@@ -172,7 +154,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     @if (auth()->user()->hasRole('admin') || $zona->user_id === auth()->id())
                                         <button
                                             wire:click="confirmZonaDeletion({{ $zona->id }})"
@@ -572,25 +554,25 @@
             <div id="instructions-modal" class="fixed z-50 inset-0 overflow-y-auto" style="display: block !important;">
                 <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
                     <div class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
-                    
+
                     <!-- Modal content -->
                     <div class="relative bg-white rounded-lg w-full max-w-2xl mx-auto p-6" style="z-index: 100;">
                         <h3 class="text-xl font-bold mb-4">Instrucciones de Instalación</h3>
-                        
+
                         @if($activeZonaForInstructions)
                             <h4 class="font-semibold text-lg mb-3">Zona: {{ $activeZonaForInstructions->nombre }}</h4>
-                            
+
                             <!-- Pasos sencillos -->
                             <div class="mb-4 p-3 bg-gray-50 rounded">
                                 <h5 class="font-bold">1. Descargar archivos</h5>
                                 <p>Descarga los archivos login.html y alogin.html desde el menú de acciones.</p>
                             </div>
-                            
+
                             <div class="mb-4 p-3 bg-gray-50 rounded">
                                 <h5 class="font-bold">2. Subir a Mikrotik</h5>
                                 <p>Sube los archivos a tu router Mikrotik en la carpeta Hotspot.</p>
                             </div>
-                            
+
                             <div class="mb-4 p-3 bg-gray-50 rounded">
                                 <h5 class="font-bold">3. Configurar autenticación</h5>
                                 <p>Tipo de autenticación configurado: <strong>{{ $activeZonaForInstructions->tipo_autenticacion_mikrotik_label }}</strong></p>
@@ -598,10 +580,10 @@
                         @else
                             <p class="text-red-500">No se ha seleccionado ninguna zona.</p>
                         @endif
-                        
+
                         <!-- Botón de cerrar -->
                         <div class="mt-6 flex justify-end">
-                            <button 
+                            <button
                                 wire:click="closeInstructionsModal"
                                 type="button"
                                 class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
@@ -625,7 +607,7 @@
                                     </h3>
                                     <div class="mt-2">
                                         <h4 class="font-bold text-base mb-2">Configuración en Mikrotik RouterOS</h4>
-                                        
+
                                         <div class="mb-4 p-3 bg-gray-50 rounded-md">
                                             <h5 class="font-bold mb-2">1. Configuración de Hotspot</h5>
                                             <p class="mb-2">Para configurar correctamente el portal cautivo en Mikrotik con los archivos proporcionados:</p>
@@ -636,11 +618,11 @@
                                                 <li>Reemplaza los archivos login.html y alogin.html con los que has descargado.</li>
                                             </ol>
                                         </div>
-                                        
+
                                         <div class="mb-4 p-3 bg-gray-50 rounded-md">
                                             <h5 class="font-bold mb-2">2. Tipo de Autenticación: {{ $activeZonaForInstructions->tipo_autenticacion_mikrotik_label }}</h5>
                                             <p class="mb-2">Esta zona está configurada para autenticación por {{ $activeZonaForInstructions->tipo_autenticacion_mikrotik_label }}.</p>
-                                            
+
                                             @if($activeZonaForInstructions->tipo_autenticacion_mikrotik == 'pin')
                                                 <p>Para la autenticación por PIN:</p>
                                                 <ul class="list-disc pl-5 space-y-1">
@@ -656,7 +638,7 @@
                                                 </ul>
                                             @endif
                                         </div>
-                                        
+
                                         <div class="p-3 bg-gray-50 rounded-md">
                                             <h5 class="font-bold mb-2">3. Ajustes adicionales</h5>
                                             <ul class="list-disc pl-5 space-y-2">
