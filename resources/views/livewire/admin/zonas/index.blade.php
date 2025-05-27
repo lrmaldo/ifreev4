@@ -1,5 +1,140 @@
 <div>
     <script>
+        // Fix para Alpine.js en dispositivos móviles - asegura que x-show funcione correctamente        document.addEventListener('alpine:init', function() {
+            Alpine.directive('touchout', (el, { expression }, { evaluate }) => {
+                // Tiempo mínimo necesario para considerar un toque como válido (ms)
+                const touchTimeThreshold = 120;
+                // Distancia mínima para considerar un desplazamiento como scroll
+                const touchMoveThreshold = 5;
+                // Delay para evitar que se cierre inmediatamente al abrir
+                const touchActivationDelay = 250;
+
+                let touchStartTime = 0;
+                let touchStartPosition = { x: 0, y: 0 };
+                let isScrolling = false;
+                let isActive = false;
+                let activationTimeout = null;
+
+                // Activar después de un pequeño delay para prevenir cierres accidentales
+                activationTimeout = setTimeout(() => {
+                    isActive = true;
+                }, touchActivationDelay);
+
+                // Verificar si el elemento es un dropdown
+                const isDropdown = el.id && el.id.includes('dropdown');
+
+                // Capturar inicio de toque
+                const touchStartHandler = (event) => {
+                    if (!isActive) return;
+
+                    // No procesar si el toque está dentro del elemento o sus botones/enlaces
+                    if (el.contains(event.target)) return;
+
+                    if (event.touches && event.touches[0]) {
+                        touchStartTime = Date.now();
+                        touchStartPosition = {
+                            x: event.touches[0].clientX,
+                            y: event.touches[0].clientY
+                        };
+                        isScrolling = false;
+                    }
+                };
+
+                // Detectar si el usuario está haciendo scroll
+                const touchMoveHandler = (event) => {
+                    if (!isActive) return;
+
+                    if (!isScrolling && event.touches && event.touches[0]) {
+                        const dx = Math.abs(event.touches[0].clientX - touchStartPosition.x);
+                        const dy = Math.abs(event.touches[0].clientY - touchStartPosition.y);
+
+                        // Si se mueve más de la distancia umbral, considerarlo como scroll
+                        if (dx > touchMoveThreshold || dy > touchMoveThreshold) {
+                            isScrolling = true;
+                        }
+                    }
+                };
+
+                // Manejar el final del toque
+                const touchEndHandler = (event) => {
+                    if (!isActive) return;
+
+                    // Si el tiempo de toque es muy corto o se detectó scroll, ignorar
+                    if (Date.now() - touchStartTime < touchTimeThreshold || isScrolling) {
+                        return;
+                    }
+
+                    // Solo cerrar si el toque es fuera del elemento
+                    if (!el.contains(event.target)) {
+                        // Para dropdowns, verificar que el toque no fue en un botón relacionado
+                        if (isDropdown) {
+                            // Obtener el ID del dropdown
+                            const dropdownId = el.id;
+                            // Buscar botones que puedan haber abierto este dropdown
+                            const buttons = document.querySelectorAll('button');
+                            for (let i = 0; i < buttons.length; i++) {
+                                if (buttons[i].outerHTML.includes(dropdownId)) {
+                                    // Si el toque fue en el botón, no cerrar el dropdown
+                                    if (buttons[i].contains(event.target)) {
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+
+                        evaluate(expression);
+                    }
+                };
+
+                // Manejar toques en el documento de forma optimizada
+                const touchHandler = (event) => {
+                    if (!isActive) return;
+
+                    // Ignorar si el elemento ya no está en el DOM
+                    if (!document.body.contains(el)) {
+                        cleanup();
+                        return;
+                    }
+
+                    // Si el toque es fuera del elemento y no en su botón asociado, cerrar
+                    if (!el.contains(event.target)) {
+                        // Similar al código anterior, verificar que no sea un botón relacionado
+                        if (isDropdown) {
+                            const dropdownId = el.id;
+                            const buttons = document.querySelectorAll('button');
+                            for (let i = 0; i < buttons.length; i++) {
+                                if (buttons[i].outerHTML.includes(dropdownId)) {
+                                    if (buttons[i].contains(event.target)) {
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+
+                        evaluate(expression);
+                    }
+                };
+
+                // Limpieza de eventos
+                const cleanup = () => {
+                    document.body.removeEventListener('touchstart', touchStartHandler);
+                    document.body.removeEventListener('touchmove', touchMoveHandler);
+                    document.body.removeEventListener('touchend', touchEndHandler);
+                    document.body.removeEventListener('touchstart', touchHandler);
+                    clearTimeout(activationTimeout);
+                };
+
+                // Registrar eventos
+                document.body.addEventListener('touchstart', touchStartHandler, { passive: true });
+                document.body.addEventListener('touchmove', touchMoveHandler, { passive: true });
+                document.body.addEventListener('touchend', touchEndHandler, { passive: true });
+                document.body.addEventListener('touchstart', touchHandler, { passive: true });
+
+                // Devolver la función de limpieza
+                return cleanup;
+            });
+        });
+
         document.addEventListener('livewire:initialized', function () {
             // Escucha los cambios en la propiedad showInstructionsModal
             Livewire.on('showInstructionsModal', function() {
@@ -9,7 +144,422 @@
                     modal.style.display = 'block';
                 }
             });
-        });
+
+            // Función para detectar si es un dispositivo móvil
+            function esMobile() {
+                return window.innerWidth < 640 || ('ontouchstart' in window) ||
+                       (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+            }
+
+            // Añadir soporte para eventos táctiles en dispositivos móviles
+            document.addEventListener('touchstart', function() {
+                // Esto activa el procesamiento de eventos táctiles
+            }, { passive: true });
+
+            // Inicializar los dropdowns para dispositivos móviles
+            if (esMobile()) {
+                // En móviles, hacer que los botones de dropdown sean más fáciles de clickear
+                document.querySelectorAll('[id^="dropdown-"]').forEach(function(dropdown) {
+                    // Asegurarse que los clicks en los enlaces dentro del dropdown funcionen
+                    dropdown.querySelectorAll('a, button').forEach(function(el) {
+                        el.addEventListener('touchstart', function(e) {
+                            e.stopPropagation();
+                        }, { passive: false });
+                    });
+                });
+            }
+
+            // Repositionar dropdowns al hacer scroll (vertical u horizontal)
+            window.addEventListener('scroll', handleScroll);
+
+            // También capturar el scroll horizontal en la tabla
+            document.querySelectorAll('.overflow-x-auto').forEach(el => {
+                el.addEventListener('scroll', handleScroll, { passive: true });
+            });
+
+            // Mantener un registro de los botones que activaron los dropdowns
+            const dropdownButtonMap = new Map();
+
+            // Función mejorada para manejar el scroll
+            function handleScroll() {
+                // Buscar todos los dropdowns visibles
+                document.querySelectorAll('[id^="dropdown-"]').forEach(function(dropdown) {
+                    if (dropdown.style.display !== 'none' && dropdown.offsetParent !== null) {
+                        // Encontrar el botón correspondiente
+                        const dropdownId = dropdown.id;
+
+                        // Intentar obtener el botón del registro primero (más eficiente)
+                        let targetButton = dropdownButtonMap.get(dropdownId);
+
+                        // Si no existe en el registro, buscarlo
+                        if (!targetButton) {
+                            const buttons = document.querySelectorAll('button');
+
+                            for (let i = 0; i < buttons.length; i++) {
+                                const button = buttons[i];
+                                if (button.outerHTML.includes(dropdownId)) {
+                                    targetButton = button;
+                                    // Guardar en el registro para uso futuro
+                                    dropdownButtonMap.set(dropdownId, button);
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Si el botón no está visible en el viewport, cerrar el dropdown
+                        if (targetButton) {
+                            const rect = targetButton.getBoundingClientRect();
+                            const isVisible = rect.top >= 0 && rect.left >= 0 &&
+                                             rect.bottom <= window.innerHeight &&
+                                             rect.right <= window.innerWidth;
+
+                            if (!isVisible) {
+                                // Si el botón ya no es visible, cerrar el dropdown a través de Alpine
+                                if (targetButton.__x && targetButton.__x.$data.open) {
+                                    targetButton.__x.$data.open = false;
+                                    return;
+                                }
+                            }
+
+                            // Simular un evento para reposicionar
+                            const event = { currentTarget: targetButton };
+                            detectPosition(event, dropdownId);
+                        }
+                    }
+                });
+            }
+        });        // Función para detectar y ajustar la posición de los dropdowns
+        window.detectPosition = function(event, dropdownId) {
+            const button = event.currentTarget;
+            const dropdown = document.getElementById(dropdownId);
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            const isMobile = windowWidth < 640; // Punto de corte para dispositivos móviles (sm en Tailwind)
+            const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+
+            // Obtener la posición de scroll
+            const scrollX = window.scrollX || window.pageXOffset;
+            const scrollY = window.scrollY || window.pageYOffset;
+
+            if (!dropdown || !button) return;
+
+            // Obtener las coordenadas del botón relativas a la ventana
+            const buttonRect = button.getBoundingClientRect();
+
+            // Calcular espacio disponible en cada dirección, considerando el scroll
+            const spaceRight = windowWidth - buttonRect.right;
+            const spaceLeft = buttonRect.left;
+            const spaceBelow = windowHeight - buttonRect.bottom;
+            const spaceAbove = buttonRect.top;
+
+            // Guardar temporalmente el display original
+            const originalDisplay = dropdown.style.display;
+            dropdown.style.display = 'block';
+            dropdown.style.visibility = 'hidden';
+
+            // Obtener dimensiones del dropdown
+            const dropdownWidth = dropdown.offsetWidth;
+            const dropdownHeight = dropdown.offsetHeight;
+
+            // Restaurar el display original
+            dropdown.style.display = originalDisplay;
+            dropdown.style.visibility = '';
+
+            // Determinar la mejor posición según el espacio disponible
+            let position = 'right';
+
+            if (isMobile || isTouchDevice) {
+                // En dispositivos móviles, elegimos la mejor posición considerando el espacio disponible
+                // y la posición del botón en la pantalla
+
+                // Verificar si el botón está en la mitad izquierda o derecha de la pantalla
+                const isButtonOnRightSide = buttonRect.left > (windowWidth / 2);
+
+                // Por defecto, mostramos abajo
+                position = 'center-bottom';
+
+                // Si no hay suficiente espacio abajo pero hay arriba, mostrarlo arriba
+                if (spaceBelow < Math.min(250, dropdownHeight) && spaceAbove > dropdownHeight) {
+                    position = 'center-top';
+                }
+
+                // Configuración para mejorar la experiencia en dispositivos móviles
+                dropdown.style.maxHeight = Math.min(300, windowHeight * 0.7) + 'px';
+                dropdown.style.overflowY = 'auto';
+                dropdown.style.overflowX = 'hidden';
+                dropdown.style.webkitOverflowScrolling = 'touch'; // Para mejorar el scroll en iOS
+            } else {
+                // Lógica para pantallas más grandes no táctiles
+                if (spaceRight < dropdownWidth && spaceLeft > dropdownWidth) {
+                    position = 'left';
+                } else if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
+                    position = spaceLeft > spaceRight ? 'top-left' : 'top-right';
+                }
+            }
+
+            // Aplicar posicionamiento al dropdown
+            dropdown.style.position = 'fixed'; // Usar posicionamiento fijo para evitar problemas con scroll
+            dropdown.style.zIndex = '999'; // Aumentar el z-index para asegurar que esté por encima de otros elementos            // Mejorar la visibilidad en todos los dispositivos
+            dropdown.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)';
+            dropdown.style.transition = 'opacity 0.25s ease-out, transform 0.25s ease-out';
+            dropdown.style.opacity = '0';
+            dropdown.style.transform = 'scale(0.95)';
+            dropdown.style.borderRadius = '0.5rem'; // Bordes más redondeados (equivalente a rounded-lg)
+            dropdown.style.border = '1px solid rgba(209, 213, 219, 0.7)'; // Borde más visible
+            dropdown.style.backgroundColor = 'rgba(255, 255, 255, 0.98)'; // Fondo más opaco
+
+            // Configuraciones adicionales para dispositivos móviles
+            if (isMobile || isTouchDevice) {
+                dropdown.style.touchAction = 'pan-y'; // Permitir scroll vertical pero prevenir zoom
+
+                // Añadir un pequeño desplazamiento para evitar que el click se registre cerca del botón
+                dropdown.style.marginTop = '8px';
+
+                // Mejorar visibilidad para dispositivos móviles
+                dropdown.style.backdropFilter = 'blur(2px)'; // Efecto de desenfoque detrás del menú
+
+                // Agregar un indicador visual (flecha) en el dropdown
+                const arrow = document.createElement('div');
+                arrow.style.position = 'absolute';
+                arrow.style.width = '12px';
+                arrow.style.height = '12px';
+                arrow.style.backgroundColor = 'white';
+                arrow.style.border = '1px solid rgba(209, 213, 219, 0.7)';
+                arrow.style.borderBottom = 'none';
+                arrow.style.borderRight = 'none';
+                arrow.style.transform = 'rotate(45deg)';
+                arrow.style.top = '-6px';
+                arrow.style.left = '20px';
+                arrow.style.zIndex = '1';
+
+                // Si el dropdown se muestra arriba, mover la flecha
+                if (position === 'center-top' || position.includes('top-')) {
+                    arrow.style.top = 'auto';
+                    arrow.style.bottom = '-6px';
+                    arrow.style.transform = 'rotate(225deg)';
+                }
+
+                // Añadir la flecha al dropdown
+                dropdown.insertBefore(arrow, dropdown.firstChild);
+
+                // Mejorar la respuesta táctil
+                dropdown.querySelectorAll('a, button').forEach(el => {
+                    // Asegurar que los elementos del menú sean fáciles de tocar
+                    el.style.minHeight = '44px'; // Altura mínima recomendada para controles táctiles
+                    el.style.display = 'flex';
+                    el.style.alignItems = 'center';
+                });
+
+                // Prevenir que el evento touchstart cierre el dropdown cuando es dentro del mismo dropdown
+                dropdown.addEventListener('touchstart', function(e) {
+                    e.stopPropagation();
+                }, { passive: false });
+
+                // Añadir un botón de cerrar explícito para móviles
+                const closeButton = document.createElement('div');
+                closeButton.style.position = 'absolute';
+                closeButton.style.top = '5px';
+                closeButton.style.right = '5px';
+                closeButton.style.width = '24px';
+                closeButton.style.height = '24px';
+                closeButton.style.borderRadius = '50%';
+                closeButton.style.display = 'flex';
+                closeButton.style.alignItems = 'center';
+                closeButton.style.justifyContent = 'center';
+                closeButton.style.cursor = 'pointer';
+                closeButton.style.color = '#6B7280';
+                closeButton.innerHTML = '&times;';
+                closeButton.style.fontSize = '18px';
+
+                closeButton.addEventListener('touchstart', function(e) {
+                    e.stopPropagation();
+                    if (button.__x && button.__x.$data.open) {
+                        button.__x.$data.open = false;
+                    }
+                }, { passive: false });
+
+                // Añadir el botón de cerrar al dropdown
+                dropdown.appendChild(closeButton);
+            }// Determinar si el botón está dentro de una tabla con scroll horizontal
+            const isInScrollableTable = (function() {
+                let el = button;
+                while (el && el.tagName !== 'BODY') {
+                    if (el.classList && (el.classList.contains('overflow-x-auto') ||
+                        window.getComputedStyle(el).overflowX === 'auto' ||
+                        window.getComputedStyle(el).overflowX === 'scroll')) {
+                        return true;
+                    }
+                    el = el.parentElement;
+                }
+                return false;
+            })();
+
+            // Si estamos en vista móvil y dentro de una tabla con scroll, asegurarnos que el dropdown esté visible
+            if ((isMobile || isTouchDevice) && isInScrollableTable) {
+                // Para tablas con scroll horizontal en móviles, siempre posicionar desde el borde izquierdo
+                // independientemente de la posición del botón para asegurar que sea visible
+                position = 'fixed-left';
+            }
+
+            // Posicionar el dropdown basado en la posición determinada
+            if (position === 'fixed-left') {
+                // Posición fija para tablas con scroll horizontal en móviles
+                dropdown.style.left = '10px';  // Margen desde el borde izquierdo
+                dropdown.style.top = (buttonRect.bottom + 8) + 'px';
+                dropdown.style.maxWidth = (windowWidth - 20) + 'px';
+                dropdown.style.minWidth = Math.min(280, windowWidth - 20) + 'px';
+                dropdown.style.right = 'auto';
+
+                // Si está muy abajo, mostrarlo arriba
+                if (buttonRect.bottom + dropdownHeight + 20 > windowHeight) {
+                    dropdown.style.top = 'auto';
+                    dropdown.style.bottom = (windowHeight - buttonRect.top + 8) + 'px';
+                }
+            } else if (position === 'center-bottom') {
+                // Para móviles: calcular mejor posición horizontal
+                const buttonCenter = buttonRect.left + (buttonRect.width / 2);
+                const idealLeft = buttonCenter - (dropdownWidth / 2);
+
+                // Asegurarnos que no se salga por los bordes
+                const safeLeft = Math.max(10, Math.min(windowWidth - dropdownWidth - 10, idealLeft));
+
+                dropdown.style.left = safeLeft + 'px';
+                dropdown.style.top = (buttonRect.bottom + 8) + 'px';
+                dropdown.style.maxWidth = (windowWidth - 20) + 'px';
+                dropdown.style.minWidth = Math.min(250, windowWidth - 20) + 'px';
+                dropdown.style.right = 'auto';
+            } else if (position === 'center-top') {
+                // Para mostrar arriba del botón
+                const buttonCenter = buttonRect.left + (buttonRect.width / 2);
+                const idealLeft = buttonCenter - (dropdownWidth / 2);
+
+                // Asegurarnos que no se salga por los bordes
+                const safeLeft = Math.max(10, Math.min(windowWidth - dropdownWidth - 10, idealLeft));
+
+                dropdown.style.left = safeLeft + 'px';
+                dropdown.style.bottom = (windowHeight - buttonRect.top + 8) + 'px';
+                dropdown.style.top = 'auto'; // Usar bottom en lugar de top para mejor alineación
+                dropdown.style.maxWidth = (windowWidth - 20) + 'px';
+                dropdown.style.minWidth = Math.min(250, windowWidth - 20) + 'px';
+                dropdown.style.right = 'auto';
+            } else if (position === 'right') {
+                // Posicionamiento estándar a la derecha
+                let leftPos = buttonRect.left;
+
+                // Asegurarse que no se salga de la pantalla por la derecha
+                if (leftPos + dropdownWidth > windowWidth - 10) {
+                    leftPos = windowWidth - dropdownWidth - 10;
+                }
+
+                dropdown.style.left = leftPos + 'px';
+                dropdown.style.top = buttonRect.bottom + 5 + 'px';
+            } else if (position === 'left') {
+                // Posicionamiento a la izquierda
+                let leftPos = buttonRect.right - dropdownWidth;
+
+                // Asegurarse que no se salga de la pantalla por la izquierda
+                if (leftPos < 10) {
+                    leftPos = 10;
+                }
+
+                dropdown.style.left = leftPos + 'px';
+                dropdown.style.top = buttonRect.bottom + 5 + 'px';
+            } else if (position === 'top-right') {
+                // Arriba a la derecha
+                let leftPos = buttonRect.left;
+
+                // Asegurarse que no se salga de la pantalla
+                if (leftPos + dropdownWidth > windowWidth - 10) {
+                    leftPos = windowWidth - dropdownWidth - 10;
+                }
+
+                dropdown.style.left = leftPos + 'px';
+                dropdown.style.bottom = (windowHeight - buttonRect.top + 5) + 'px';
+                dropdown.style.top = 'auto'; // Usar bottom en lugar de top
+            } else if (position === 'top-left') {
+                // Arriba a la izquierda
+                let leftPos = buttonRect.right - dropdownWidth;
+
+                // Asegurarse que no se salga de la pantalla
+                if (leftPos < 10) {
+                    leftPos = 10;
+                }
+
+                dropdown.style.left = leftPos + 'px';
+                dropdown.style.bottom = (windowHeight - buttonRect.top + 5) + 'px';
+                dropdown.style.top = 'auto'; // Usar bottom en lugar de top
+            }            // Forzar repintado del DOM para que la animación funcione correctamente
+            requestAnimationFrame(() => {
+                dropdown.style.opacity = '1';
+                dropdown.style.transform = 'scale(1)';
+            });
+
+            // Añadir detección de scroll para cerrar el dropdown si el usuario hace scroll
+            const scrollHandler = () => {
+                const alpineComponent = button.__x;
+                if (alpineComponent && alpineComponent.$data.open) {
+                    alpineComponent.$data.open = false;
+                }
+                window.removeEventListener('scroll', scrollHandler, { passive: true });
+            };
+
+            // Cerrar dropdown al hacer tap en cualquier parte de la pantalla (para móviles)
+            const documentTouchHandler = (e) => {
+                // No cerrar si el toque es dentro del dropdown o en el botón
+                if (dropdown.contains(e.target) || button.contains(e.target)) {
+                    return;
+                }
+
+                const alpineComponent = button.__x;
+                if (alpineComponent && alpineComponent.$data.open) {
+                    alpineComponent.$data.open = false;
+                }
+
+                // Limpiar este evento después de usarlo
+                document.removeEventListener('touchstart', documentTouchHandler);
+            };
+
+            // En dispositivos móviles, agregar más manejadores para mejorar la interacción
+            if (isMobile || isTouchDevice) {
+                window.addEventListener('scroll', scrollHandler, { passive: true });
+
+                // Registrar un handler para cerrar al tocar en cualquier lugar fuera
+                // Pequeño timeout para evitar que se cierre inmediatamente
+                setTimeout(() => {
+                    document.addEventListener('touchstart', documentTouchHandler, { passive: true });
+                }, 100);
+
+                // También cerrar al hacer scroll horizontal en la tabla
+                const tableScrollHandler = (e) => {
+                    const alpineComponent = button.__x;
+                    if (alpineComponent && alpineComponent.$data.open) {
+                        alpineComponent.$data.open = false;
+                    }
+                };
+
+                // Buscar tablas con scroll horizontal
+                const scrollableTables = document.querySelectorAll('.overflow-x-auto');
+                scrollableTables.forEach(table => {
+                    table.addEventListener('scroll', tableScrollHandler, { passive: true, once: true });
+                });
+
+                // Eliminar los listeners después de un tiempo (para evitar problemas de memoria)
+                setTimeout(() => {
+                    if (button.__x && !button.__x.$data.open) {
+                        window.removeEventListener('scroll', scrollHandler);
+                        document.removeEventListener('touchstart', documentTouchHandler);
+                        scrollableTables.forEach(table => {
+                            table.removeEventListener('scroll', tableScrollHandler);
+                        });
+                    }
+                }, 5000); // 5 segundos
+            }
+
+            // Actualizar el valor de position en el componente Alpine
+            if (button.__x) {
+                button.__x.$data.position = position;
+            }
+        };
     </script>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,22 +612,25 @@
 
         <!-- Tabla de zonas -->
         <div class="overflow-x-auto bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="text-sm text-gray-500 px-4 py-2 bg-gray-100 md:hidden">
+                Desliza horizontalmente para ver toda la tabla →
+            </div>
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Nombre
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                             Tipo de Registro
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                             Cuenta regresiva (Segundos)
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                             Auth Mikrotik
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                             Propietario
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -93,17 +646,22 @@
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {{ $zona->nombre }}
+                                <div class="sm:hidden mt-1 text-xs text-gray-500">
+                                    <div>Tipo: {{ $zona->getTipoRegistroLabelAttribute() }}</div>
+                                    <div class="md:hidden">Segundos: {{ $zona->segundos }}</div>
+                                    <div class="md:hidden">Auth: {{ $zona->getTipoAutenticacionMikrotikLabelAttribute() }}</div>
+                                </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
                                 {{ $zona->getTipoRegistroLabelAttribute() }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
                                 {{ $zona->segundos }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
                                 {{ $zona->getTipoAutenticacionMikrotikLabelAttribute() }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
                                 {{ $zona->user->name }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -122,10 +680,10 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div class="flex space-x-2">
+                                <div class="flex flex-wrap gap-2 sm:space-x-2">
                                     <button
                                         wire:click="openModal(true, {{ $zona->id }})"
-                                        class="text-indigo-600 hover:text-indigo-900"
+                                        class="text-indigo-600 hover:text-indigo-900 py-1 px-1.5 rounded border border-transparent hover:border-indigo-200"
                                     >
                                         Editar
                                     </button>
@@ -133,60 +691,129 @@
                                     @if($zona->tipo_registro != 'sin_registro')
                                     <a
                                         href="{{ route('admin.zone.form-fields', ['zonaId' => $zona->id]) }}"
-                                        class="text-green-600 hover:text-green-900"
+                                        class="text-green-600 hover:text-green-900 py-1 px-1.5 rounded border border-transparent hover:border-green-200"
                                     >
                                         Campos
                                     </a>
 
                                     <a
                                         href="{{ route('cliente.zona.formulario', ['zonaId' => $zona->id]) }}"
-                                        class="text-purple-600 hover:text-purple-900"
+                                        class="text-purple-600 hover:text-purple-900 py-1 px-1.5 rounded border border-transparent hover:border-purple-200"
                                         target="_blank"
                                     >
-                                        Ver Formulario
+                                        <span class="hidden xs:inline">Ver </span>Formulario
                                     </a>
                                     @endif
 
-                                    <div class="relative inline-block" x-data="{ open: false }">
-                                        <button @click="open = !open" class="text-amber-600 hover:text-amber-900 focus:outline-none">
-                                            Vista previa
-                                            <svg class="h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <div x-data="{ open: false, position: 'right' }" class="relative inline-block">
+                                        <button @click="open = !open; setTimeout(() => detectPosition($event, 'dropdown-vista-{{ $zona->id }}'), 10)"
+                                                x-on:touchstart.stop="open = !open; setTimeout(() => detectPosition($event, 'dropdown-vista-{{ $zona->id }}'), 10)"
+                                                class="whitespace-nowrap text-amber-600 hover:text-amber-900 focus:outline-none py-2 px-3 rounded border border-transparent hover:border-amber-200 hover:bg-amber-50 active:bg-amber-100 transition-colors duration-150 touch-manipulation">
+                                            <span class="hidden xs:inline">Vista </span>previa
+                                            <svg class="h-5 w-5 inline ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                             </svg>
                                         </button>
-                                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
-                                            <div class="py-1">
-                                                <a href="{{ route('cliente.zona.preview', ['id' => $zona->id]) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" target="_blank">
-                                                    Vista previa normal
+                                        <div x-show="open"
+                                             @click.away="open = false"
+                                             @touchstart.stop
+                                             x-touchout="open = false"
+                                             @mouseenter="detectPosition($event, 'dropdown-vista-{{ $zona->id }}')"
+                                             id="dropdown-vista-{{ $zona->id }}"
+                                             class="fixed bg-white rounded-md shadow-lg z-50 overflow-hidden border border-gray-200"
+                                             x-transition:enter="transition ease-out duration-100"
+                                             x-transition:enter-start="opacity-0 transform scale-95"
+                                             x-transition:enter-end="opacity-100 transform scale-100"
+                                             x-transition:leave="transition ease-in duration-75"
+                                             x-transition:leave-start="opacity-100 transform scale-100"
+                                             x-transition:leave-end="opacity-0 transform scale-95">
+                                            <div class="py-1 whitespace-nowrap">
+                                                <a href="{{ route('cliente.zona.preview', ['id' => $zona->id]) }}"
+                                                   class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 sm:py-2 transition-colors duration-150"
+                                                   target="_blank"
+                                                   style="touch-action: manipulation;">
+                                                    <span class="flex items-center">
+                                                        <svg class="h-4 w-4 mr-2 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                        Vista previa normal
+                                                    </span>
                                                 </a>
-                                                <a href="{{ route('cliente.zona.preview.carrusel', ['id' => $zona->id]) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" target="_blank">
-                                                    Vista con carrusel
+                                                <a href="{{ route('cliente.zona.preview.carrusel', ['id' => $zona->id]) }}"
+                                                   class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 sm:py-2 transition-colors duration-150"
+                                                   target="_blank"
+                                                   style="touch-action: manipulation;">
+                                                    <span class="flex items-center">
+                                                        <svg class="h-4 w-4 mr-2 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                                                        </svg>
+                                                        Vista con carrusel
+                                                    </span>
                                                 </a>
-                                                <a href="{{ route('cliente.zona.preview.video', ['id' => $zona->id]) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" target="_blank">
-                                                    Vista con video
+                                                <a href="{{ route('cliente.zona.preview.video', ['id' => $zona->id]) }}"
+                                                   class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 sm:py-2 transition-colors duration-150"
+                                                   target="_blank"
+                                                   style="touch-action: manipulation;">
+                                                    <span class="flex items-center">
+                                                        <svg class="h-4 w-4 mr-2 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        Vista con video
+                                                    </span>
                                                 </a>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="relative" x-data="{ open: false }">
-                                        <button @click="open = !open" class="text-blue-600 hover:text-blue-900 focus:outline-none">
-                                            Archivos Mikrotik
-                                            <svg class="h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <div x-data="{ open: false, position: 'right' }" class="relative inline-block">
+                                        <button @click="open = !open; setTimeout(() => detectPosition($event, 'dropdown-files-{{ $zona->id }}'), 10)"
+                                               x-on:touchstart.stop="open = !open; setTimeout(() => detectPosition($event, 'dropdown-files-{{ $zona->id }}'), 10)"
+                                               class="whitespace-nowrap text-blue-600 hover:text-blue-900 focus:outline-none py-2 px-3 rounded border border-transparent hover:border-blue-200 hover:bg-blue-50 active:bg-blue-100 transition-colors duration-150 touch-manipulation">
+                                            <span class="hidden sm:inline">Archivos </span>Mikrotik
+                                            <svg class="h-5 w-5 inline ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                             </svg>
                                         </button>
-                                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
-                                            <div class="py-1">
-                                                <a href="{{ route('admin.zonas.download', ['zonaId' => $zona->id, 'fileType' => 'login']) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                    Descargar login.html
+                                        <div x-show="open"
+                                             @click.away="open = false"
+                                             @touchstart.stop
+                                             x-touchout="open = false"
+                                             @mouseenter="detectPosition($event, 'dropdown-files-{{ $zona->id }}')"
+                                             id="dropdown-files-{{ $zona->id }}"
+                                             class="fixed bg-white rounded-md shadow-lg z-50 overflow-hidden border border-gray-200"
+                                             x-transition:enter="transition ease-out duration-100"
+                                             x-transition:enter-start="opacity-0 transform scale-95"
+                                             x-transition:enter-end="opacity-100 transform scale-100"
+                                             x-transition:leave="transition ease-in duration-75"
+                                             x-transition:leave-start="opacity-100 transform scale-100"
+                                             x-transition:leave-end="opacity-0 transform scale-95">
+                                            <div class="py-1 whitespace-nowrap">
+                                                <a href="{{ route('admin.zonas.download', ['zonaId' => $zona->id, 'fileType' => 'login']) }}"
+                                                   class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 sm:py-2 transition-colors duration-150"
+                                                   style="touch-action: manipulation;">
+                                                    <span class="flex items-center">
+                                                        <svg class="h-4 w-4 mr-2 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                        </svg>
+                                                        Descargar login.html
+                                                    </span>
                                                 </a>
-                                                <a href="{{ route('admin.zonas.download', ['zonaId' => $zona->id, 'fileType' => 'alogin']) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                    Descargar alogin.html
+                                                <a href="{{ route('admin.zonas.download', ['zonaId' => $zona->id, 'fileType' => 'alogin']) }}"
+                                                   class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 sm:py-2 transition-colors duration-150"
+                                                   style="touch-action: manipulation;">
+                                                    <span class="flex items-center">
+                                                        <svg class="h-4 w-4 mr-2 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                        </svg>
+                                                        Descargar alogin.html
+                                                    </span>
                                                 </a>
                                                 <button
                                                     wire:click.prevent="openInstructionsModal({{ $zona->id }})"
-                                                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                    class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 sm:py-2 transition-colors duration-150"
+                                                    style="touch-action: manipulation;"
                                                 >
                                                     Ver instrucciones
                                                 </button>
@@ -197,7 +824,7 @@
                                     @if (auth()->user()->hasRole('admin') || $zona->user_id === auth()->id())
                                         <button
                                             wire:click="confirmZonaDeletion({{ $zona->id }})"
-                                            class="text-red-600 hover:text-red-900"
+                                            class="text-red-600 hover:text-red-900 py-1 px-1.5 rounded border border-transparent hover:border-red-200"
                                         >
                                             Eliminar
                                         </button>
