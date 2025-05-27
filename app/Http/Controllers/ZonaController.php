@@ -37,7 +37,7 @@ class ZonaController extends Controller
             'link-orig-esc' => 'http%3A%2F%2Fwww.google.com%2F',
             'mac-esc' => '00%3A11%3A22%3A33%3A44%3A55'
         ];
-        
+
         // Pre-renderizar los campos del formulario
         $camposHtml = [];
         foreach ($zona->campos as $campo) {
