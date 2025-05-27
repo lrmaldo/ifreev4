@@ -84,9 +84,17 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/zonas/{zonaId}/formulario', \App\Livewire\FormularioDinamico::class)
             ->name('cliente.zona.formulario');
 
-        // Ruta para previsualizar el portal cautivo de una zona
+        // Rutas para previsualizar el portal cautivo de una zona
         Route::get('/zonas/{id}/preview', [\App\Http\Controllers\ZonaController::class, 'preview'])
             ->name('cliente.zona.preview');
+
+        // Ruta para previsualizar portal cautivo con carrusel de imágenes
+        Route::get('/zonas/{id}/preview/carrusel', [\App\Http\Controllers\ZonaController::class, 'previewCarrusel'])
+            ->name('cliente.zona.preview.carrusel');
+
+        // Ruta para previsualizar portal cautivo con reproducción de video
+        Route::get('/zonas/{id}/preview/video', [\App\Http\Controllers\ZonaController::class, 'previewVideo'])
+            ->name('cliente.zona.preview.video');
     });
 });
 

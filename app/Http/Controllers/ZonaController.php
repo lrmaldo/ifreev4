@@ -46,4 +46,92 @@ class ZonaController extends Controller
 
         return view('zonas.preview', compact('zona', 'mikrotikData', 'camposHtml'));
     }
+
+    /**
+     * Muestra una vista previa del portal cautivo con carrusel de imágenes.
+     * Muestra el formulario y al enviar, muestra un carrusel de imágenes con contador regresivo.
+     *
+     * @param int $id
+     * @return \Illuminate\View\View
+     */
+    public function previewCarrusel($id)
+    {
+        // Obtener la zona con sus campos de formulario
+        $zona = Zona::with(['campos' => function ($query) {
+            $query->orderBy('orden');
+        }])->findOrFail($id);
+
+        // Datos simulados que normalmente enviaría Mikrotik
+        $mikrotikData = [
+            'mac' => '00:11:22:33:44:55',
+            'ip' => '192.168.88.10',
+            'username' => '',
+            'link-login' => 'http://10.0.0.1/login',
+            'link-orig' => 'http://www.google.com/',
+            'error' => '',
+            'chap-id' => '12345678',
+            'chap-challenge' => 'abcdef1234567890',
+            'link-login-only' => 'http://10.0.0.1/login',
+            'link-orig-esc' => 'http%3A%2F%2Fwww.google.com%2F',
+            'mac-esc' => '00%3A11%3A22%3A33%3A44%3A55'
+        ];
+
+        // Pre-renderizar los campos del formulario
+        $camposHtml = [];
+        foreach ($zona->campos as $campo) {
+            $camposHtml[] = $this->renderizarCampo($campo);
+        }
+
+        // Imágenes de ejemplo para el carrusel
+        $imagenes = [
+            asset('images/carrusel/slide1.jpg'),
+            asset('images/carrusel/slide2.jpg'),
+            asset('images/carrusel/slide3.jpg'),
+            asset('images/carrusel/slide4.jpg'),
+            asset('images/carrusel/slide5.jpg'),
+        ];
+
+        return view('zonas.preview-carrusel', compact('zona', 'mikrotikData', 'camposHtml', 'imagenes'));
+    }
+
+    /**
+     * Muestra una vista previa del portal cautivo con reproducción de video.
+     * Muestra el formulario y al enviar, reproduce un video.
+     *
+     * @param int $id
+     * @return \Illuminate\View\View
+     */
+    public function previewVideo($id)
+    {
+        // Obtener la zona con sus campos de formulario
+        $zona = Zona::with(['campos' => function ($query) {
+            $query->orderBy('orden');
+        }])->findOrFail($id);
+
+        // Datos simulados que normalmente enviaría Mikrotik
+        $mikrotikData = [
+            'mac' => '00:11:22:33:44:55',
+            'ip' => '192.168.88.10',
+            'username' => '',
+            'link-login' => 'http://10.0.0.1/login',
+            'link-orig' => 'http://www.google.com/',
+            'error' => '',
+            'chap-id' => '12345678',
+            'chap-challenge' => 'abcdef1234567890',
+            'link-login-only' => 'http://10.0.0.1/login',
+            'link-orig-esc' => 'http%3A%2F%2Fwww.google.com%2F',
+            'mac-esc' => '00%3A11%3A22%3A33%3A44%3A55'
+        ];
+
+        // Pre-renderizar los campos del formulario
+        $camposHtml = [];
+        foreach ($zona->campos as $campo) {
+            $camposHtml[] = $this->renderizarCampo($campo);
+        }
+
+        // URL del video de ejemplo
+        $videoUrl = asset('videos/sample.mp4');
+
+        return view('zonas.preview-video', compact('zona', 'mikrotikData', 'camposHtml', 'videoUrl'));
+    }
 }

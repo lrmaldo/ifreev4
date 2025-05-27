@@ -147,13 +147,27 @@
                                     </a>
                                     @endif
 
-                                    <a
-                                        href="{{ route('cliente.zona.preview', ['id' => $zona->id]) }}"
-                                        class="text-amber-600 hover:text-amber-900"
-                                        target="_blank"
-                                    >
-                                        Vista previa
-                                    </a>
+                                    <div class="relative inline-block" x-data="{ open: false }">
+                                        <button @click="open = !open" class="text-amber-600 hover:text-amber-900 focus:outline-none">
+                                            Vista previa
+                                            <svg class="h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </button>
+                                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                                            <div class="py-1">
+                                                <a href="{{ route('cliente.zona.preview', ['id' => $zona->id]) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" target="_blank">
+                                                    Vista previa normal
+                                                </a>
+                                                <a href="{{ route('cliente.zona.preview.carrusel', ['id' => $zona->id]) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" target="_blank">
+                                                    Vista con carrusel
+                                                </a>
+                                                <a href="{{ route('cliente.zona.preview.video', ['id' => $zona->id]) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" target="_blank">
+                                                    Vista con video
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <div class="relative" x-data="{ open: false }">
                                         <button @click="open = !open" class="text-blue-600 hover:text-blue-900 focus:outline-none">
