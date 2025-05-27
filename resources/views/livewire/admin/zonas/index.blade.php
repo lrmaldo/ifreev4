@@ -147,6 +147,14 @@
                                     </a>
                                     @endif
 
+                                    <a
+                                        href="{{ route('cliente.zona.preview', ['id' => $zona->id]) }}"
+                                        class="text-amber-600 hover:text-amber-900"
+                                        target="_blank"
+                                    >
+                                        Vista previa
+                                    </a>
+
                                     <div class="relative" x-data="{ open: false }">
                                         <button @click="open = !open" class="text-blue-600 hover:text-blue-900 focus:outline-none">
                                             Archivos Mikrotik
@@ -270,6 +278,28 @@
                                                 class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                                             >
                                             @error('zona.nombre')
+                                                <span class="text-red-500 text-xs">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                        <div>
+                                            <label for="id_personalizado" class="block text-sm font-medium text-gray-700">ID personalizado para URL</label>
+                                            <div class="mt-1 flex rounded-md shadow-sm">
+                                                <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
+                                                    https://i-free.com.mx/login_formulario/
+                                                </span>
+                                                <input
+                                                    type="text"
+                                                    wire:model="zona.id_personalizado"
+                                                    id="id_personalizado"
+                                                    placeholder="Opcional - si no se especifica, se usará el ID real"
+                                                    class="flex-1 min-w-0 block w-full rounded-none rounded-r-md sm:text-sm border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
+                                                >
+                                            </div>
+                                            <p class="mt-1 text-sm text-gray-500">
+                                                Si ya tienes Mikrotiks configurados con una URL específica, puedes mantener el mismo ID.
+                                                Solo se permiten letras, números, guiones y guiones bajos.
+                                            </p>
+                                            @error('zona.id_personalizado')
                                                 <span class="text-red-500 text-xs">{{ $message }}</span>
                                             @enderror
                                         </div>
@@ -659,7 +689,7 @@
                                         <div class="p-3 bg-gray-50 rounded-md">
                                             <h5 class="font-bold mb-2">3. Ajustes adicionales</h5>
                                             <ul class="list-disc pl-5 space-y-2">
-                                                <li>En Hotspot > Server Profiles, asegúrate de configurar la URL de redirección a tu portal: <span class="font-mono bg-gray-200 px-1 rounded">https://tu-portal-web.com/redirect?zona={{ $activeZonaForInstructions->id }}</span></li>
+                                                <li>En Hotspot > Server Profiles, asegúrate de configurar la URL de redirección a tu portal: <span class="font-mono bg-gray-200 px-1 rounded">https://i-free.com.mx/login_formulario/{{ $activeZonaForInstructions->login_form_id }}</span></li>
                                                 <li>Si necesitas personalizar los archivos HTML descargados, puedes editar los estilos o agregar tu logo.</li>
                                                 <li>Recuerda ajustar las reglas de firewall si es necesario para permitir el tráfico adecuado.</li>
                                             </ul>

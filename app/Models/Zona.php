@@ -11,6 +11,7 @@ class Zona extends Pivot
     protected $fillable = [
         'nombre',
         'id_analytics',
+        'id_personalizado',
         'user_id',
         'requiere_registro',
         'campo_nombre',
@@ -71,5 +72,16 @@ class Zona extends Pivot
     public function getTipoAutenticacionMikrotikLabelAttribute()
     {
         return $this->getTipoAutenticacionMikrotikOptions()[$this->tipo_autenticacion_mikrotik] ?? 'PIN';
+    }
+
+    /**
+     * Obtiene el ID que se usará en los formularios de login para Mikrotik.
+     * Usa el ID personalizado si está definido, de lo contrario usa el ID real.
+     *
+     * @return mixed
+     */
+    public function getLoginFormIdAttribute()
+    {
+        return $this->id_personalizado ?? $this->id;
     }
 }

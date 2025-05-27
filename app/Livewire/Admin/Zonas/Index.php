@@ -28,6 +28,7 @@ class Index extends Component
     // Propiedades para zona
     public $zona = [
         'nombre' => '',
+        'id_personalizado' => '', // ID personalizado para login.html
         'segundos' => 15,
         'tipo_registro' => 'formulario',
         'login_sin_registro' => false,
@@ -48,6 +49,7 @@ class Index extends Component
 
     protected $rules = [
         'zona.nombre' => 'required|string|max:255',
+        'zona.id_personalizado' => 'nullable|string|max:50|unique:zonas,id_personalizado|regex:/^[a-zA-Z0-9_-]+$/|not_in:admin,login,register,dashboard',
         'zona.segundos' => 'required|integer|min:5',
         'zona.tipo_registro' => 'required|string|in:formulario,redes,sin_registro',
         'zona.login_sin_registro' => 'boolean',
@@ -102,6 +104,7 @@ class Index extends Component
             $this->activeZona = null;
             $this->zona = [
                 'nombre' => '',
+                'id_personalizado' => '',
                 'segundos' => 15,
                 'tipo_registro' => 'formulario',
                 'login_sin_registro' => false,
@@ -121,7 +124,12 @@ class Index extends Component
 
     public function saveZona()
     {
-        $this->validate();
+        // Validación personalizada para id_personalizado
+        $rules = $this->rules;
+        if ($this->isEditing && $this->activeZona) {
+            $rules['zona.id_personalizado'] = 'nullable|string|max:50|unique:zonas,id_personalizado,' . $this->activeZona->id . '|regex:/^[a-zA-Z0-9_-]+$/|not_in:admin,login,register,dashboard';
+        }
+        $this->validate($rules);
 
         if ($this->isEditing && $this->activeZona) {
             $this->activeZona->update($this->zona);
@@ -279,6 +287,55 @@ class Index extends Component
             return;
         }
 
+        // Si es el archivo login.html, personalizar con el ID de la zona (real o personalizado)
+        if ($fileType === 'login') {
+            $content = file_get_contents($filePath);
+
+            // Usamos el ID personalizado si existe, si no, usamos el ID real
+            $zonaId = $zona->login_form_id; // Usa el accessor ya definido en el modelo
+
+            // Para el archivo de referencia, necesitamos crear un formulario que apunte a nuestra URL
+            $html = <<<HTML
+<html>
+    <head> <title>Redirecting...</title></head>
+        <body>
+            $(if chap-id)
+                <noscript>
+                <center><b>JavaScript required. Enable JavaScript to continue.</b></center>
+                </noscript>
+            $(endif)
+        <center>Si no se redirecciona en unos segundos haga clic en 'continue'<br>
+            <form name="redirect" action="https://i-free.com.mx/login_formulario/{$zonaId}" method="post">
+                <input type="hidden" name="mac" value="$(mac)">
+                <input type="hidden" name="ip" value="$(ip)">
+                <input type="hidden" name="username" value="$(username)">
+                <input type="hidden" name="link-login" value="$(link-login)">
+                <input type="hidden" name="link-orig" value="$(link-orig)">
+                <input type="hidden" name="error" value="$(error)">
+                <input type="hidden" name="chap-id" value="$(chap-id)">
+                <input type="hidden" name="chap-challenge" value="$(chap-challenge)">
+                <input type="hidden" name="link-login-only" value="$(link-login-only)">
+                <input type="hidden" name="link-orig-esc" value="$(link-orig-esc)">
+                <input type="hidden" name="mac-esc" value="$(mac-esc)">
+                <input type="submit" value="continue">
+            </form>
+        <script language="JavaScript">
+        <!--
+            document.redirect.submit();
+            //-->
+        </script></center>
+        </body>
+    </html>
+HTML;
+
+            // Guardar el contenido en un archivo temporal y devolverlo como descarga
+            $tempFilePath = sys_get_temp_dir() . '/' . $fileName;
+            file_put_contents($tempFilePath, $html);
+
+            return response()->download($tempFilePath, $fileName)->deleteFileAfterSend(true);
+        }
+
+        // Si es otro archivo (como alogin.html), se devuelve sin modificaciones
         return response()->download($filePath, $fileName);
     }
 }

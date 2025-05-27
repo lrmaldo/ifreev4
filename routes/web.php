@@ -3,7 +3,27 @@
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
+use App\Http\Controllers\ZonaLoginController;
 use Illuminate\Support\Facades\Route;
+
+// Ruta para manejar las solicitudes de login del Mikrotik
+Route::post('/login_formulario/{id}', [ZonaLoginController::class, 'handle'])
+    ->name('zona.login.mikrotik')
+    ->withoutMiddleware(['web'])  // No requerimos CSRF para esta ruta ya que viene del Mikrotik
+    ->middleware(['throttle:60,1']); // Protección contra abusos
+
+// Rutas para el registro de usuarios en zonas WiFi
+Route::get('/zona/{zonaId}/registro/formulario', function($zonaId) {
+    $zona = \App\Models\Zona::findOrFail($zonaId);
+    $mikrotikData = session('mikrotik_data', []);
+    return view('auth.mikrotik.formulario-registro', compact('zona', 'mikrotikData'));
+})->name('zona.registro.formulario');
+
+Route::get('/zona/{zonaId}/registro/redes', function($zonaId) {
+    $zona = \App\Models\Zona::findOrFail($zonaId);
+    $mikrotikData = session('mikrotik_data', []);
+    return view('auth.mikrotik.redes-sociales', compact('zona', 'mikrotikData'));
+})->name('zona.registro.redes');
 
 Route::get('/', function () {
     return view('welcome');
@@ -51,9 +71,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/clientes', function() {
             return view('clientes');
         })->name('admin.clientes.index');
-    });
-
-    // Rutas para clientes y admins (acceso a zonas)
+    });    // Rutas para clientes y admins (acceso a zonas)
     Route::middleware(['role:cliente|admin'])->group(function () {
         Route::get('/zonas', function() {
             return view('zonas');
@@ -61,10 +79,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/zonas/download/{zonaId}/{fileType}', function ($zonaId, $fileType) {
             return app()->call([app()->make(App\Livewire\Admin\Zonas\Index::class), 'downloadMikrotikFile'], ['zonaId' => $zonaId, 'fileType' => $fileType]);
         })->name('cliente.zonas.download');
-        
+
         // Ruta para ver el formulario dinámico de una zona
         Route::get('/zonas/{zonaId}/formulario', \App\Livewire\FormularioDinamico::class)
             ->name('cliente.zona.formulario');
+
+        // Ruta para previsualizar el portal cautivo de una zona
+        Route::get('/zonas/{id}/preview', [\App\Http\Controllers\ZonaController::class, 'preview'])
+            ->name('cliente.zona.preview');
     });
 });
 

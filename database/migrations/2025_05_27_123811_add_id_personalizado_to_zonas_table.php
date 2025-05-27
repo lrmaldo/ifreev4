@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('zonas', function (Blueprint $table) {
-            //
+            $table->string('id_personalizado')->nullable()->unique()->after('id');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('zonas', function (Blueprint $table) {
-            //
+            $table->dropColumn('id_personalizado');
         });
     }
 };
