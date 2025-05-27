@@ -40,6 +40,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/forms', function() {
             return view('forms');
         })->name('admin.forms.index');
+
+        // Rutas para administración de campos de formulario
+        Route::get('/zonas/{zonaId}/form-fields', \App\Livewire\Admin\AdminFormFields::class)
+            ->name('admin.zone.form-fields');
+
+        // Ruta para administrar opciones de un campo de formulario
+        Route::get('/form-fields/{formField}/options', \App\Livewire\Admin\FormFieldOptions::class)
+            ->name('admin.form-fields.options');
         Route::get('/clientes', function() {
             return view('clientes');
         })->name('admin.clientes.index');
@@ -53,6 +61,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/zonas/download/{zonaId}/{fileType}', function ($zonaId, $fileType) {
             return app()->call([app()->make(App\Livewire\Admin\Zonas\Index::class), 'downloadMikrotikFile'], ['zonaId' => $zonaId, 'fileType' => $fileType]);
         })->name('cliente.zonas.download');
+        
+        // Ruta para ver el formulario dinámico de una zona
+        Route::get('/zonas/{zonaId}/formulario', \App\Livewire\FormularioDinamico::class)
+            ->name('cliente.zona.formulario');
     });
 });
 

@@ -36,4 +36,20 @@ class FormField extends Model
             'checkbox' => 'Casilla de Verificación'
         ];
     }
+
+    /**
+     * Relación con las opciones del campo
+     */
+    public function opciones()
+    {
+        return $this->hasMany(FormFieldOption::class)->orderBy('orden');
+    }
+
+    /**
+     * Verifica si un campo tiene opciones (select, radio o checkbox)
+     */
+    public function tieneOpciones()
+    {
+        return in_array($this->tipo, ['select', 'radio', 'checkbox']);
+    }
 }

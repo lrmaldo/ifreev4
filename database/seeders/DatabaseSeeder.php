@@ -20,5 +20,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Seeder para los campos de formulario dinámicos
+        $this->call(FormFieldsSeeder::class);
     }
 }

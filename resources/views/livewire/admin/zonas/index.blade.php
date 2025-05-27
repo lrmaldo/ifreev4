@@ -130,6 +130,23 @@
                                         Editar
                                     </button>
 
+                                    @if($zona->tipo_registro != 'sin_registro')
+                                    <a
+                                        href="{{ route('admin.zone.form-fields', ['zonaId' => $zona->id]) }}"
+                                        class="text-green-600 hover:text-green-900"
+                                    >
+                                        Campos
+                                    </a>
+
+                                    <a
+                                        href="{{ route('cliente.zona.formulario', ['zonaId' => $zona->id]) }}"
+                                        class="text-purple-600 hover:text-purple-900"
+                                        target="_blank"
+                                    >
+                                        Ver Formulario
+                                    </a>
+                                    @endif
+
                                     <div class="relative" x-data="{ open: false }">
                                         <button @click="open = !open" class="text-blue-600 hover:text-blue-900 focus:outline-none">
                                             Archivos Mikrotik
