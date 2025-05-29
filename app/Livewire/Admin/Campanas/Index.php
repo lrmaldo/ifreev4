@@ -45,6 +45,9 @@ class Index extends Component
     // Modal
     public $showModal = false;
 
+    // Listeners para eventos de JavaScript
+    protected $listeners = ['zonasActualizadas' => 'actualizarZonasJavaScript'];
+
     // Reglas de validación
     protected function rules()
     {
@@ -99,6 +102,9 @@ class Index extends Component
     {
         $this->resetForm();
         $this->showModal = true;
+
+        // Despachar evento para inicializar el JavaScript con las zonas seleccionadas
+        $this->dispatch('initializeZonasSelect', $this->zonas_ids);
     }
 
     // Cerrar el modal
@@ -150,11 +156,11 @@ class Index extends Component
         if ($this->editando) {
             $campana = Campana::find($this->campana_id);
             $campana->update($data);
-            $this->sincronizarZonas($campana);
+            $this->sincronizarZonasInterno($campana);
             session()->flash('message', 'Campaña actualizada con éxito.');
         } else {
             $campana = Campana::create($data);
-            $this->sincronizarZonas($campana);
+            $this->sincronizarZonasInterno($campana);
             session()->flash('message', 'Campaña creada con éxito.');
         }
 
@@ -258,10 +264,47 @@ class Index extends Component
     }
 
     /**
+     * Método público para sincronizar zonas desde JavaScript/Select2
+     */
+    public function sincronizarZonas($zonasIds)
+    {
+        // Filtrar valores vacíos y asegurarse que son enteros
+        $this->zonas_ids = array_map('intval', array_filter($zonasIds));
+
+        // Despachar evento para actualizar el JavaScript con los nuevos valores
+        $this->dispatch('zonasActualizadas', $this->zonas_ids);
+
+        // No renderizar de nuevo para evitar perder la selección
+        $this->skipRender();
+    }
+
+    /**
+     * Actualiza el atributo data-livewire-values en el elemento select del JavaScript
+     */
+    public function actualizarZonasJavaScript()
+    {
+        // Asegurar que zonas_ids es un array y convertir a enteros
+        $zonas_ids = array_map('intval', array_filter($this->zonas_ids ?? []));
+
+        // Despachar evento para actualizar el atributo en el select
+        $this->dispatch('updateLivewireAttribute', [
+            'elementId' => 'zonas_select',
+            'attribute' => 'data-livewire-values',
+            'value' => json_encode($zonas_ids)
+        ]);
+
+        // Para debugging
+        $this->dispatch('consolelog', 'Zonas actualizadas: ' . implode(', ', $zonas_ids));
+
+        // No renderizar de nuevo
+        $this->skipRender();
+    }
+
+    /**
      * Sincroniza las zonas seleccionadas con la campaña
      * Valida que un usuario normal solo pueda asignar sus propias zonas
      */
-    protected function sincronizarZonas(Campana $campana)
+    protected function sincronizarZonasInterno(Campana $campana)
     {
         if (empty($this->zonas_ids)) {
             $campana->zonas()->detach();

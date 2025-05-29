@@ -8,6 +8,12 @@
             </div>
         @endif
 
+        @if (session()->has('warning'))
+            <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 dark:bg-yellow-900 dark:border-yellow-700 dark:text-yellow-300 px-4 py-3 rounded relative m-4" role="alert">
+                <span class="block sm:inline">{{ session('warning') }}</span>
+            </div>
+        @endif
+
         <!-- Filtros -->
         <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 dark:bg-zinc-900 dark:border-zinc-700">
             <div class="flex flex-wrap gap-4">
@@ -280,12 +286,20 @@
                                     <!-- Zonas -->
                                     <div>
                                         <label for="zonas_select" class="block text-sm font-medium text-gray-700">Zonas donde mostrar esta campaña</label>
-                                        <div wire:ignore>
-                                            <select id="zonas_select" class="select2 mt-1 block w-full border border-gray-300 rounded-md shadow-sm" multiple>
+                                        <div wire:ignore.self>
+                                            <select id="zonas_select"
+                                                    class="select2 mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
+                                                    multiple
+                                                    wire:model.live.debounce.500ms="zonas_ids"
+                                                    data-livewire-values="{{ json_encode($zonas_ids ?? []) }}"
+                                                    onclick="if(!window.select2Debug.getStatus().isInitialized) window.initializeZonasSelect2();">
                                                 @foreach($zonas as $zona)
-                                                    <option value="{{ $zona->id }}">{{ $zona->nombre }}</option>
+                                                    <option value="{{ $zona->id }}" {{ in_array($zona->id, $zonas_ids ?? []) ? 'selected' : '' }}>
+                                                        {{ $zona->nombre }}
+                                                    </option>
                                                 @endforeach
                                             </select>
+                                            <small class="mt-1 text-xs text-gray-500">Si el selector no funciona correctamente, <a href="#" onclick="window.initializeZonasSelect2(); return false;" class="text-indigo-600 hover:underline">haz clic aquí</a> para reinicializarlo.</small>
                                         </div>
                                         @error('zonas_ids') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
@@ -307,72 +321,42 @@
     @endif
 </div>
 
-@push('styles')
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<style>
-    .select2-container--default .select2-selection--multiple {
-        min-height: 38px;
-        border-color: rgb(209 213 219);
-    }
-    .select2-container--default.select2-container--focus .select2-selection--multiple {
-        border-color: #6366f1;
-        box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.2);
-    }
-    .dark .select2-container--default .select2-selection--multiple {
-        background-color: #1e293b;
-        border-color: #475569;
-        color: #f8fafc;
-    }
-    .dark .select2-container--default .select2-selection--multiple .select2-selection__choice {
-        background-color: #334155;
-        border-color: #475569;
-        color: #f1f5f9;
-    }
-    .dark .select2-container--default .select2-results__option--highlighted[aria-selected] {
-        background-color: #4f46e5;
-    }
-    .dark .select2-dropdown {
-        background-color: #1e293b;
-        color: #f1f5f9;
-        border-color: #475569;
-    }
-</style>
-@endpush
-
 @push('scripts')
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- jQuery y Select2 desde CDN (temporal hasta resolver Vite) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+<!-- Asegurarse que jQuery está disponible antes de cargar Select2 -->
 <script>
-    document.addEventListener('livewire:initialized', function () {
-        initSelect2();
-
-        Livewire.on('closeModal', function() {
-            setTimeout(() => {
-                initSelect2();
-            }, 300);
-        });
-    });
-
-    function initSelect2() {
-        // Esperar a que el modal esté visible
-        if (!document.getElementById('zonas_select')) {
-            return;
-        }
-
-        // Inicializar Select2
-        $('#zonas_select').select2({
-            placeholder: 'Seleccione las zonas',
-            width: '100%',
-            language: 'es'
-        }).on('change', function () {
-            // Sincronizar con el componente Livewire cuando cambia la selección
-            const zonas = $(this).val();
-            @this.set('zonas_ids', zonas);
-        });
-
-        // Establecer los valores iniciales
-        const zonasIdsArray = @this.get('zonas_ids');
-        $('#zonas_select').val(zonasIdsArray).trigger('change');
+    if (typeof jQuery === 'undefined') {
+        console.error('jQuery no está disponible! Cargando jQuery de respaldo...');
+        document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"><\/script>');
     }
 </script>
+
+<!-- Select2 CSS y JS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- Verificar que Select2 esté disponible -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof jQuery !== 'undefined') {
+            console.log('✅ jQuery está disponible: ' + jQuery.fn.jquery);
+
+            if (typeof jQuery.fn.select2 !== 'undefined') {
+                console.log('✅ Select2 está disponible');
+            } else {
+                console.error('❌ Select2 no está disponible! Cargando Select2 de respaldo...');
+                var select2Script = document.createElement('script');
+                select2Script.src = 'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js';
+                document.head.appendChild(select2Script);
+            }
+        }
+    });
+</script>
+
+<!-- Script de integración Select2 con Livewire -->
+<script src="{{ asset('js/select2-zonas.js') }}"></script>
 @endpush
+
+

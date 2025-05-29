@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Model;
 
-class Zona extends Pivot
+class Zona extends Model
 {
     //
     protected $table = 'zonas';
