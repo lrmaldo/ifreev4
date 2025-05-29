@@ -12,6 +12,12 @@ Route::post('/login_formulario/{id}', [ZonaLoginController::class, 'handle'])
     ->withoutMiddleware(['web'])  // No requerimos CSRF para esta ruta ya que viene del Mikrotik
     ->middleware(['throttle:60,1']); // Protección contra abusos
 
+// Ruta para obtener campañas activas para un portal cautivo
+Route::get('/portal-cautivo/{zonaId}/campanas', [\App\Http\Controllers\PortalCautivoController::class, 'obtenerCampanas'])
+    ->name('portal.campanas')
+    ->withoutMiddleware(['web'])  // No requerimos CSRF para esta ruta ya que puede ser accedida desde el portal cautivo
+    ->middleware(['throttle:60,1']); // Protección contra abusos
+
 // Rutas para el registro de usuarios en zonas WiFi
 Route::get('/zona/{zonaId}/registro/formulario', function($zonaId) {
     $zona = \App\Models\Zona::findOrFail($zonaId);
@@ -51,6 +57,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/permissions', function() {
             return view('permissions');
         })->name('admin.permissions.index');
+        Route::get('/campanas', function() {
+            return view('campanas');
+        })->name('admin.campanas.index');
         Route::get('/zonas', function() {
             return view('zonas');
         })->name('admin.zonas.index');

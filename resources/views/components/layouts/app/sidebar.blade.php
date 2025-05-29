@@ -14,20 +14,29 @@
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+
+                    @if(auth()->user()->hasRole('admin'))
+                    <flux:navlist.group :heading="__('Administración')" class="grid">
+                        <flux:navlist.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>{{ __('Usuarios') }}</flux:navlist.item>
+                        <flux:navlist.item icon="lock-closed" :href="route('admin.roles.index')" :current="request()->routeIs('admin.roles.*')" wire:navigate>{{ __('Roles') }}</flux:navlist.item>
+                        <flux:navlist.item icon="key" :href="route('admin.permissions.index')" :current="request()->routeIs('admin.permissions.*')" wire:navigate>{{ __('Permisos') }}</flux:navlist.item>
+                        <flux:navlist.item icon="building-office-2" :href="route('admin.clientes.index')" :current="request()->routeIs('admin.clientes.*')" wire:navigate>{{ __('Clientes') }}</flux:navlist.item>
+                        <flux:navlist.item icon="signal" :href="route('admin.zonas.index')" :current="request()->routeIs('admin.zonas.*')" wire:navigate>{{ __('Zonas WiFi') }}</flux:navlist.item>
+                        <flux:navlist.item icon="presentation-chart-bar" :href="route('admin.campanas.index')" :current="request()->routeIs('admin.campanas.*')" wire:navigate>{{ __('Campañas') }}</flux:navlist.item>
+                    </flux:navlist.group>
+                    @endif
+
+                    @if(auth()->user()->hasRole('cliente'))
+                    <flux:navlist.group :heading="__('Cliente')" class="grid">
+                        <flux:navlist.item icon="signal" :href="route('cliente.zonas.index')" :current="request()->routeIs('cliente.zonas.*')" wire:navigate>{{ __('Mis Zonas WiFi') }}</flux:navlist.item>
+                    </flux:navlist.group>
+                    @endif
                 </flux:navlist.group>
             </flux:navlist>
 
             <flux:spacer />
 
-            <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                {{ __('Repository') }}
-                </flux:navlist.item>
 
-                <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                {{ __('Documentation') }}
-                </flux:navlist.item>
-            </flux:navlist>
 
             <!-- Desktop User Menu -->
             <flux:dropdown position="bottom" align="start">

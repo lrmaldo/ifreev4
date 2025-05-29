@@ -84,4 +84,13 @@ class Zona extends Pivot
     {
         return $this->id_personalizado ?? $this->id;
     }
+
+    /**
+     * Obtiene las campañas asociadas a esta zona
+     */
+    public function campanas()
+    {
+        return $this->belongsToMany(Campana::class, 'campana_zona')
+                    ->withTimestamps();
+    }
 }

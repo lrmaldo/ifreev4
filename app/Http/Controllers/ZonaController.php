@@ -82,16 +82,16 @@ class ZonaController extends Controller
             $camposHtml[] = $this->renderizarCampo($campo);
         }
 
-        // Imágenes de ejemplo para el carrusel
-        $imagenes = [
-            asset('images/carrusel/slide1.jpg'),
-            asset('images/carrusel/slide2.jpg'),
-            asset('images/carrusel/slide3.jpg'),
-            asset('images/carrusel/slide4.jpg'),
-            asset('images/carrusel/slide5.jpg'),
-        ];
+        // Obtener campañas activas para el cliente de la zona o las globales
+        $campanas = \App\Models\Campana::activas()
+            ->where(function($query) use ($zona) {
+                $query->where('cliente_id', $zona->cliente_id)
+                      ->orWhereNull('cliente_id'); // Incluir también campañas globales
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        return view('zonas.preview-carrusel', compact('zona', 'mikrotikData', 'camposHtml', 'imagenes'));
+        return view('zonas.preview-carrusel', compact('zona', 'mikrotikData', 'camposHtml', 'campanas'));
     }
 
     /**
