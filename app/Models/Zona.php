@@ -25,7 +25,9 @@ class Zona extends Model
         'login_sin_registro',
         'tipo_autenticacion_mikrotik',
         'script_head',
-        'script_body'
+        'script_body',
+        'seleccion_campanas',
+        'tiempo_visualizacion'
     ];
     protected $casts = [
         'requiere_registro' => 'boolean',
@@ -39,6 +41,8 @@ class Zona extends Model
         'tipo_registro' => 'string',
         'login_sin_registro' => 'boolean',
         'tipo_autenticacion_mikrotik' => 'string',
+        'seleccion_campanas' => 'string',
+        'tiempo_visualizacion' => 'integer',
     ];
     public function user()
     {
@@ -48,6 +52,54 @@ class Zona extends Model
     {
         return $this->hasMany(FormField::class, 'zona_id');
     }
+
+    public function campanas()
+    {
+        return $this->belongsToMany(Campana::class, 'campana_zona')
+                    ->withTimestamps();
+    }
+
+    public function getCampanasActivas()
+    {
+        $hoy = now()->format('Y-m-d');
+        $diaSemana = strtolower(now()->locale('es')->dayName);
+
+        $query = $this->campanas()
+            ->where('visible', true)
+            ->where(function($q) use ($hoy, $diaSemana) {
+                $q->where(function($q) use ($hoy) {
+                    $q->where('fecha_inicio', '<=', $hoy)
+                      ->where('fecha_fin', '>=', $hoy)
+                      ->where('siempre_visible', true);
+                })
+                ->orWhere(function($q) use ($hoy, $diaSemana) {
+                    $q->where('fecha_inicio', '<=', $hoy)
+                      ->where('fecha_fin', '>=', $hoy)
+                      ->where('siempre_visible', false)
+                      ->whereJsonContains('dias_visibles', $diaSemana);
+                });
+            });
+
+        return $query->get();
+    }
+
+    public function getCampanaSeleccionada()
+    {
+        $campanas = $this->getCampanasActivas();
+
+        if ($campanas->isEmpty()) {
+            return null;
+        }
+
+        if ($this->seleccion_campanas === 'aleatorio') {
+            // Seleccionar una campaña al azar
+            return $campanas->random();
+        } else {
+            // Seleccionar por prioridad (menor número = mayor prioridad)
+            return $campanas->sortBy('prioridad')->first();
+        }
+    }
+
     public function getTipoRegistroOptions()
     {
         return [
@@ -85,12 +137,4 @@ class Zona extends Model
         return $this->id_personalizado ?? $this->id;
     }
 
-    /**
-     * Obtiene las campañas asociadas a esta zona
-     */
-    public function campanas()
-    {
-        return $this->belongsToMany(Campana::class, 'campana_zona')
-                    ->withTimestamps();
-    }
 }

@@ -31,6 +31,7 @@ class Index extends Component
     public $archivo;
     public $cliente_id;
     public $zonas_ids = [];
+    public $prioridad = 10;
 
     // Propiedades para edición
     public $campana_id;
@@ -65,6 +66,7 @@ class Index extends Component
             'cliente_id' => 'nullable|exists:clientes,id',
             'zonas_ids' => 'nullable|array',
             'zonas_ids.*' => 'integer|exists:zonas,id',
+            'prioridad' => 'required|integer|min:1|max:100',
         ];
 
         // Solo requerimos el archivo si estamos creando una nueva campaña
@@ -85,7 +87,8 @@ class Index extends Component
         $this->reset([
             'titulo', 'descripcion', 'enlace', 'fecha_inicio', 'fecha_fin',
             'visible', 'siempre_visible', 'dias_visibles', 'tipo', 'archivo',
-            'cliente_id', 'campana_id', 'editando', 'archivo_actual', 'zonas_ids'
+            'cliente_id', 'campana_id', 'editando', 'archivo_actual', 'zonas_ids',
+            'prioridad'
         ]);
 
         // Valores por defecto
@@ -93,6 +96,7 @@ class Index extends Component
         $this->siempre_visible = false;
         $this->dias_visibles = [];
         $this->tipo = 'imagen';
+        $this->prioridad = 10;
         $this->fecha_inicio = now()->format('Y-m-d');
         $this->fecha_fin = now()->addDays(30)->format('Y-m-d');
     }
@@ -151,6 +155,7 @@ class Index extends Component
             'tipo' => $this->tipo,
             'archivo_path' => $archivoPath,
             'cliente_id' => $this->cliente_id,
+            'prioridad' => $this->prioridad,
         ];
 
         if ($this->editando) {
@@ -185,6 +190,7 @@ class Index extends Component
         $this->tipo = $campana->tipo;
         $this->archivo_actual = $campana->archivo_path;
         $this->cliente_id = $campana->cliente_id;
+        $this->prioridad = $campana->prioridad;
         $this->zonas_ids = $campana->zonas->pluck('id')->toArray();
 
         $this->openModal();

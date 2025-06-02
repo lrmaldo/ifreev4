@@ -12,11 +12,23 @@ Route::post('/login_formulario/{id}', [ZonaLoginController::class, 'handle'])
     ->withoutMiddleware(['web'])  // No requerimos CSRF para esta ruta ya que viene del Mikrotik
     ->middleware(['throttle:60,1']); // Protección contra abusos
 
-// Ruta para obtener campañas activas para un portal cautivo
+// Rutas para el portal cautivo
 Route::get('/portal-cautivo/{zonaId}/campanas', [\App\Http\Controllers\PortalCautivoController::class, 'obtenerCampanas'])
     ->name('portal.campanas')
     ->withoutMiddleware(['web'])  // No requerimos CSRF para esta ruta ya que puede ser accedida desde el portal cautivo
     ->middleware(['throttle:60,1']); // Protección contra abusos
+
+// Ruta para obtener todas las campañas activas
+Route::get('/portal-cautivo/{zonaId}/todas-campanas', [\App\Http\Controllers\PortalCautivoController::class, 'obtenerTodasCampanas'])
+    ->name('portal.todas.campanas')
+    ->withoutMiddleware(['web'])
+    ->middleware(['throttle:60,1']);
+
+// Ruta para registrar la reproducción completa de un video
+Route::post('/portal-cautivo/{zonaId}/video-completado', [\App\Http\Controllers\PortalCautivoController::class, 'videoCompletado'])
+    ->name('portal.video.completado')
+    ->withoutMiddleware(['web'])
+    ->middleware(['throttle:60,1']);
 
 // Rutas para el registro de usuarios en zonas WiFi
 Route::get('/zona/{zonaId}/registro/formulario', function($zonaId) {
@@ -74,6 +86,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/zonas/{zonaId}/form-fields', \App\Livewire\Admin\AdminFormFields::class)
             ->name('admin.zone.form-fields');
 
+        // Ruta para configuración de campañas de una zona
+        Route::get('/zonas/{zonaId}/configuracion-campanas', \App\Livewire\Admin\Zonas\ConfiguracionCampanas::class)
+            ->name('admin.zonas.configuracion-campanas');
+
         // Ruta para administrar opciones de un campo de formulario
         Route::get('/form-fields/{formField}/options', \App\Livewire\Admin\FormFieldOptions::class)
             ->name('admin.form-fields.options');
@@ -104,6 +120,10 @@ Route::middleware(['auth'])->group(function () {
         // Ruta para previsualizar portal cautivo con reproducción de video
         Route::get('/zonas/{id}/preview/video', [\App\Http\Controllers\ZonaController::class, 'previewVideo'])
             ->name('cliente.zona.preview.video');
+
+        // Ruta para previsualizar portal cautivo con contenido dinámico de campañas
+        Route::get('/zonas/{id}/preview/campana', [\App\Http\Controllers\ZonaController::class, 'previewCampana'])
+            ->name('cliente.zona.preview.campana');
     });
 });
 

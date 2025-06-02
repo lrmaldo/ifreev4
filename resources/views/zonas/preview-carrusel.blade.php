@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Swiper CSS para el carrusel -->
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
     <style>
         /* Variables de colores personalizables */
         :root {
@@ -35,7 +37,7 @@
             --animation-speed: 0.3s;
         }
 
-        /* Ajustes globales de diseño */
+        /* Estilos globales */
         body {
             font-family: 'Inter', 'Poppins', sans-serif;
             background-color: var(--color-background);
@@ -43,7 +45,6 @@
             line-height: 1.6;
         }
 
-        /* Contenedor principal del portal cautivo */
         .preview-container {
             max-width: 500px;
             margin: 20px auto;
@@ -59,7 +60,7 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
         }
 
-        /* Barra superior del portal cautivo */
+        /* Barra superior */
         .preview-notice {
             background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
             color: white;
@@ -71,14 +72,14 @@
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
-        /* Contenido principal del portal */
+        /* Contenido principal */
         .preview-content {
             padding: 2.5rem;
             background-color: white;
             position: relative;
         }
 
-        /* Decoración de fondo con ondas sutiles */
+        /* Decoración de fondo */
         .preview-content::before {
             content: '';
             position: absolute;
@@ -94,565 +95,238 @@
             opacity: 0.5;
         }
 
-        /* Elementos del formulario mejorados */
+        /* Estilos para el formulario */
         input, select, textarea {
             width: 100%;
             padding: 0.75rem 1rem;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-md);
-            outline: none;
-            transition: all var(--animation-speed) ease-in-out;
             font-size: 0.95rem;
-            background-color: white;
-            box-shadow: var(--shadow-sm);
-        }
-
-        input:hover, select:hover, textarea:hover {
-            border-color: #cbd5e0;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px var(--color-primary-light);
-        }
-
-        /* Checkboxes y radios personalizados */
-        input[type="checkbox"], input[type="radio"] {
-            width: 1.25rem;
-            height: 1.25rem;
-            border: 2px solid var(--color-border);
-            background-color: white;
-            cursor: pointer;
-        }
-
-        input[type="checkbox"]:checked, input[type="radio"]:checked {
-            background-color: var(--color-primary);
-            border-color: var(--color-primary);
-        }
-
-        /* Etiquetas de campos */
-        label {
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            display: block;
-            color: var(--color-text);
-            font-size: 0.9rem;
-            transition: color var(--animation-speed) ease;
-        }
-
-        /* Botones estilizados */
-        button {
-            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-            color: white;
-            border-radius: var(--radius-md);
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            letter-spacing: 0.025em;
-            transition: all var(--animation-speed) ease;
-            border: none;
-            box-shadow: var(--shadow-md);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        button:hover {
-            background: linear-gradient(90deg, var(--color-button-hover), var(--color-secondary-dark));
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        /* Efecto de onda al hacer click en botones */
-        button::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 5px;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.5);
-            opacity: 0;
-            border-radius: 100%;
-            transform: scale(1, 1) translate(-50%);
-            transform-origin: 50% 50%;
-        }
-
-        button:focus:not(:active)::after {
-            animation: ripple 0.5s ease-out;
-        }
-
-        @keyframes ripple {
-            0% {
-                transform: scale(0, 0);
-                opacity: 0.5;
-            }
-            100% {
-                transform: scale(30, 30);
-                opacity: 0;
-            }
-        }
-
-        /* Elementos decorativos y utilidades */
-        .divider {
-            height: 1px;
-            background: linear-gradient(to right, transparent, var(--color-border), transparent);
-            width: 100%;
-            margin: 1.75rem 0;
-        }
-
-        /* Icono de WiFi estilizado */
-        .wifi-icon {
-            width: 70px;
-            height: 70px;
-            margin: 0 auto 1.5rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: var(--radius-full);
-            background-color: var(--color-primary-light);
-            color: var(--color-primary);
-            position: relative;
-        }
-
-        /* Animación del icono WiFi */
-        .wifi-icon::before {
-            content: '';
-            position: absolute;
-            width: 90%;
-            height: 90%;
-            border-radius: var(--radius-full);
-            border: 3px solid var(--color-primary);
-            opacity: 0.7;
-            animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
-
-        @keyframes ping {
-            75%, 100% {
-                transform: scale(1.5);
-                opacity: 0;
-            }
-        }
-
-        /* Estilos para texto y elementos especiales */
-        .highlight {
-            color: var(--color-primary);
-            font-weight: 500;
-        }
-
-        .card {
-            border-radius: var(--radius-md);
-            padding: 1.5rem;
-            background-color: white;
-            box-shadow: var(--shadow-md);
-            transition: box-shadow var(--animation-speed) ease;
-        }
-
-        .card:hover {
-            box-shadow: var(--shadow-lg);
-        }
-
-        /* Contenedor de mensajes de estado */
-        .status-container {
-            padding: 1rem;
-            border-radius: var(--radius-md);
-            margin: 1.5rem 0;
-            display: flex;
-            align-items: center;
-            background-color: var(--color-success-light);
-            border: 1px solid var(--color-success);
-            color: var(--color-success);
-        }
-
-        .status-container svg {
-            margin-right: 0.75rem;
-            flex-shrink: 0;
-        }
-
-        /* Estilos para el carrusel */
-        #carrusel-container {
-            position: relative;
-            width: 100%;
-            height: 240px;
-            overflow: hidden;
-            border-radius: var(--radius-md);
-            margin: 1.5rem 0;
-            opacity: 0;
-            transform: scale(0.95);
-            transition: opacity var(--animation-speed) ease-in-out, transform var(--animation-speed) ease-in-out;
-        }
-
-        #carrusel-container.active {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .carrusel-slide {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            transition: opacity 1s ease-in-out;
-            object-fit: cover;
-            border-radius: var(--radius-md);
-        }
-
-        .carrusel-slide.active {
-            opacity: 1;
-        }
-
-        #contador-container {
-            position: relative;
-            width: 100%;
-            text-align: center;
-            margin-top: 1.5rem;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--color-primary);
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity var(--animation-speed) ease-in-out, transform var(--animation-speed) ease-in-out;
-        }
-
-        #contador-container.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        #mensaje-final {
-            text-align: center;
-            padding: 2rem;
-            opacity: 0;
-            transform: scale(0.9);
-            transition: opacity var(--animation-speed) ease-in-out, transform var(--animation-speed) ease-in-out;
-        }
-
-        #mensaje-final.active {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .mensaje-exito {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--color-success);
+            transition: border-color var(--animation-speed) ease, box-shadow var(--animation-speed) ease;
             margin-bottom: 1rem;
         }
 
-        .dot-container {
-            text-align: center;
-            margin-top: 0.5rem;
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-input-focus);
         }
 
-        .dot {
-            height: 8px;
-            width: 8px;
-            margin: 0 5px;
-            background-color: var(--color-border);
-            border-radius: 50%;
-            display: inline-block;
-            transition: background-color 0.5s ease;
-        }
-
-        .dot.active {
-            background-color: var(--color-primary);
-        }
-
-        /* Media queries para responsive design */
-        @media (max-width: 640px) {
-            .preview-content {
-                padding: 1.75rem 1.5rem;
-            }
-
-            .preview-notice {
-                padding: 10px;
-                font-size: 14px;
-            }
-
-            button {
-                padding: 0.7rem 1.25rem;
-            }
-
-            .wifi-icon {
-                width: 60px;
-                height: 60px;
-                margin-bottom: 1.25rem;
-            }
-
-            #carrusel-container {
-                height: 180px;
-            }
-        }
-
-        /* Mejoras de accesibilidad */
-        @media (prefers-reduced-motion: reduce) {
-            button, .preview-container, input, select, textarea, .wifi-icon::before {
-                transition: none;
-                animation: none;
-            }
-        }
-
-        /* Paso entre vistas */
-        .step {
-            display: none;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity var(--animation-speed) ease-in-out, transform var(--animation-speed) ease-in-out;
-        }
-
-        .step.active {
+        label {
             display: block;
-            opacity: 1;
-            transform: translateY(0);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--color-text);
         }
 
-        /* Script personalizado para head */
-        {!! $zona->script_head !!}
+        /* Estilo del botón principal */
+        .btn-primary {
+            display: inline-block;
+            width: 100%;
+            padding: 0.75rem 1.25rem;
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color var(--animation-speed) ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-button-hover);
+        }
+
+        /* Estilos del carrusel */
+        .carousel-container {
+            width: 100%;
+            overflow: hidden;
+            border-radius: var(--radius-md);
+            margin-top: 20px;
+        }
+
+        .swiper-container {
+            width: 100%;
+            height: 300px;
+        }
+
+        .swiper-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .campaign-info {
+            padding: 1rem;
+            background-color: white;
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+        }
+
+        /* Contador de tiempo */
+        .countdown-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .countdown {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            background-color: var(--color-primary-light);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-full);
+        }
+
+        /* Estilos responsive */
+        @media (max-width: 640px) {
+            .preview-container {
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+
+            .preview-content {
+                padding: 1.5rem;
+            }
+
+            .swiper-container {
+                height: 200px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container mx-auto px-4 py-8">
-        <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h1 class="text-2xl font-bold text-gray-800">Vista previa con carrusel: {{ $zona->nombre }}</h1>
-            <a href="{{ route('cliente.zonas.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition duration-200 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                </svg>
-                Volver a zonas
-            </a>
+    <div class="preview-container">
+        <div class="preview-notice">
+            {{ $zona->nombre }} - Carrusel de campañas
         </div>
 
-        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-r-md shadow-sm" role="alert">
-            <p class="font-bold">Modo vista previa - Carrusel</p>
-            @if($zona->tipo_registro == 'sin_registro')
-            <p>Esta es una simulación de cómo se verá su portal cautivo con carrusel de imágenes. Como la zona está configurada para acceso sin registro, el carrusel se muestra directamente con un contador regresivo.</p>
-            @else
-            <p>Esta es una simulación de cómo se verá su portal cautivo con carrusel de imágenes. Complete el formulario para ver la demostración del carrusel y el contador regresivo.</p>
-            @endif
-        </div>
+        <div class="preview-content">
+            <div id="form-section" class="mb-8">
+                <h1 class="text-2xl font-bold mb-6">Accede a nuestra WiFi</h1>
+                <p class="text-gray-600 mb-6">
+                    @if($campanaSeleccionada)
+                        {{ $campanaSeleccionada->titulo }}
+                    @else
+                        Mira nuestras promociones mientras preparamos tu conexión
+                    @endif
+                </p>
 
-        <div class="preview-container">
-            <div class="preview-notice">Vista previa del portal cautivo - Carrusel</div>
-            <div class="preview-content">
-                @if($zona->tipo_registro == 'sin_registro')
-                <!-- Acceso directo sin registro -->
-                <div id="paso-carrusel" class="step active">
-                    <div class="wifi-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.143 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-                        </svg>
-                    </div>
-
-                    <div class="mb-6 text-center">
-                        <h2 class="text-2xl font-bold mb-2" style="color: var(--color-primary)">{{ $zona->nombre }}</h2>
-                        <p class="text-gray-600">Mira nuestras promociones mientras preparamos tu conexión</p>
-                    </div>
-
-                    <!-- Carrusel de imágenes -->
-                    <div id="carrusel-container" class="active">
-                        @foreach($imagenes as $index => $imagen)
-                            <img src="{{ $imagen }}" alt="Slide {{ $index + 1 }}" class="carrusel-slide {{ $index === 0 ? 'active' : '' }}">
-                        @endforeach
-                    </div>
-
-                    <!-- Indicadores del carrusel -->
-                    <div class="dot-container">
-                        @foreach($imagenes as $index => $imagen)
-                            <span class="dot {{ $index === 0 ? 'active' : '' }}"></span>
-                        @endforeach
-                    </div>
-
-                    <!-- Contador regresivo -->
-                    <div id="contador-container" class="active">
-                        <div>Conectando en <span id="contador">10</span> segundos</div>
-                    </div>
-                </div>
-                @else
-                <!-- Paso 1: Formulario inicial -->
-                <div id="paso-formulario" class="step active">
-                    <div class="wifi-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.143 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-                        </svg>
-                    </div>
-
-                    <div class="mb-6 text-center">
-                        <h2 class="text-2xl font-bold mb-2" style="color: var(--color-primary)">{{ $zona->nombre }}</h2>
-                        <p class="text-gray-600">Completa el formulario para conectarte</p>
-                    </div>
-
-                    <form id="formulario-wifi" class="space-y-6">
-                        <!-- Campos dinámicos del formulario -->
-                        @foreach($camposHtml as $campoHtml)
-                            {!! $campoHtml !!}
-                        @endforeach
-
-                        <div class="divider"></div>
-
-                        <div class="mt-6">
-                            <button type="submit" class="w-full py-3">
-                                <span class="flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                                    </svg>
-                                    Registrarse y conectar
-                                </span>
-                            </button>
+                <form id="login-form" class="space-y-4">
+                    @foreach ($zona->campos as $campo)
+                        <div class="mb-4">
+                            {!! $camposHtml[$loop->index] !!}
                         </div>
-                    </form>
+                    @endforeach
 
-                    <div class="mt-8 pt-4 border-t border-gray-100 text-xs text-gray-500 text-center">
-                        <p>Al conectarte, aceptas nuestras <a href="#" class="hover:underline" style="color: var(--color-primary)">políticas de uso</a> y <a href="#" class="hover:underline" style="color: var(--color-primary)">privacidad</a></p>
-                    </div>
-                </div>
-                @endif
+                    <button type="submit" class="btn-primary">
+                        Acceder
+                    </button>
+                </form>
+            </div>
 
-                <!-- Paso 2: Carrusel con contador -->
-                <div id="paso-carrusel" class="step">
-                    <div class="mb-6 text-center">
-                        <h2 class="text-2xl font-bold mb-2" style="color: var(--color-primary)">¡Gracias por registrarte!</h2>
-                        <p class="text-gray-600">Mira nuestras promociones mientras preparamos tu conexión</p>
-                    </div>
+            <div id="carousel-section" class="hidden">
+                <h2 class="text-xl font-bold mb-4">
+                    @if($campanaSeleccionada)
+                        {{ $campanaSeleccionada->titulo }}
+                    @else
+                        Promociones mientras te conectamos
+                    @endif
+                </h2>
 
-                    <!-- Carrusel de imágenes -->
-                    <div id="carrusel-container" class="active">
-                        @foreach($imagenes as $index => $imagen)
-                            <img src="{{ $imagen }}" alt="Slide {{ $index + 1 }}" class="carrusel-slide {{ $index === 0 ? 'active' : '' }}">
-                        @endforeach
-                    </div>
-
-                    <!-- Indicadores del carrusel -->
-                    <div class="dot-container">
-                        @foreach($imagenes as $index => $imagen)
-                            <span class="dot {{ $index === 0 ? 'active' : '' }}"></span>
-                        @endforeach
-                    </div>
-
-                    <!-- Contador regresivo -->
-                    <div id="contador-container" class="active">
-                        <div>Conectando en <span id="contador">10</span> segundos</div>
+                <div class="carousel-container">
+                    <div class="swiper-container">
+                        <div class="swiper-wrapper">
+                            @foreach ($imagenes as $imagen)
+                            <div class="swiper-slide">
+                                <img src="{{ $imagen }}" alt="Imagen promocional">
+                            </div>
+                            @endforeach
+                        </div>
+                        <div class="swiper-pagination"></div>
                     </div>
                 </div>
 
-                <!-- Paso 3: Mensaje de éxito -->
-                <div id="paso-exito" class="step">
-                    <div id="mensaje-final" class="active">
-                        <div class="wifi-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
-                        <h2 class="mensaje-exito">¡Acceso concedido!</h2>
-                        <p class="text-gray-600 mb-4">Ya puedes disfrutar de nuestra conexión WiFi</p>
-                        <div class="status-container">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <p>Conexión establecida correctamente</p>
-                        </div>
-                    </div>
+                <div class="countdown-container mt-4">
+                    <div class="countdown" id="countdown">{{ $tiempoVisualizacion }}</div>
+                    <div class="ml-2">segundos para tu acceso</div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
-            <h3 class="text-lg font-semibold mb-4 text-gray-800">Datos simulados de Mikrotik</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                @foreach($mikrotikData as $key => $value)
-                    <div class="border-b border-gray-100 pb-2">
-                        <span class="font-mono text-sm text-gray-600 font-medium">{{ $key }}:</span>
-                        <span class="ml-2 font-mono text-sm">{{ $value }}</span>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    </div>    <script>
+    <!-- Scripts -->
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Elementos del DOM
-            const formulario = document.getElementById('formulario-wifi');
-            const pasoFormulario = document.getElementById('paso-formulario');
-            const pasoCarrusel = document.getElementById('paso-carrusel');
-            const pasoExito = document.getElementById('paso-exito');
-            const contador = document.getElementById('contador');
-            const slides = document.querySelectorAll('.carrusel-slide');
-            const dots = document.querySelectorAll('.dot');
+            const formSection = document.getElementById('form-section');
+            const carouselSection = document.getElementById('carousel-section');
+            const loginForm = document.getElementById('login-form');
+            const countdown = document.getElementById('countdown');
+            let tiempoRestante = {{ $tiempoVisualizacion }};
+            let countdownInterval;
 
-            let currentSlide = 0;
-            let tiempoRestante = 10;
-            let carruselInterval;
-            let contadorInterval;
+            // Inicializar Swiper cuando se muestre el carrusel
+            let swiper;
 
-            // Función para cambiar de slide en el carrusel
-            function cambiarSlide() {
-                // Quitar la clase active de todos los slides y dots
-                slides.forEach(slide => slide.classList.remove('active'));
-                dots.forEach(dot => dot.classList.remove('active'));
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
 
-                // Incrementar el índice del slide
-                currentSlide = (currentSlide + 1) % slides.length;
+                // Ocultar formulario y mostrar carrusel
+                formSection.classList.add('hidden');
+                carouselSection.classList.remove('hidden');
 
-                // Añadir la clase active al slide y dot actual
-                slides[currentSlide].classList.add('active');
-                dots[currentSlide].classList.add('active');
-            }
+                // Inicializar Swiper
+                swiper = new Swiper('.swiper-container', {
+                    loop: true,
+                    autoplay: {
+                        delay: 3000,
+                    },
+                    pagination: {
+                        el: '.swiper-pagination',
+                        clickable: true,
+                    },
+                });
 
-            // Función para actualizar el contador regresivo
-            function actualizarContador() {
-                tiempoRestante--;
-                contador.textContent = tiempoRestante;
+                // Iniciar cuenta regresiva
+                countdownInterval = setInterval(function() {
+                    tiempoRestante--;
+                    countdown.textContent = tiempoRestante;
 
-                if (tiempoRestante <= 0) {
-                    clearInterval(contadorInterval);
-                    clearInterval(carruselInterval);
+                    if (tiempoRestante <= 0) {
+                        clearInterval(countdownInterval);
+                        // En un entorno real, aquí redireccionaríamos al usuario
+                        // o lo autenticaríamos en el router Mikrotik
+                        alert('¡Conectado! Ahora tienes acceso a Internet.');
 
-                    // Cambiar al paso de éxito con transiciones suaves
-                    setTimeout(() => {
-                        pasoCarrusel.classList.remove('active');
-                        setTimeout(() => {
-                            pasoExito.classList.add('active');
-                        }, 400);
-                    }, 500);
-                }
-            }
-
-            // En caso de acceso sin registro, iniciar directamente el carrusel y el contador
-            @if($zona->tipo_registro == 'sin_registro')
-                // Iniciar el carrusel automáticamente
-                carruselInterval = setInterval(cambiarSlide, 2000);
-
-                // Iniciar el contador automáticamente
-                contadorInterval = setInterval(actualizarContador, 1000);
-            @else
-                // Evento submit del formulario solo si hay formulario
-                if(formulario) {
-                    formulario.addEventListener('submit', function(e) {
-                        e.preventDefault();
-
-                        // Cambiar al paso del carrusel con transiciones suaves
-                        pasoFormulario.classList.remove('active');
-                        setTimeout(() => {
-                            pasoCarrusel.classList.add('active');
-
-                            // Iniciar el carrusel
-                            slides[0].classList.add('active');
-                            dots[0].classList.add('active');
-                            carruselInterval = setInterval(cambiarSlide, 2000);
-
-                            // Iniciar el contador
-                            contadorInterval = setInterval(actualizarContador, 1000);
-                        }, 400);
-                    });
-                }
-            @endif
+                        // Podríamos usar una llamada AJAX para registrar la visualización
+                        // y autorizar al usuario en el router
+                        /*
+                        fetch('/portal-cautivo/{{ $zona->id }}/video-completado', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                campana_id: {{ $campanaSeleccionada ? $campanaSeleccionada->id : 'null' }},
+                                mac: '{{ $mikrotikData["mac"] ?? "" }}',
+                                ip: '{{ $mikrotikData["ip"] ?? "" }}'
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if(data.success && data.redirect_url) {
+                                window.location.href = data.redirect_url;
+                            }
+                        });
+                        */
+                    }
+                }, 1000);
+            });
         });
     </script>
-
-    <!-- Script personalizado para body -->
-    {!! $zona->script_body !!}
 </body>
 </html>

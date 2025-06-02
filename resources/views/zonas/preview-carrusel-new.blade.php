@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Vista previa con video - {{ $zona->nombre }}</title>
+    <title>Vista previa con carrusel - {{ $zona->nombre }}</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Google Fonts - Inter y Poppins -->
@@ -272,44 +272,56 @@
             flex-shrink: 0;
         }
 
-        /* Estilos para el reproductor de video */
-        #video-container {
+        /* Estilos para el carrusel */
+        #carrusel-container {
             position: relative;
             width: 100%;
-            border-radius: var(--radius-md);
+            height: 240px;
             overflow: hidden;
+            border-radius: var(--radius-md);
             margin: 1.5rem 0;
             opacity: 0;
             transform: scale(0.95);
             transition: opacity var(--animation-speed) ease-in-out, transform var(--animation-speed) ease-in-out;
         }
 
-        #video-container.active {
+        #carrusel-container.active {
             opacity: 1;
             transform: scale(1);
         }
 
-        #video {
+        .carrusel-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            border-radius: var(--radius-md);
-            display: block;
-        }
-
-        .progress-bar-container {
-            width: 100%;
-            height: 6px;
-            background-color: var(--color-border);
-            border-radius: 3px;
-            margin-top: 0.5rem;
-            overflow: hidden;
-        }
-
-        .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-            width: 0%;
-            border-radius: 3px;
-            transition: width 0.2s linear;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            object-fit: cover;
+            border-radius: var(--radius-md);
+        }
+
+        .carrusel-slide.active {
+            opacity: 1;
+        }
+
+        #contador-container {
+            position: relative;
+            width: 100%;
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--color-primary);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity var(--animation-speed) ease-in-out, transform var(--animation-speed) ease-in-out;
+        }
+
+        #contador-container.active {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         #mensaje-final {
@@ -332,6 +344,25 @@
             margin-bottom: 1rem;
         }
 
+        .dot-container {
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+
+        .dot {
+            height: 8px;
+            width: 8px;
+            margin: 0 5px;
+            background-color: var(--color-border);
+            border-radius: 50%;
+            display: inline-block;
+            transition: background-color 0.5s ease;
+        }
+
+        .dot.active {
+            background-color: var(--color-primary);
+        }
+
         /* Media queries para responsive design */
         @media (max-width: 640px) {
             .preview-content {
@@ -351,6 +382,10 @@
                 width: 60px;
                 height: 60px;
                 margin-bottom: 1.25rem;
+            }
+
+            #carrusel-container {
+                height: 180px;
             }
         }
 
@@ -383,7 +418,7 @@
 <body>
     <div class="container mx-auto px-4 py-8">
         <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h1 class="text-2xl font-bold text-gray-800">Vista previa con video: {{ $zona->nombre }}</h1>
+            <h1 class="text-2xl font-bold text-gray-800">Vista previa con carrusel: {{ $zona->nombre }}</h1>
             <a href="{{ route('cliente.zonas.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition duration-200 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
@@ -393,20 +428,20 @@
         </div>
 
         <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-r-md shadow-sm" role="alert">
-            <p class="font-bold">Modo vista previa - Video</p>
+            <p class="font-bold">Modo vista previa - Carrusel</p>
             @if($zona->tipo_registro == 'sin_registro')
-            <p>Esta es una simulación de cómo se verá su portal cautivo con reproducción de video. Como la zona está configurada para acceso sin registro, el video se reproduce directamente.</p>
+            <p>Esta es una simulación de cómo se verá su portal cautivo con carrusel de imágenes. Como la zona está configurada para acceso sin registro, el carrusel se muestra directamente con un contador regresivo.</p>
             @else
-            <p>Esta es una simulación de cómo se verá su portal cautivo con reproducción de video. Complete el formulario para ver la demostración del video.</p>
+            <p>Esta es una simulación de cómo se verá su portal cautivo con carrusel de imágenes. Complete el formulario para ver la demostración del carrusel y el contador regresivo.</p>
             @endif
         </div>
 
         <div class="preview-container">
-            <div class="preview-notice">Vista previa del portal cautivo - Video</div>
+            <div class="preview-notice">Vista previa del portal cautivo - Carrusel</div>
             <div class="preview-content">
                 @if($zona->tipo_registro == 'sin_registro')
                 <!-- Acceso directo sin registro -->
-                <div id="paso-video" class="step active">
+                <div id="paso-carrusel" class="step active">
                     <div class="wifi-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.143 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
@@ -419,20 +454,28 @@
                             @if($campanaSeleccionada)
                                 {{ $campanaSeleccionada->titulo }}
                             @else
-                                Mira este video mientras preparamos tu conexión
+                                Mira nuestras promociones mientras preparamos tu conexión
                             @endif
                         </p>
                     </div>
 
-                    <!-- Reproductor de video -->
-                    <div id="video-container" class="active">
-                        <video id="video" controls autoplay>
-                            <source src="{{ $videoUrl }}" type="video/mp4">
-                            Tu navegador no soporta la reproducción de videos.
-                        </video>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" id="progress-bar"></div>
-                        </div>
+                    <!-- Carrusel de imágenes -->
+                    <div id="carrusel-container" class="active">
+                        @foreach($imagenes as $index => $imagen)
+                            <img src="{{ $imagen }}" alt="Slide {{ $index + 1 }}" class="carrusel-slide {{ $index === 0 ? 'active' : '' }}">
+                        @endforeach
+                    </div>
+
+                    <!-- Indicadores del carrusel -->
+                    <div class="dot-container">
+                        @foreach($imagenes as $index => $imagen)
+                            <span class="dot {{ $index === 0 ? 'active' : '' }}"></span>
+                        @endforeach
+                    </div>
+
+                    <!-- Contador regresivo -->
+                    <div id="contador-container" class="active">
+                        <div>Conectando en <span id="contador">{{ $tiempoVisualizacion }}</span> segundos</div>
                     </div>
                 </div>
                 @else
@@ -475,28 +518,36 @@
                 </div>
                 @endif
 
-                <!-- Paso 2: Reproducción de Video -->
-                <div id="paso-video" class="step">
+                <!-- Paso 2: Carrusel con contador -->
+                <div id="paso-carrusel" class="step">
                     <div class="mb-6 text-center">
                         <h2 class="text-2xl font-bold mb-2" style="color: var(--color-primary)">¡Gracias por registrarte!</h2>
                         <p class="text-gray-600">
                             @if($campanaSeleccionada)
                                 {{ $campanaSeleccionada->titulo }}
                             @else
-                                Mira este video mientras preparamos tu conexión
+                                Mira nuestras promociones mientras preparamos tu conexión
                             @endif
                         </p>
                     </div>
 
-                    <!-- Reproductor de video -->
-                    <div id="video-container" class="active">
-                        <video id="video" controls autoplay>
-                            <source src="{{ $videoUrl }}" type="video/mp4">
-                            Tu navegador no soporta la reproducción de videos.
-                        </video>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" id="progress-bar"></div>
-                        </div>
+                    <!-- Carrusel de imágenes -->
+                    <div id="carrusel-container" class="active">
+                        @foreach($imagenes as $index => $imagen)
+                            <img src="{{ $imagen }}" alt="Slide {{ $index + 1 }}" class="carrusel-slide {{ $index === 0 ? 'active' : '' }}">
+                        @endforeach
+                    </div>
+
+                    <!-- Indicadores del carrusel -->
+                    <div class="dot-container">
+                        @foreach($imagenes as $index => $imagen)
+                            <span class="dot {{ $index === 0 ? 'active' : '' }}"></span>
+                        @endforeach
+                    </div>
+
+                    <!-- Contador regresivo -->
+                    <div id="contador-container" class="active">
+                        <div>Conectando en <span id="contador">{{ $tiempoVisualizacion }}</span> segundos</div>
                     </div>
                 </div>
 
@@ -537,88 +588,79 @@
             // Elementos del DOM
             const formulario = document.getElementById('formulario-wifi');
             const pasoFormulario = document.getElementById('paso-formulario');
-            const pasoVideo = document.getElementById('paso-video');
+            const pasoCarrusel = document.getElementById('paso-carrusel');
             const pasoExito = document.getElementById('paso-exito');
-            const video = document.getElementById('video');
-            const progressBar = document.getElementById('progress-bar');
+            const contador = document.getElementById('contador');
+            const slides = document.querySelectorAll('.carrusel-slide');
+            const dots = document.querySelectorAll('.dot');
 
-            @if($zona->tipo_registro != 'sin_registro')
-                // Solo configurar el evento de formulario si no es acceso sin registro
-                if (formulario) {
+            let currentSlide = 0;
+            let tiempoRestante = {{ $tiempoVisualizacion }};
+            let carruselInterval;
+            let contadorInterval;
+
+            // Función para cambiar de slide en el carrusel
+            function cambiarSlide() {
+                // Quitar la clase active de todos los slides y dots
+                slides.forEach(slide => slide.classList.remove('active'));
+                dots.forEach(dot => dot.classList.remove('active'));
+
+                // Incrementar el índice del slide
+                currentSlide = (currentSlide + 1) % slides.length;
+
+                // Añadir la clase active al slide y dot actual
+                slides[currentSlide].classList.add('active');
+                dots[currentSlide].classList.add('active');
+            }
+
+            // Función para actualizar el contador regresivo
+            function actualizarContador() {
+                tiempoRestante--;
+                contador.textContent = tiempoRestante;
+
+                if (tiempoRestante <= 0) {
+                    clearInterval(contadorInterval);
+                    clearInterval(carruselInterval);
+
+                    // Cambiar al paso de éxito con transiciones suaves
+                    setTimeout(() => {
+                        pasoCarrusel.classList.remove('active');
+                        setTimeout(() => {
+                            pasoExito.classList.add('active');
+                        }, 400);
+                    }, 500);
+                }
+            }
+
+            // En caso de acceso sin registro, iniciar directamente el carrusel y el contador
+            @if($zona->tipo_registro == 'sin_registro')
+                // Iniciar el carrusel automáticamente
+                carruselInterval = setInterval(cambiarSlide, 2000);
+
+                // Iniciar el contador automáticamente
+                contadorInterval = setInterval(actualizarContador, 1000);
+            @else
+                // Evento submit del formulario solo si hay formulario
+                if(formulario) {
                     formulario.addEventListener('submit', function(e) {
                         e.preventDefault();
 
-                        // Cambiar al paso del video con transiciones suaves
+                        // Cambiar al paso del carrusel con transiciones suaves
                         pasoFormulario.classList.remove('active');
                         setTimeout(() => {
-                            pasoVideo.classList.add('active');
+                            pasoCarrusel.classList.add('active');
+
+                            // Iniciar el carrusel
+                            slides[0].classList.add('active');
+                            dots[0].classList.add('active');
+                            carruselInterval = setInterval(cambiarSlide, 2000);
+
+                            // Iniciar el contador
+                            contadorInterval = setInterval(actualizarContador, 1000);
                         }, 400);
                     });
                 }
             @endif
-
-            // Escuchar eventos del video
-            if (video) {
-                video.addEventListener('timeupdate', function() {
-                    // Actualizar la barra de progreso
-                    const percentage = (video.currentTime / video.duration) * 100;
-                    progressBar.style.width = percentage + '%';
-                });
-
-                // Evento al finalizar el video
-                video.addEventListener('ended', function() {
-                    // Cambiar al paso de éxito con transiciones suaves
-                    pasoVideo.classList.remove('active');
-
-                    // En un entorno real, enviaríamos esta información al servidor
-                    // para registrar que el video se ha visto por completo y autorizar el acceso
-                    const campanaId = @if($campanaSeleccionada) {{ $campanaSeleccionada->id }} @else null @endif;
-                    const mac = '{{ $mikrotikData["mac"] ?? "" }}';
-                    const ip = '{{ $mikrotikData["ip"] ?? "" }}';
-
-                    // Simulación de envío de datos a la API
-                    console.log('Video completado. Enviando datos:', {
-                        campana_id: campanaId,
-                        mac: mac,
-                        ip: ip
-                    });
-
-                    // En producción, aquí haríamos una petición fetch:
-                    /*
-                    fetch('/portal-cautivo/{{ $zona->id }}/video-completado', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            campana_id: campanaId,
-                            mac: mac,
-                            ip: ip
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if(data.success) {
-                            // Si hay una URL de redirección, utilizarla
-                            if(data.redirect_url) {
-                                setTimeout(() => {
-                                    window.location.href = data.redirect_url;
-                                }, 3000);
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                    });
-                    */
-
-                    // Mostrar mensaje de éxito
-                    setTimeout(() => {
-                        pasoExito.classList.add('active');
-                    }, 400);
-                });
-            }
         });
     </script>
 

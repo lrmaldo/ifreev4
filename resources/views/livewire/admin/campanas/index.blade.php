@@ -45,6 +45,7 @@
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Periodo</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tipo</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cliente</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Prioridad</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Estado</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                     </tr>
@@ -101,6 +102,11 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                                 {{ $campana->cliente ? $campana->cliente->razon_social : 'Global' }}
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                                    {{ $campana->prioridad ?? 'N/A' }}
+                                </span>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <button wire:click="toggleVisibility({{ $campana->id }})" class="relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 {{ $campana->visible ? 'bg-green-500' : 'bg-gray-200' }} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                     <span class="sr-only">Toggle visibility</span>
@@ -122,7 +128,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                 No hay campañas disponibles.
                             </td>
                         </tr>
@@ -197,6 +203,20 @@
                                         </div>
                                         @error('tipo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
+
+                                    <!-- Prioridad -->
+                                    <div>
+                                        <label for="prioridad" class="block text-sm font-medium text-gray-700">Prioridad</label>
+                                        <div class="flex items-center">
+                                            <input type="number" wire:model="prioridad" id="prioridad" min="1" max="100"
+                                                class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                                style="max-width: 100px;">
+                                            <span class="ml-2 text-xs text-gray-500">Menor número = Mayor prioridad</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1">Cuando la selección es por prioridad, se muestra la campaña con el menor valor.</p>
+                                        @error('prioridad') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    </div>
+
                                     <!-- Archivo -->
                                     <div>
                                         <label for="archivo" class="block text-sm font-medium text-gray-700">
@@ -271,6 +291,7 @@
                                             <p class="text-xs text-gray-500 mt-1">Si no selecciona ningún día, se mostrará todos los días dentro del rango de fechas.</p>
                                         </div>
                                     </div>
+
                                     <!-- Cliente -->
                                     <div>
                                         <label for="cliente_id" class="block text-sm font-medium text-gray-700">Cliente (opcional)</label>

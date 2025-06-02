@@ -631,6 +631,9 @@
                             Auth Mikrotik
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                            Selec. Campañas
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                             Propietario
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -662,6 +665,15 @@
                                 {{ $zona->getTipoAutenticacionMikrotikLabelAttribute() }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $zona->seleccion_campanas === 'aleatorio' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800' }}">
+                                    {{ $zona->seleccion_campanas === 'aleatorio' ? 'Aleatorio' : 'Por prioridad' }}
+                                </span>
+                                <br>
+                                <span class="text-xs text-gray-500 mt-1">
+                                    Tiempo: {{ $zona->tiempo_visualizacion ?? 15 }}s
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
                                 {{ $zona->user->name }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -687,6 +699,13 @@
                                     >
                                         Editar
                                     </button>
+
+                                    <a
+                                        href="{{ route('admin.zonas.configuracion-campanas', ['zonaId' => $zona->id]) }}"
+                                        class="text-orange-600 hover:text-orange-900 py-1 px-1.5 rounded border border-transparent hover:border-orange-200"
+                                    >
+                                        Campañas
+                                    </a>
 
                                     @if($zona->tipo_registro != 'sin_registro')
                                     <a

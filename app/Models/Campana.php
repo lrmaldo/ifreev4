@@ -15,6 +15,7 @@ class Campana extends Model
         'fecha_inicio',
         'fecha_fin',
         'visible',
+        'prioridad',
         'siempre_visible',
         'dias_visibles',
         'tipo',
