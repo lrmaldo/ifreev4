@@ -205,46 +205,71 @@
         </div>
 
         <div class="preview-content">
-            <div id="form-section" class="mb-8">
-                <h1 class="text-2xl font-bold mb-6">Accede a nuestra WiFi</h1>
-                <p class="text-gray-600 mb-6">
-                    @if($campanaSeleccionada)
-                        {{ $campanaSeleccionada->titulo }}
-                    @else
-                        Mira nuestras promociones mientras preparamos tu conexión
-                    @endif
-                </p>
+            @if($zona->tipo_registro == 'sin_registro' || !$mostrarFormulario)
+                <!-- Sin registro o sin campos configurados -->
+                <div id="carousel-section">
+                    <h1 class="text-2xl font-bold mb-6">Accede a nuestra WiFi</h1>
+                    <p class="text-gray-600 mb-6">
+                        @if($campanaSeleccionada)
+                            {{ $campanaSeleccionada->titulo }}
+                        @else
+                            Mira nuestras promociones mientras preparamos tu conexión
+                        @endif
+                    </p>
+            @else
+                <!-- Con registro -->
+                <div id="form-section" class="mb-8">
+                    <h1 class="text-2xl font-bold mb-6">Accede a nuestra WiFi</h1>
+                    <p class="text-gray-600 mb-6">
+                        @if($campanaSeleccionada)
+                            {{ $campanaSeleccionada->titulo }}
+                        @else
+                            Mira nuestras promociones mientras preparamos tu conexión
+                        @endif
+                    </p>
 
-                <form id="login-form" class="space-y-4">
-                    @foreach ($zona->campos as $campo)
-                        <div class="mb-4">
-                            {!! $camposHtml[$loop->index] !!}
-                        </div>
-                    @endforeach
+                    <form id="login-form" class="space-y-4">
+                        @foreach ($zona->campos as $campo)
+                            <div class="mb-4">
+                                {!! $camposHtml[$loop->index] !!}
+                            </div>
+                        @endforeach
 
-                    <button type="submit" class="btn-primary">
-                        Acceder
-                    </button>
-                </form>
-            </div>
+                        <button type="submit" class="btn-primary">
+                            Acceder
+                        </button>
+                    </form>
+                </div>
 
-            <div id="carousel-section" class="hidden">
-                <h2 class="text-xl font-bold mb-4">
-                    @if($campanaSeleccionada)
-                        {{ $campanaSeleccionada->titulo }}
-                    @else
-                        Promociones mientras te conectamos
-                    @endif
-                </h2>
+                <div id="carousel-section" class="hidden">
+                    <h2 class="text-xl font-bold mb-4">
+                        @if($campanaSeleccionada)
+                            {{ $campanaSeleccionada->titulo }}
+                        @else
+                            Promociones mientras te conectamos
+                        @endif
+                    </h2>
+            @endif
 
                 <div class="carousel-container">
+
                     <div class="swiper-container">
                         <div class="swiper-wrapper">
-                            @foreach ($imagenes as $imagen)
-                            <div class="swiper-slide">
-                                <img src="{{ $imagen }}" alt="Imagen promocional">
-                            </div>
-                            @endforeach
+                            @if(count($imagenes) > 0)
+                                @foreach ($imagenes as $imagen)
+                                <div class="swiper-slide">
+                                    <img src="{{ $imagen }}" alt="Imagen promocional"
+                                         onerror="this.onerror=null; this.src='/storage/campanas/imagenes/default.jpg'; console.error('Error cargando imagen: {{ $imagen }}');"
+                                         style="width: 100%; height: 100%; object-fit: contain;">
+                                </div>
+                                @endforeach
+                            @else
+                                <!-- Imagen por defecto si no hay ninguna -->
+                                <div class="swiper-slide">
+                                    <img src="/storage/campanas/imagenes/default.jpg" alt="Imagen por defecto"
+                                         style="width: 100%; height: 100%; object-fit: contain;">
+                                </div>
+                            @endif
                         </div>
                         <div class="swiper-pagination"></div>
                     </div>
@@ -254,6 +279,12 @@
                     <div class="countdown" id="countdown">{{ $tiempoVisualizacion }}</div>
                     <div class="ml-2">segundos para tu acceso</div>
                 </div>
+
+                @if($zona->tipo_registro == 'sin_registro' || !$mostrarFormulario)
+                <div class="text-center mt-6 text-sm text-gray-500">
+                    <p>Serás conectado automáticamente cuando termine la cuenta regresiva</p>
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -270,28 +301,22 @@
             let countdownInterval;
 
             // Inicializar Swiper cuando se muestre el carrusel
-            let swiper;
+            let swiper = new Swiper('.swiper-container', {
+                loop: {{ count($imagenes) > 1 ? 'true' : 'false' }}, // Solo activar loop si hay más de una imagen
+                autoplay: {
+                    delay: 3000,
+                    disableOnInteraction: false
+                },
+                pagination: {
+                    el: '.swiper-pagination',
+                    clickable: true,
+                },
+                // Si solo hay una imagen, desactivamos la navegación
+                allowTouchMove: {{ count($imagenes) > 1 ? 'true' : 'false' }}
+            });
 
-            loginForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                // Ocultar formulario y mostrar carrusel
-                formSection.classList.add('hidden');
-                carouselSection.classList.remove('hidden');
-
-                // Inicializar Swiper
-                swiper = new Swiper('.swiper-container', {
-                    loop: true,
-                    autoplay: {
-                        delay: 3000,
-                    },
-                    pagination: {
-                        el: '.swiper-pagination',
-                        clickable: true,
-                    },
-                });
-
-                // Iniciar cuenta regresiva
+            // Función para iniciar la cuenta regresiva
+            function iniciarContador() {
                 countdownInterval = setInterval(function() {
                     tiempoRestante--;
                     countdown.textContent = tiempoRestante;
@@ -325,7 +350,26 @@
                         */
                     }
                 }, 1000);
-            });
+            }
+
+            // Si hay formulario, configurarlo para que al enviarlo muestre el carrusel
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    // Ocultar formulario y mostrar carrusel
+                    formSection.classList.add('hidden');
+                    carouselSection.classList.remove('hidden');
+
+                    // Iniciar cuenta regresiva
+                    iniciarContador();
+                });
+            }
+            // Si es modo sin registro o no hay campos configurados, iniciar contador automáticamente
+            @if($zona->tipo_registro == 'sin_registro' || !$mostrarFormulario)
+                // Iniciar cuenta regresiva directamente
+                iniciarContador();
+            @endif
         });
     </script>
 </body>

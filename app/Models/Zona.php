@@ -57,30 +57,65 @@ class Zona extends Model
     {
         return $this->belongsToMany(Campana::class, 'campana_zona')
                     ->withTimestamps();
-    }
-
-    public function getCampanasActivas()
+    }    public function getCampanasActivas()
     {
-        $hoy = now()->format('Y-m-d');
-        $diaSemana = strtolower(now()->locale('es')->dayName);
+        $ahora = now(); // Objeto Carbon completo
+        $hoy = $ahora->format('Y-m-d'); // Solo fecha para comparaciones de strings
+        $diaSemana = strtolower($ahora->locale('es')->dayName);
 
-        $query = $this->campanas()
-            ->where('visible', true)
-            ->where(function($q) use ($hoy, $diaSemana) {
-                $q->where(function($q) use ($hoy) {
-                    $q->where('fecha_inicio', '<=', $hoy)
-                      ->where('fecha_fin', '>=', $hoy)
-                      ->where('siempre_visible', true);
-                })
-                ->orWhere(function($q) use ($hoy, $diaSemana) {
-                    $q->where('fecha_inicio', '<=', $hoy)
-                      ->where('fecha_fin', '>=', $hoy)
-                      ->where('siempre_visible', false)
-                      ->whereJsonContains('dias_visibles', $diaSemana);
-                });
-            });
+        // Paso 1: Intentar obtener campañas asociadas a esta zona
+        $todasCampanas = $this->campanas()->get();
 
-        return $query->get();
+        // Paso 2: Si no hay relaciones, obtener TODAS las campañas del sistema
+        if ($todasCampanas->isEmpty()) {
+            $todasCampanas = \App\Models\Campana::all();
+
+            // Crear automáticamente relaciones para futuras consultas
+            foreach ($todasCampanas as $campana) {
+                \Log::info("Intentando asociar automáticamente: Zona {$this->id} con Campaña {$campana->id}");
+                // Crear asociaciones automáticas en la tabla campana_zona para futuras consultas
+                if (!\DB::table('campana_zona')->where('zona_id', $this->id)->where('campana_id', $campana->id)->exists()) {
+                    try {
+                        $this->campanas()->attach($campana->id);
+                    } catch (\Exception $e) {
+                        \Log::error("Error al asociar campana con zona: " . $e->getMessage());
+                    }
+                }
+            }
+        }
+
+        // Filtramos manualmente según los criterios
+        $campanasActivas = $todasCampanas->filter(function($campana) use ($ahora, $hoy, $diaSemana) {
+            // Para evitar errores, verificamos que los campos necesarios existan
+            $fechaInicio = isset($campana->fecha_inicio) ? $campana->fecha_inicio : $ahora;
+            $fechaFin = isset($campana->fecha_fin) ? $campana->fecha_fin : $ahora;
+
+            // Extraemos solo la fecha para comparación (sin hora)
+            $fechaInicioStr = is_object($fechaInicio) ? $fechaInicio->format('Y-m-d') : substr($fechaInicio, 0, 10);
+            $fechaFinStr = is_object($fechaFin) ? $fechaFin->format('Y-m-d') : substr($fechaFin, 0, 10);
+
+            // Comparamos solo la parte de fecha (sin la hora)
+            $cumpleFechaInicio = $fechaInicioStr <= $hoy;
+            $cumpleFechaFin = $fechaFinStr >= $hoy;
+            $visible = (bool)($campana->visible ?? true);
+
+            // Comprobamos la visibilidad por día
+            $cumpleDia = $campana->siempre_visible ||
+                         (isset($campana->dias_visibles) &&
+                          is_array($campana->dias_visibles) &&
+                          in_array($diaSemana, $campana->dias_visibles));
+
+            // Si dias_visibles no está definido, consideramos que cumple el criterio
+            if (!isset($campana->dias_visibles)) {
+                $cumpleDia = true;
+            }
+
+            $estaActiva = $visible && $cumpleFechaInicio && $cumpleFechaFin && $cumpleDia;
+
+            return $estaActiva;
+        });
+
+        return $campanasActivas;
     }
 
     public function getCampanaSeleccionada()

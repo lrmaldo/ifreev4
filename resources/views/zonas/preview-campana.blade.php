@@ -9,12 +9,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    
+
     @if($tipoCampana === 'imagenes')
     <!-- Swiper CSS para el carrusel -->
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
     @endif
-    
+
     <style>
         /* Variables de colores personalizables */
         :root {
@@ -353,7 +353,8 @@
 </head>
 <body>
     <div class="preview-container">
-        <!-- Sección del formulario -->
+        <!-- Sección del formulario (sólo se muestra si se requiere registro) -->
+        @if($zona->tipo_registro != 'sin_registro' && $mostrarFormulario)
         <div id="form-section" class="content-section">
             <div class="header-section fade-in">
                 <h1 class="zone-title">{{ $zona->nombre }}</h1>
@@ -373,16 +374,24 @@
                 </button>
             </form>
         </div>
+        @else
+        <div id="header-section" class="content-section">
+            <div class="header-section fade-in">
+                <h1 class="zone-title">{{ $zona->nombre }}</h1>
+                <p class="zone-subtitle">Bienvenido a nuestra red WiFi</p>
+            </div>
+        </div>
+        @endif
 
         <!-- Sección de contenido multimedia -->
-        <div id="media-section" style="display: none;">
+        <div id="media-section" style="{{ $zona->tipo_registro == 'sin_registro' ? 'display: block;' : 'display: none;' }}">
             @if($tipoCampana === 'imagenes')
             <!-- Carrusel de imágenes -->
             <div class="carousel-container">
                 <div class="countdown-container">
                     <span id="countdown">{{ $contenido['tiempoVisualizacion'] }}</span>s
                 </div>
-                
+
                 <div class="swiper">
                     <div class="swiper-wrapper">
                         @foreach($contenido['imagenes'] as $imagen)
@@ -401,7 +410,7 @@
                     <source src="{{ $contenido['videoUrl'] }}" type="video/mp4">
                     Tu navegador no soporta la reproducción de video.
                 </video>
-                
+
                 <div id="video-overlay" class="video-overlay">
                     <button id="play-btn" class="play-button">
                         <div class="play-icon"></div>
@@ -442,7 +451,7 @@
 
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
+
                 // Mostrar estado de carga
                 connectBtn.disabled = true;
                 buttonText.style.display = 'none';
@@ -484,11 +493,11 @@
                 // Iniciar countdown
                 let countdown = {{ $contenido['tiempoVisualizacion'] }};
                 const countdownElement = document.getElementById('countdown');
-                
+
                 const timer = setInterval(function() {
                     countdown--;
                     countdownElement.textContent = countdown;
-                    
+
                     if (countdown <= 0) {
                         clearInterval(timer);
                         showConnectingScreen();
@@ -523,15 +532,15 @@
             function showConnectingScreen() {
                 mediaSection.style.display = 'none';
                 connectingSection.classList.add('active');
-                
+
                 // Countdown para redirección
                 let redirectCount = 3;
                 const redirectElement = document.getElementById('redirect-countdown');
-                
+
                 const redirectTimer = setInterval(function() {
                     redirectCount--;
                     redirectElement.textContent = redirectCount;
-                    
+
                     if (redirectCount <= 0) {
                         clearInterval(redirectTimer);
                         // Aquí se haría la redirección real
@@ -539,6 +548,29 @@
                     }
                 }, 1000);
             }
+
+            // Si es modo sin registro, iniciar automáticamente el contenido multimedia
+            @if($zona->tipo_registro == 'sin_registro' || !$mostrarFormulario)
+            @if($tipoCampana === 'imagenes')
+            // Iniciar carrusel automáticamente
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    initCarousel();
+                }, 500);
+            });
+            @elseif($tipoCampana === 'video')
+            // Iniciar video automáticamente
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    initVideo();
+                    const video = document.getElementById('campaign-video');
+                    const overlay = document.getElementById('video-overlay');
+                    overlay.classList.add('hidden');
+                    video.play();
+                }, 500);
+            });
+            @endif
+            @endif
         });
     </script>
 </body>

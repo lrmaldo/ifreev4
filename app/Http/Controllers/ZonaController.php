@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Zona;
 use App\Traits\RenderizaFormFields;
+use Illuminate\Support\Facades\Storage;
 
 class ZonaController extends Controller
 {
@@ -44,7 +45,10 @@ class ZonaController extends Controller
             $camposHtml[] = $this->renderizarCampo($campo);
         }
 
-        return view('zonas.preview', compact('zona', 'mikrotikData', 'camposHtml'));
+        // Verificar si la zona tiene tipo de registro "sin_registro" o si no tiene campos
+        $mostrarFormulario = $zona->tipo_registro != 'sin_registro' && $zona->campos->count() > 0;
+
+        return view('zonas.preview', compact('zona', 'mikrotikData', 'camposHtml', 'mostrarFormulario'));
     }
 
     /**
@@ -76,70 +80,144 @@ class ZonaController extends Controller
             'mac-esc' => '00%3A11%3A22%3A33%3A44%3A55'
         ];
 
+        // Verificar si la zona tiene tipo de registro "sin_registro" o si no tiene campos
+        $mostrarFormulario = $zona->tipo_registro != 'sin_registro' && $zona->campos->count() > 0;
+
         // Pre-renderizar los campos del formulario
         $camposHtml = [];
         foreach ($zona->campos as $campo) {
             $camposHtml[] = $this->renderizarCampo($campo);
         }
 
-        // Obtener campañas activas para el cliente de la zona o las globales
-        $campanasActivas = \App\Models\Campana::where('visible', true)
-            ->where('fecha_inicio', '<=', now()->format('Y-m-d'))
-            ->where('fecha_fin', '>=', now()->format('Y-m-d'))
-            ->where(function($query) {
-                $diaSemana = strtolower(now()->locale('es')->dayName);
-                $query->where('siempre_visible', true)
-                      ->orWhere(function($q) use ($diaSemana) {
-                          $q->where('siempre_visible', false)
-                            ->whereJsonContains('dias_visibles', $diaSemana);
-                      });
-            })
-            ->where(function($query) use ($zona) {
-                $query->where('cliente_id', $zona->cliente_id)
-                      ->orWhereNull('cliente_id'); // Incluir también campañas globales
-            })
-            ->get();
+        // Obtener campañas activas de la zona usando el método del modelo
+        $campanasActivas = $zona->getCampanasActivas();
 
-        // Filtrar solo campañas de tipo 'imagenes'
-        $campanasImagenes = $campanasActivas->where('tipo', 'imagenes');
+        // Debug: Imprimir las campañas activas para revisar
+        \Log::info('Campañas activas para la zona ' . $zona->id . ': ' . $campanasActivas->count());
+        foreach ($campanasActivas as $campana) {
+            \Log::info('Campaña ID: ' . $campana->id . ', Tipo: ' . $campana->tipo . ', Archivo: ' . $campana->archivo_path);
+        }
 
-        // Seleccionar campaña según criterio configurado
+        // Preparamos un array con los tipos de campañas
+        $tiposCampanas = [];
+        foreach ($campanasActivas as $campana) {
+            $tiposCampanas[] = $campana->tipo;
+        }
+
+        // Filtrar campañas de tipo 'imagen' o 'imagenes' o cualquier variación
+        $campanasImagenes = $campanasActivas->filter(function($campana) {
+            // Si no tiene tipo definido, asumimos que es una imagen por defecto
+            if (!isset($campana->tipo) || empty($campana->tipo)) {
+                return true;
+            }
+
+            $tipo = strtolower($campana->tipo);
+            return $tipo === 'imagen' || $tipo === 'imagenes' || $tipo === 'image' || $tipo === 'img' ||
+                   strpos($tipo, 'imag') !== false;
+        });
+
+
+
+        // Inicializar variables
         $campanaSeleccionada = null;
         $imagenes = [];
 
+        // Si no hay campañas activas de tipo imagen, vamos a buscar TODAS las imágenes
+        // disponibles en el directorio de campañas
+        if ($campanasImagenes->isEmpty()) {
+            \Log::info("No hay campañas activas. Buscando imágenes en el directorio...");
+            // Buscar en el directorio físico todas las imágenes disponibles
+            if (is_dir(public_path('storage/campanas/imagenes'))) {
+                $files = scandir(public_path('storage/campanas/imagenes'));
+                foreach ($files as $file) {
+                    if ($file != '.' && $file != '..' && in_array(pathinfo($file, PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png', 'gif'])) {
+                        $rutaImagen = '/storage/campanas/imagenes/' . $file;
+                        $imagenes[] = $rutaImagen;
+                        \Log::info("Imagen encontrada en directorio: " . $rutaImagen);
+                    }
+                }
+            }
+
+            // Si aún así no hay imágenes, usamos al menos la imagen default
+            if (empty($imagenes) && file_exists(public_path('storage/campanas/imagenes/default.jpg'))) {
+                $imagenes[] = '/storage/campanas/imagenes/default.jpg';
+                \Log::info("Usando imagen default.jpg como respaldo");
+            }
+        }
+
+        // Si hay campañas activas, procesamos normalmente
         if (!$campanasImagenes->isEmpty()) {
-            // Modo de selección (prioridad o aleatorio)
+            // Mostrar todas las imágenes de campañas en el carrusel
+            // (Limitamos a máximo 10 imágenes para evitar sobrecargar el carrusel)
+            $campanasAMostrar = $campanasImagenes->take(10);
+
+            // Seleccionar la primera campaña como la principal para mostrar información
             $modoSeleccion = $zona->seleccion_campanas ?? 'prioridad';
 
             if ($modoSeleccion === 'aleatorio') {
+                // Para el modo aleatorio, seleccionamos una al azar como la principal
                 $campanaSeleccionada = $campanasImagenes->random();
-            } else { // prioridad
+            } else {
+                // Para modo prioridad, tomamos la de mayor prioridad como principal
                 $campanaSeleccionada = $campanasImagenes->sortBy('prioridad')->first();
+            }            // Obtener todas las imágenes de las campañas seleccionadas
+            foreach ($campanasAMostrar as $campana) {
+                if ($campana->archivo_path) {
+                    // Verificar si el archivo existe físicamente
+                    $localPath = public_path('storage/' . $campana->archivo_path);
+
+                    if (file_exists($localPath)) {
+                        // Si el archivo existe físicamente, usamos la ruta correcta
+                        $rutaImagen = '/storage/' . $campana->archivo_path;
+                        $imagenes[] = $rutaImagen;
+                    } else {
+                        // Si no existe, intentamos generar rutas alternativas
+
+                        // Comprobamos si el archivo es una ruta relativa o absoluta
+                        if (strpos($campana->archivo_path, '/') === 0) {
+                            // Es una ruta absoluta, la usamos directamente
+                            $imagenes[] = $campana->archivo_path;
+                        } else {
+                            // Verificamos si existe en public/storage directamente
+                            $altPath = public_path('storage/campanas/imagenes/' . basename($campana->archivo_path));
+                            if (file_exists($altPath)) {
+                                $rutaImagen = '/storage/campanas/imagenes/' . basename($campana->archivo_path);
+                                $imagenes[] = $rutaImagen;
+                            } else {
+                                // Intentar con el Storage::url como último recurso
+                                $rutaImagen = Storage::url($campana->archivo_path);
+                                $imagenes[] = $rutaImagen;
+                            }
+                        }
+                    }
+
+                    \Log::info('Información de campaña - ID: ' . $campana->id . ', Título: ' . $campana->titulo . ', Archivo: ' . $campana->archivo_path);
+                }
             }
 
-            // Obtener imágenes de la campaña seleccionada
-            if ($campanaSeleccionada) {
-                // En un caso real, aquí cargaríamos las imágenes asociadas a la campaña
-                // Para esta demostración, usamos imágenes de placeholder
-                $imagenes = [
-                    asset('storage/campanas/imagen1.jpg'),
-                    asset('storage/campanas/imagen2.jpg'),
-                    asset('storage/campanas/imagen3.jpg'),
-                ];
+            // Si no hay imágenes válidas, no mostramos el carrusel
+            if (empty($imagenes)) {
+                $imagenes = [];
             }
         } else {
-            // Si no hay campañas de tipo imagen, usar imágenes por defecto
-            $imagenes = [
-                'https://via.placeholder.com/800x400/ff5e2c/ffffff?text=Bienvenido+a+nuestra+red+WiFi',
-                'https://via.placeholder.com/800x400/ff8159/ffffff?text=Disfruta+de+nuestra+conectividad',
-                'https://via.placeholder.com/800x400/e64a1c/ffffff?text=Gracias+por+tu+visita',
-            ];
+            // Si no hay campañas de tipo imagen, no mostramos el carrusel
+            $imagenes = [];
+
+            // No hay campaña seleccionada
+            $campanaSeleccionada = null;
         }
 
         // Tiempo de visualización configurable (segundos)
-        $tiempoVisualizacion = $zona->tiempo_visualizacion ?? 15;
+        $tiempoVisualizacion = $zona->segundos ?? 15;
 
-        return view('zonas.preview-carrusel', compact('zona', 'mikrotikData', 'camposHtml', 'imagenes', 'campanaSeleccionada', 'tiempoVisualizacion'));
+        // Registramos solo información mínima para producción
+        if (count($imagenes) > 0) {
+            \Log::info('Portal cautivo - Zona ID: ' . $zona->id . ' - ' . count($imagenes) . ' imágenes disponibles');
+        } else {
+            \Log::warning('Portal cautivo - Zona ID: ' . $zona->id . ' - No hay imágenes disponibles');
+        }
+
+        return view('zonas.preview-carrusel', compact('zona', 'mikrotikData', 'camposHtml', 'imagenes', 'campanaSeleccionada', 'tiempoVisualizacion', 'mostrarFormulario'));
     }
 
     /**
@@ -177,23 +255,8 @@ class ZonaController extends Controller
             $camposHtml[] = $this->renderizarCampo($campo);
         }
 
-        // Obtener campañas activas para el cliente de la zona o las globales
-        $campanasActivas = \App\Models\Campana::where('visible', true)
-            ->where('fecha_inicio', '<=', now()->format('Y-m-d'))
-            ->where('fecha_fin', '>=', now()->format('Y-m-d'))
-            ->where(function($query) {
-                $diaSemana = strtolower(now()->locale('es')->dayName);
-                $query->where('siempre_visible', true)
-                      ->orWhere(function($q) use ($diaSemana) {
-                          $q->where('siempre_visible', false)
-                            ->whereJsonContains('dias_visibles', $diaSemana);
-                      });
-            })
-            ->where(function($query) use ($zona) {
-                $query->where('cliente_id', $zona->cliente_id)
-                      ->orWhereNull('cliente_id'); // Incluir también campañas globales
-            })
-            ->get();
+        // Obtener campañas activas de la zona usando el método del modelo
+        $campanasActivas = $zona->getCampanasActivas();
 
         // Filtrar solo campañas de tipo 'video'
         $campanasVideo = $campanasActivas->where('tipo', 'video');
@@ -213,17 +276,22 @@ class ZonaController extends Controller
             }
 
             // Obtener video de la campaña seleccionada
-            if ($campanaSeleccionada) {
-                // En un caso real, aquí cargaríamos el video asociado a la campaña
-                // Para esta demostración, usamos un video por defecto
-                $videoUrl = asset('storage/campanas/video.mp4');
+            if ($campanaSeleccionada && $campanaSeleccionada->archivo_path) {
+                // Cargar el video almacenado en la campaña
+                $videoUrl = Storage::url($campanaSeleccionada->archivo_path);
+            } else {
+                // Si no hay video en la campaña, no mostrar nada
+                $videoUrl = '';
             }
         } else {
-            // Si no hay campañas de tipo video, usar video por defecto
-            $videoUrl = asset('videos/sample.mp4');
+            // Si no hay campañas de tipo video, no mostrar ningún video
+            $videoUrl = '';
         }
 
-        return view('zonas.preview-video', compact('zona', 'mikrotikData', 'camposHtml', 'videoUrl', 'campanaSeleccionada'));
+        // Verificar si la zona tiene tipo de registro "sin_registro" o si no tiene campos
+        $mostrarFormulario = $zona->tipo_registro != 'sin_registro' && $zona->campos->count() > 0;
+
+        return view('zonas.preview-video', compact('zona', 'mikrotikData', 'camposHtml', 'videoUrl', 'campanaSeleccionada', 'mostrarFormulario'));
     }
 
     /**
@@ -261,27 +329,15 @@ class ZonaController extends Controller
             $camposHtml[] = $this->renderizarCampo($campo);
         }
 
-        // Obtener campañas activas para el cliente de la zona o las globales
-        $campanasActivas = \App\Models\Campana::where('visible', true)
-            ->where('fecha_inicio', '<=', now()->format('Y-m-d'))
-            ->where('fecha_fin', '>=', now()->format('Y-m-d'))
-            ->where(function($query) {
-                $diaSemana = strtolower(now()->locale('es')->dayName);
-                $query->where('siempre_visible', true)
-                      ->orWhere(function($q) use ($diaSemana) {
-                          $q->where('siempre_visible', false)
-                            ->whereJsonContains('dias_visibles', $diaSemana);
-                      });
-            })
-            ->where(function($query) use ($zona) {
-                $query->where('cliente_id', $zona->cliente_id)
-                      ->orWhereNull('cliente_id'); // Incluir también campañas globales
-            })
-            ->get();
+        // Obtener campañas activas de la zona usando el método del modelo
+        $campanasActivas = $zona->getCampanasActivas();
 
         // Filtrar campañas por tipo
         $campanasVideo = $campanasActivas->where('tipo', 'video');
-        $campanasImagenes = $campanasActivas->where('tipo', 'imagenes');
+        // Compatibilidad con 'imagen' e 'imagenes'
+        $campanasImagenes = $campanasActivas->filter(function($campana) {
+            return $campana->tipo === 'imagen' || $campana->tipo === 'imagenes';
+        });
 
         // Variables para la vista
         $tipoCampana = 'imagenes'; // tipo por defecto
@@ -304,20 +360,19 @@ class ZonaController extends Controller
             }
 
             // Preparar contenido de video
-            if ($campanaSeleccionada) {
-                // En un caso real, aquí cargaríamos el video asociado a la campaña
-                // Para esta demostración, usamos un video por defecto
+            if ($campanaSeleccionada && $campanaSeleccionada->archivo_path) {
+                // Cargar el video almacenado en la campaña
                 $contenido = [
-                    'url' => asset('storage/campanas/video.mp4'),
-                    'poster' => asset('storage/campanas/video-poster.jpg'),
-                    'titulo' => $campanaSeleccionada->nombre ?? 'Video promocional'
+                    'url' => Storage::url($campanaSeleccionada->archivo_path),
+                    'poster' => '', // No usamos poster
+                    'titulo' => $campanaSeleccionada->titulo ?? 'Video promocional'
                 ];
             } else {
-                // Video por defecto si no hay campañas de video configuradas
+                // Si no hay video en la campaña, no mostrar nada
                 $contenido = [
-                    'url' => asset('videos/sample.mp4'),
-                    'poster' => 'https://via.placeholder.com/800x450/ff5e2c/ffffff?text=Video+Promocional',
-                    'titulo' => 'Bienvenido a nuestra red WiFi'
+                    'url' => '',
+                    'poster' => '',
+                    'titulo' => ''
                 ];
             }
         } elseif (!$campanasImagenes->isEmpty()) {
@@ -331,30 +386,19 @@ class ZonaController extends Controller
             }
 
             // Preparar contenido de imágenes
-            if ($campanaSeleccionada) {
-                // En un caso real, aquí cargaríamos las imágenes asociadas a la campaña
-                // Para esta demostración, usamos imágenes de placeholder
+            if ($campanaSeleccionada && $campanaSeleccionada->archivo_path) {
+                // Cargar la imagen de la campaña seleccionada
                 $contenido = [
-                    asset('storage/campanas/imagen1.jpg'),
-                    asset('storage/campanas/imagen2.jpg'),
-                    asset('storage/campanas/imagen3.jpg'),
+                    Storage::url($campanaSeleccionada->archivo_path)
                 ];
             } else {
-                // Imágenes por defecto si no hay campañas configuradas
-                $contenido = [
-                    'https://via.placeholder.com/800x400/ff5e2c/ffffff?text=Bienvenido+a+nuestra+red+WiFi',
-                    'https://via.placeholder.com/800x400/ff8159/ffffff?text=Disfruta+de+nuestra+conectividad',
-                    'https://via.placeholder.com/800x400/e64a1c/ffffff?text=Gracias+por+tu+visita',
-                ];
+                // Si no hay imagen en la campaña, no mostramos nada
+                $contenido = [];
             }
         } else {
-            // No hay campañas activas - usar contenido por defecto de imágenes
+            // No hay campañas activas - no mostrar contenido
             $tipoCampana = 'imagenes';
-            $contenido = [
-                'https://via.placeholder.com/800x400/ff5e2c/ffffff?text=Bienvenido+a+nuestra+red+WiFi',
-                'https://via.placeholder.com/800x400/ff8159/ffffff?text=Disfruta+de+nuestra+conectividad',
-                'https://via.placeholder.com/800x400/e64a1c/ffffff?text=Gracias+por+tu+visita',
-            ];
+            $contenido = [];
         }
 
         // Datos adicionales para debugging (opcional)
@@ -367,6 +411,9 @@ class ZonaController extends Controller
             'campanaNombre' => $campanaSeleccionada->nombre ?? 'Sin campaña específica'
         ];
 
+        // Verificar si la zona tiene tipo de registro "sin_registro" o si no tiene campos
+        $mostrarFormulario = $zona->tipo_registro != 'sin_registro' && $zona->campos->count() > 0;
+         // Para depuración, eliminar en producción
         return view('zonas.preview-campana', compact(
             'zona',
             'mikrotikData',
@@ -375,7 +422,8 @@ class ZonaController extends Controller
             'contenido',
             'campanaSeleccionada',
             'tiempoVisualizacion',
-            'debugInfo'
+            'debugInfo',
+            'mostrarFormulario'
         ));
     }
 }
