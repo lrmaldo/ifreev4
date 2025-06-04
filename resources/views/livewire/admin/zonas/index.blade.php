@@ -692,163 +692,68 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div class="flex flex-wrap gap-2 sm:space-x-2">
-                                    <button
-                                        wire:click="openModal(true, {{ $zona->id }})"
-                                        class="text-indigo-600 hover:text-indigo-900 py-1 px-1.5 rounded border border-transparent hover:border-indigo-200"
-                                    >
-                                        Editar
-                                    </button>
+                                <flux:dropdown placement="bottom-end">
+                                    <flux:button size="sm" icon:trailing="chevron-down">Opciones</flux:button>
 
-                                    <a
-                                        href="{{ route('admin.zonas.configuracion-campanas', ['zonaId' => $zona->id]) }}"
-                                        class="text-orange-600 hover:text-orange-900 py-1 px-1.5 rounded border border-transparent hover:border-orange-200"
-                                    >
-                                        Campañas
-                                    </a>
+                                    <flux:menu>
+                                        <!-- Opciones principales -->
+                                        <flux:menu.item icon="pencil" wire:click="openModal(true, {{ $zona->id }})">
+                                            Editar
+                                        </flux:menu.item>
 
-                                    @if($zona->tipo_registro != 'sin_registro')
-                                    <a
-                                        href="{{ route('admin.zone.form-fields', ['zonaId' => $zona->id]) }}"
-                                        class="text-green-600 hover:text-green-900 py-1 px-1.5 rounded border border-transparent hover:border-green-200"
-                                    >
-                                        Campos
-                                    </a>
+                                        <flux:menu.item icon="presentation-chart-bar" :href="route('admin.zonas.configuracion-campanas', ['zonaId' => $zona->id])">
+                                            Campañas
+                                        </flux:menu.item>
 
-                                    <a
-                                        href="{{ route('cliente.zona.formulario', ['zonaId' => $zona->id]) }}"
-                                        class="text-purple-600 hover:text-purple-900 py-1 px-1.5 rounded border border-transparent hover:border-purple-200"
-                                        target="_blank"
-                                    >
-                                        <span class="hidden xs:inline">Ver </span>Formulario
-                                    </a>
-                                    @endif
+                                        @if($zona->tipo_registro != 'sin_registro')
+                                            <flux:menu.item icon="document-text" :href="route('admin.zone.form-fields', ['zonaId' => $zona->id])">
+                                                Campos
+                                            </flux:menu.item>
 
-                                    <div x-data="{ open: false, position: 'right' }" class="relative inline-block">
-                                        <button @click="open = !open; setTimeout(() => detectPosition($event, 'dropdown-vista-{{ $zona->id }}'), 10)"
-                                                x-on:touchstart.stop="open = !open; setTimeout(() => detectPosition($event, 'dropdown-vista-{{ $zona->id }}'), 10)"
-                                                class="whitespace-nowrap text-amber-600 hover:text-amber-900 focus:outline-none py-2 px-3 rounded border border-transparent hover:border-amber-200 hover:bg-amber-50 active:bg-amber-100 transition-colors duration-150 touch-manipulation">
-                                            <span class="hidden xs:inline">Vista </span>previa
-                                            <svg class="h-5 w-5 inline ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </button>
-                                        <div x-show="open"
-                                             @click.away="open = false"
-                                             @touchstart.stop
-                                             x-touchout="open = false"
-                                             @mouseenter="detectPosition($event, 'dropdown-vista-{{ $zona->id }}')"
-                                             id="dropdown-vista-{{ $zona->id }}"
-                                             class="fixed bg-white rounded-md shadow-lg z-50 overflow-hidden border border-gray-200"
-                                             x-transition:enter="transition ease-out duration-100"
-                                             x-transition:enter-start="opacity-0 transform scale-95"
-                                             x-transition:enter-end="opacity-100 transform scale-100"
-                                             x-transition:leave="transition ease-in duration-75"
-                                             x-transition:leave-start="opacity-100 transform scale-100"
-                                             x-transition:leave-end="opacity-0 transform scale-95">
-                                            <div class="py-1 whitespace-nowrap">
-                                                <a href="{{ route('cliente.zona.preview', ['id' => $zona->id]) }}"
-                                                   class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 sm:py-2 transition-colors duration-150"
-                                                   target="_blank"
-                                                   style="touch-action: manipulation;">
-                                                    <span class="flex items-center">
-                                                        <svg class="h-4 w-4 mr-2 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                        </svg>
-                                                        Vista previa normal
-                                                    </span>
-                                                </a>
-                                                <a href="{{ route('cliente.zona.preview.carrusel', ['id' => $zona->id]) }}"
-                                                   class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 sm:py-2 transition-colors duration-150"
-                                                   target="_blank"
-                                                   style="touch-action: manipulation;">
-                                                    <span class="flex items-center">
-                                                        <svg class="h-4 w-4 mr-2 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                                                        </svg>
-                                                        Vista con carrusel
-                                                    </span>
-                                                </a>
-                                                <a href="{{ route('cliente.zona.preview.video', ['id' => $zona->id]) }}"
-                                                   class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 sm:py-2 transition-colors duration-150"
-                                                   target="_blank"
-                                                   style="touch-action: manipulation;">
-                                                    <span class="flex items-center">
-                                                        <svg class="h-4 w-4 mr-2 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                        Vista con video
-                                                    </span>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
+                                            <flux:menu.item icon="clipboard-document" :href="route('cliente.zona.formulario', ['zonaId' => $zona->id])" target="_blank">
+                                                Ver Formulario
+                                            </flux:menu.item>
+                                        @endif
 
-                                    <div x-data="{ open: false, position: 'right' }" class="relative inline-block">
-                                        <button @click="open = !open; setTimeout(() => detectPosition($event, 'dropdown-files-{{ $zona->id }}'), 10)"
-                                               x-on:touchstart.stop="open = !open; setTimeout(() => detectPosition($event, 'dropdown-files-{{ $zona->id }}'), 10)"
-                                               class="whitespace-nowrap text-blue-600 hover:text-blue-900 focus:outline-none py-2 px-3 rounded border border-transparent hover:border-blue-200 hover:bg-blue-50 active:bg-blue-100 transition-colors duration-150 touch-manipulation">
-                                            <span class="hidden sm:inline">Archivos </span>Mikrotik
-                                            <svg class="h-5 w-5 inline ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </button>
-                                        <div x-show="open"
-                                             @click.away="open = false"
-                                             @touchstart.stop
-                                             x-touchout="open = false"
-                                             @mouseenter="detectPosition($event, 'dropdown-files-{{ $zona->id }}')"
-                                             id="dropdown-files-{{ $zona->id }}"
-                                             class="fixed bg-white rounded-md shadow-lg z-50 overflow-hidden border border-gray-200"
-                                             x-transition:enter="transition ease-out duration-100"
-                                             x-transition:enter-start="opacity-0 transform scale-95"
-                                             x-transition:enter-end="opacity-100 transform scale-100"
-                                             x-transition:leave="transition ease-in duration-75"
-                                             x-transition:leave-start="opacity-100 transform scale-100"
-                                             x-transition:leave-end="opacity-0 transform scale-95">
-                                            <div class="py-1 whitespace-nowrap">
-                                                <a href="{{ route('admin.zonas.download', ['zonaId' => $zona->id, 'fileType' => 'login']) }}"
-                                                   class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 sm:py-2 transition-colors duration-150"
-                                                   style="touch-action: manipulation;">
-                                                    <span class="flex items-center">
-                                                        <svg class="h-4 w-4 mr-2 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                                        </svg>
-                                                        Descargar login.html
-                                                    </span>
-                                                </a>
-                                                <a href="{{ route('admin.zonas.download', ['zonaId' => $zona->id, 'fileType' => 'alogin']) }}"
-                                                   class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 sm:py-2 transition-colors duration-150"
-                                                   style="touch-action: manipulation;">
-                                                    <span class="flex items-center">
-                                                        <svg class="h-4 w-4 mr-2 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                                        </svg>
-                                                        Descargar alogin.html
-                                                    </span>
-                                                </a>
-                                                <button
-                                                    wire:click.prevent="openInstructionsModal({{ $zona->id }})"
-                                                    class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 sm:py-2 transition-colors duration-150"
-                                                    style="touch-action: manipulation;"
-                                                >
-                                                    Ver instrucciones
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                        <!-- Grupo de Vista previa -->
+                                        <flux:menu.group label="Vista previa">
+                                            <flux:menu.item icon="eye" :href="route('cliente.zona.preview', ['id' => $zona->id])" target="_blank">
+                                                Vista normal
+                                            </flux:menu.item>
 
-                                    @if (auth()->user()->hasRole('admin') || $zona->user_id === auth()->id())
-                                        <button
-                                            wire:click="confirmZonaDeletion({{ $zona->id }})"
-                                            class="text-red-600 hover:text-red-900 py-1 px-1.5 rounded border border-transparent hover:border-red-200"
-                                        >
-                                            Eliminar
-                                        </button>
-                                    @endif
-                                </div>
+                                            <flux:menu.item icon="photo" :href="route('cliente.zona.preview.carrusel', ['id' => $zona->id])" target="_blank">
+                                                Con carrusel
+                                            </flux:menu.item>
+
+                                            <flux:menu.item icon="film" :href="route('cliente.zona.preview.video', ['id' => $zona->id])" target="_blank">
+                                                Con video
+                                            </flux:menu.item>
+                                        </flux:menu.group>
+
+                                        <!-- Grupo de Archivos Mikrotik -->
+                                        <flux:menu.group label="Archivos Mikrotik">
+                                            <flux:menu.item icon="arrow-down-tray" :href="route('admin.zonas.download', ['zonaId' => $zona->id, 'fileType' => 'login'])">
+                                                Descargar login.html
+                                            </flux:menu.item>
+
+                                            <flux:menu.item icon="arrow-down-tray" :href="route('admin.zonas.download', ['zonaId' => $zona->id, 'fileType' => 'alogin'])">
+                                                Descargar alogin.html
+                                            </flux:menu.item>
+
+                                            <flux:menu.item icon="information-circle" wire:click.prevent="openInstructionsModal({{ $zona->id }})">
+                                                Ver instrucciones
+                                            </flux:menu.item>
+                                        </flux:menu.group>
+
+                                        <!-- Opción de eliminar (si tiene permisos) -->
+                                        @if (auth()->user()->hasRole('admin') || $zona->user_id === auth()->id())
+                                            <flux:menu.separator />
+                                            <flux:menu.item icon="trash" wire:click="confirmZonaDeletion({{ $zona->id }})" variant="danger">
+                                                Eliminar
+                                            </flux:menu.item>
+                                        @endif
+                                    </flux:menu>
+                                </flux:dropdown>
                             </td>
                         </tr>
                         <!-- Lista de campos por zona -->

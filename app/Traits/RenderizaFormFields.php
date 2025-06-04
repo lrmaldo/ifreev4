@@ -76,7 +76,14 @@ trait RenderizaFormFields
 
             case 'checkbox':
                 if ($campo->opciones->count() > 0) {
-                    // Múltiples checkbox
+                    // Múltiples checkbox con opciones
+                    // Añadimos primero la etiqueta principal del grupo si no es un checkbox único
+                    $html .= '<div class="mt-1 mb-2 font-medium text-sm">' . $campo->etiqueta;
+                    if ($campo->obligatorio) {
+                        $html .= ' <span class="text-red-500">*</span>';
+                    }
+                    $html .= '</div>';
+
                     $html .= '<div class="mt-2 space-y-2">';
 
                     foreach ($campo->opciones as $opcion) {
@@ -93,7 +100,7 @@ trait RenderizaFormFields
 
                     $html .= '</div>';
                 } else {
-                    // Checkbox único
+                    // Checkbox único (como "Acepto los términos y condiciones")
                     $checked = ($valor) ? 'checked' : '';
                     $html .= '<div class="flex items-center mt-2">';
                     $html .= '<input type="checkbox" id="' . $id . '" name="' . $nombre . '" value="1" ' . $checked . ' ' . $required .
