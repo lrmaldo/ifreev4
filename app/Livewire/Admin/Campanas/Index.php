@@ -69,11 +69,15 @@ class Index extends Component
             'prioridad' => 'required|integer|min:1|max:100',
         ];
 
-        // Solo requerimos el archivo si estamos creando una nueva campaña
-        if (!$this->editando || $this->archivo) {
+        // Ajustar validación para el archivo
+        if ($this->editando && !$this->archivo) {
+            // Si estamos editando y no se ha subido un nuevo archivo, no validamos
+            // porque mantendremos el archivo existente
+        } else {
+            // Para creación o cuando se sube un nuevo archivo en edición
             $validacionArchivo = $this->tipo === 'imagen'
-                ? 'required|image|max:2048'
-                : 'required|mimetypes:video/mp4,video/quicktime|max:20480';
+                ? ($this->editando ? 'nullable|image|max:2048' : 'required|image|max:2048')
+                : ($this->editando ? 'nullable|mimetypes:video/mp4,video/quicktime|max:20480' : 'required|mimetypes:video/mp4,video/quicktime|max:20480');
 
             $rules['archivo'] = $validacionArchivo;
         }
@@ -104,11 +108,14 @@ class Index extends Component
     #[On('openCampanaModal')]
     public function openModal()
     {
-        $this->resetForm();
-        $this->showModal = true;
-
-        // Despachar evento para inicializar el JavaScript con las zonas seleccionadas
-        $this->dispatch('initializeZonasSelect', $this->zonas_ids);
+        // Solo reset si no estamos editando (para no sobreescribir datos de edición)
+        if (!$this->editando) {
+            $this->resetForm();
+            $this->showModal = true;
+            
+            // Despachar evento para inicializar el JavaScript con las zonas seleccionadas
+            $this->dispatch('initializeZonasSelect', $this->zonas_ids);
+        }
     }
 
     // Cerrar el modal
@@ -191,9 +198,17 @@ class Index extends Component
         $this->archivo_actual = $campana->archivo_path;
         $this->cliente_id = $campana->cliente_id;
         $this->prioridad = $campana->prioridad;
+        
+        // Asegurarnos que las zonas se cargan correctamente
         $this->zonas_ids = $campana->zonas->pluck('id')->toArray();
-
-        $this->openModal();
+        
+        $this->showModal = true;
+        
+        // Esperar a que el DOM se actualice antes de inicializar Select2
+        $this->dispatch('initializeZonasSelect', $this->zonas_ids);
+        
+        // Para debugging
+        $this->dispatch('consolelog', 'Zonas cargadas para edición: ' . implode(', ', $this->zonas_ids));
     }
 
     // Eliminar una campaña

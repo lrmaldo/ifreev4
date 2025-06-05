@@ -307,20 +307,19 @@
                                     <!-- Zonas -->
                                     <div>
                                         <label for="zonas_select" class="block text-sm font-medium text-gray-700">Zonas donde mostrar esta campaña</label>
-                                        <div wire:ignore.self>
+                                        <div wire:ignore>
                                             <select id="zonas_select"
                                                     class="select2 mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
                                                     multiple
                                                     wire:model.live.debounce.500ms="zonas_ids"
-                                                    data-livewire-values="{{ json_encode($zonas_ids ?? []) }}"
-                                                    onclick="if(!window.select2Debug.getStatus().isInitialized) window.initializeZonasSelect2();">
+                                                    data-livewire-values="{{ json_encode($zonas_ids ?? []) }}">
                                                 @foreach($zonas as $zona)
                                                     <option value="{{ $zona->id }}" {{ in_array($zona->id, $zonas_ids ?? []) ? 'selected' : '' }}>
                                                         {{ $zona->nombre }}
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            <small class="mt-1 text-xs text-gray-500">Si el selector no funciona correctamente, <a href="#" onclick="window.initializeZonasSelect2(); return false;" class="text-indigo-600 hover:underline">haz clic aquí</a> para reinicializarlo.</small>
+                                            <small class="mt-1 text-xs text-gray-500">Si el selector no muestra las zonas correctamente, <a href="#" onclick="window.initializeZonasSelect2(); return false;" class="text-indigo-600 hover:underline">haz clic aquí</a> para reinicializarlo.</small>
                                         </div>
                                         @error('zonas_ids') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
@@ -373,6 +372,16 @@
                 document.head.appendChild(select2Script);
             }
         }
+    });
+
+    // Inicializar Select2 automáticamente cuando el modal se abre
+    Livewire.on('initializeZonasSelect', function(zonasIds) {
+        console.log('Evento Livewire initializeZonasSelect recibido:', zonasIds);
+
+        // Esperar a que el modal esté completamente renderizado
+        setTimeout(function() {
+            window.initializeZonasSelect2();
+        }, 300);
     });
 </script>
 

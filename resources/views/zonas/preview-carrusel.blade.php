@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <!-- Swiper CSS para el carrusel -->
-    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
     <style>
         /* Variables de colores personalizables */
         :root {
@@ -155,7 +155,17 @@
         .swiper-slide img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
+        }
+
+        /* Estilos para animación fade */
+        .swiper-container-fade .swiper-slide {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .swiper-container-fade .swiper-slide-active {
+            opacity: 1;
         }
 
         .campaign-info {
@@ -241,7 +251,7 @@
                     </form>
                 </div>
 
-                <div id="carousel-section" class="hidden">
+                <div id="carousel-section" class="{{ $zona->tipo_registro != 'sin_registro' && $mostrarFormulario ? 'hidden' : '' }}">
                     <h2 class="text-xl font-bold mb-4">
                         @if($campanaSeleccionada)
                             {{ $campanaSeleccionada->titulo }}
@@ -252,26 +262,33 @@
             @endif
 
                 <div class="carousel-container">
-
                     <div class="swiper-container">
                         <div class="swiper-wrapper">
                             @if(count($imagenes) > 0)
                                 @foreach ($imagenes as $imagen)
                                 <div class="swiper-slide">
-                                    <img src="{{ $imagen }}" alt="Imagen promocional"
-                                         onerror="this.onerror=null; this.src='/storage/campanas/imagenes/default.jpg'; console.error('Error cargando imagen: {{ $imagen }}');"
+                                    <img id="slide-img-{{ $loop->index }}"
+                                         src="{{ $imagen }}"
+                                         alt="Imagen promocional"
+                                         onerror="handleImageError(this, '{{ $imagen }}', {{ $loop->index }})"
                                          style="width: 100%; height: 100%; object-fit: contain;">
                                 </div>
                                 @endforeach
                             @else
                                 <!-- Imagen por defecto si no hay ninguna -->
                                 <div class="swiper-slide">
-                                    <img src="/storage/campanas/imagenes/default.jpg" alt="Imagen por defecto"
+                                    <img src="/storage/campanas/imagenes/default.jpg"
+                                         alt="Imagen por defecto"
                                          style="width: 100%; height: 100%; object-fit: contain;">
                                 </div>
                             @endif
                         </div>
                         <div class="swiper-pagination"></div>
+                    </div>
+
+                    <div id="debug-info" class="text-xs text-gray-400 mt-2" style="display: none;">
+                        <div>Total imágenes: {{ count($imagenes) }}</div>
+                        <div id="loaded-images">Imágenes cargadas: 0</div>
                     </div>
                 </div>
 
@@ -290,21 +307,65 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
     <script>
+        // Función para manejar errores de carga de imágenes con múltiples rutas alternativas
+        function handleImageError(img, originalSrc, index) {
+            console.error('Error cargando imagen:', originalSrc);
+
+            // Incrementar contador de intentos
+            img.dataset.attempts = (parseInt(img.dataset.attempts || '0') + 1);
+
+            // Si ya hemos intentado demasiadas veces, usar la imagen por defecto
+            if (parseInt(img.dataset.attempts) > 3) {
+                console.warn('Demasiados intentos fallidos, usando imagen por defecto');
+                img.src = '/storage/campanas/imagenes/default.jpg';
+                img.onerror = null; // Evitar bucle infinito
+                return;
+            }
+
+            // Array de transformaciones alternativas para intentar
+            const alternativeRoutes = [
+                // 1. Intentar con /storage/ prefijado si no lo tiene
+                src => src.startsWith('/storage/') ? src : `/storage/${src}`,
+                // 2. Intentar con carpeta campañas/imagenes
+                src => `/storage/campanas/imagenes/${src.split('/').pop()}`,
+                // 3. Eliminar /storage/ si lo tiene
+                src => src.replace('/storage/', ''),
+            ];
+
+            // Obtener la siguiente transformación según el número de intentos
+            const currentAttempt = parseInt(img.dataset.attempts) - 1;
+            if (currentAttempt < alternativeRoutes.length) {
+                const newSrc = alternativeRoutes[currentAttempt](originalSrc);
+                console.log(`Intento #${img.dataset.attempts}: cambiando ruta a ${newSrc}`);
+                img.src = newSrc;
+            } else {
+                // Si ya probamos todas las transformaciones, usar imagen por defecto
+                img.src = '/storage/campanas/imagenes/default.jpg';
+                img.onerror = null; // Evitar bucle infinito
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const formSection = document.getElementById('form-section');
             const carouselSection = document.getElementById('carousel-section');
             const loginForm = document.getElementById('login-form');
             const countdown = document.getElementById('countdown');
+            const debugInfo = document.getElementById('debug-info');
             let tiempoRestante = {{ $tiempoVisualizacion }};
             let countdownInterval;
 
+            // Mostrar información de depuración con doble clic
+            document.addEventListener('dblclick', function() {
+                debugInfo.style.display = debugInfo.style.display === 'none' ? 'block' : 'none';
+            });
+
             // Inicializar Swiper cuando se muestre el carrusel
-            let swiper = new Swiper('.swiper-container', {
+            const swiperConfig = {
                 loop: {{ count($imagenes) > 1 ? 'true' : 'false' }}, // Solo activar loop si hay más de una imagen
                 autoplay: {
-                    delay: 3000,
+                    delay: 4000, // 4 segundos entre imágenes
                     disableOnInteraction: false
                 },
                 pagination: {
@@ -312,8 +373,21 @@
                     clickable: true,
                 },
                 // Si solo hay una imagen, desactivamos la navegación
-                allowTouchMove: {{ count($imagenes) > 1 ? 'true' : 'false' }}
-            });
+                allowTouchMove: {{ count($imagenes) > 1 ? 'true' : 'false' }},
+                effect: 'fade', // Efecto de transición más suave
+                fadeEffect: {
+                    crossFade: true
+                }
+            };
+
+            console.log('Inicializando Swiper con configuración:', swiperConfig);
+            let swiper = new Swiper('.swiper-container', swiperConfig);
+
+            // Forzar inicio de autoplay
+            if ({{ count($imagenes) > 1 ? 'true' : 'false' }}) {
+                swiper.autoplay.start();
+                console.log('Autoplay iniciado');
+            }
 
             // Función para iniciar la cuenta regresiva
             function iniciarContador() {
@@ -352,6 +426,29 @@
                 }, 1000);
             }
 
+            // Eventos de Swiper para monitorear su funcionamiento
+            swiper.on('slideChange', function() {
+                console.log('Slide cambiado a:', swiper.activeIndex);
+            });
+
+            swiper.on('autoplayStart', function() {
+                console.log('Autoplay iniciado');
+            });
+
+            swiper.on('autoplayStop', function() {
+                console.log('Autoplay detenido');
+            });
+
+            // Verificar que el carrusel esté funcionando
+            setTimeout(function() {
+                if (swiper.autoplay && swiper.autoplay.running) {
+                    console.log('El carrusel está funcionando correctamente');
+                } else {
+                    console.warn('El carrusel no está reproduciendo automáticamente. Reiniciando...');
+                    swiper.autoplay.start();
+                }
+            }, 5000);
+
             // Si hay formulario, configurarlo para que al enviarlo muestre el carrusel
             if (loginForm) {
                 loginForm.addEventListener('submit', function(e) {
@@ -360,6 +457,12 @@
                     // Ocultar formulario y mostrar carrusel
                     formSection.classList.add('hidden');
                     carouselSection.classList.remove('hidden');
+
+                    // Reiniciar Swiper para asegurar que funcione después de mostrar el contenedor
+                    setTimeout(function() {
+                        swiper.update();
+                        swiper.autoplay.start();
+                    }, 100);
 
                     // Iniciar cuenta regresiva
                     iniciarContador();

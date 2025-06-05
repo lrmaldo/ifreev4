@@ -95,7 +95,29 @@ class ZonaController extends Controller
         // Debug: Imprimir las campañas activas para revisar
         \Log::info('Campañas activas para la zona ' . $zona->id . ': ' . $campanasActivas->count());
         foreach ($campanasActivas as $campana) {
-            \Log::info('Campaña ID: ' . $campana->id . ', Tipo: ' . $campana->tipo . ', Archivo: ' . $campana->archivo_path);
+            \Log::info('Campaña ID: ' . $campana->id . ', Título: ' . $campana->titulo . ', Tipo: ' . $campana->tipo . ', Archivo: ' . $campana->archivo_path);
+        }
+
+        // Forzar recarga de relaciones de la base de datos para asegurarnos de tener datos actualizados
+        try {
+            // Refrescar manualmente las relaciones en la tabla pivot
+            $relacionesPivot = \DB::table('campana_zona')->where('zona_id', $zona->id)->get();
+            \Log::info("Relaciones en tabla pivot para zona {$zona->id}: " . $relacionesPivot->count());
+
+            // Si no hay relaciones en la tabla pivot pero hay campañas activas, crearlas
+            if ($relacionesPivot->isEmpty() && !$campanasActivas->isEmpty()) {
+                \Log::info("Creando relaciones pivot que faltan para {$campanasActivas->count()} campañas activas");
+                foreach ($campanasActivas as $campana) {
+                    \DB::table('campana_zona')->insert([
+                        'zona_id' => $zona->id,
+                        'campana_id' => $campana->id,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error("Error verificando relaciones pivot: " . $e->getMessage());
         }
 
         // Preparamos un array con los tipos de campañas
@@ -111,12 +133,12 @@ class ZonaController extends Controller
                 return true;
             }
 
-            $tipo = strtolower($campana->tipo);
+            $tipo = strtolower($campana->tipo ?? '');
             return $tipo === 'imagen' || $tipo === 'imagenes' || $tipo === 'image' || $tipo === 'img' ||
                    strpos($tipo, 'imag') !== false;
         });
 
-
+        \Log::info("Campañas de tipo imagen encontradas: " . $campanasImagenes->count());
 
         // Inicializar variables
         $campanaSeleccionada = null;
@@ -160,34 +182,69 @@ class ZonaController extends Controller
             } else {
                 // Para modo prioridad, tomamos la de mayor prioridad como principal
                 $campanaSeleccionada = $campanasImagenes->sortBy('prioridad')->first();
-            }            // Obtener todas las imágenes de las campañas seleccionadas
+            }
+
+            // Asegurar que la campaña seleccionada se asocie correctamente con esta zona
+            if ($campanaSeleccionada) {
+                try {
+                    // Verificar si la relación ya existe
+                    if (!\DB::table('campana_zona')->where('zona_id', $zona->id)->where('campana_id', $campanaSeleccionada->id)->exists()) {
+                        \Log::info("Asociando campaña seleccionada en previewCarrusel: Zona {$zona->id} con Campaña {$campanaSeleccionada->id}");
+                        $zona->campanas()->attach($campanaSeleccionada->id);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error("Error al asociar campaña seleccionada con zona en previewCarrusel: " . $e->getMessage());
+                }
+            }
+
+            // Obtener todas las imágenes de las campañas seleccionadas
             foreach ($campanasAMostrar as $campana) {
+                \Log::info("Procesando campaña ID {$campana->id} para carrusel, archivo_path: " . ($campana->archivo_path ?? 'null'));
+
                 if ($campana->archivo_path) {
-                    // Verificar si el archivo existe físicamente
-                    $localPath = public_path('storage/' . $campana->archivo_path);
+                    // Intentar varias rutas posibles hasta encontrar una que funcione
+                    $posiblesRutas = [
+                        // Ruta directa desde storage
+                        public_path('storage/' . $campana->archivo_path),
+                        // Ruta para archivos guardados con Storage::put
+                        public_path($campana->archivo_path),
+                        // Ruta para archivos en la carpeta específica de campañas/imagenes
+                        public_path('storage/campanas/imagenes/' . basename($campana->archivo_path)),
+                        // Ruta absoluta si el archivo_path ya es una ruta completa
+                        public_path($campana->archivo_path),
+                    ];
 
-                    if (file_exists($localPath)) {
-                        // Si el archivo existe físicamente, usamos la ruta correcta
-                        $rutaImagen = '/storage/' . $campana->archivo_path;
-                        $imagenes[] = $rutaImagen;
-                    } else {
-                        // Si no existe, intentamos generar rutas alternativas
+                    $rutaEncontrada = false;
+                    $rutaImagen = '';
 
-                        // Comprobamos si el archivo es una ruta relativa o absoluta
-                        if (strpos($campana->archivo_path, '/') === 0) {
-                            // Es una ruta absoluta, la usamos directamente
-                            $imagenes[] = $campana->archivo_path;
-                        } else {
-                            // Verificamos si existe en public/storage directamente
-                            $altPath = public_path('storage/campanas/imagenes/' . basename($campana->archivo_path));
-                            if (file_exists($altPath)) {
+                    foreach ($posiblesRutas as $index => $ruta) {
+                        \Log::info("Comprobando ruta #{$index}: {$ruta}");
+                        if (file_exists($ruta)) {
+                            // Convertir ruta de archivo a URL
+                            if ($index == 0) {
+                                $rutaImagen = '/storage/' . $campana->archivo_path;
+                            } elseif ($index == 1) {
+                                $rutaImagen = '/' . $campana->archivo_path;
+                            } elseif ($index == 2) {
                                 $rutaImagen = '/storage/campanas/imagenes/' . basename($campana->archivo_path);
-                                $imagenes[] = $rutaImagen;
                             } else {
-                                // Intentar con el Storage::url como último recurso
-                                $rutaImagen = Storage::url($campana->archivo_path);
-                                $imagenes[] = $rutaImagen;
+                                $rutaImagen = '/' . ltrim($campana->archivo_path, '/');
                             }
+
+                            \Log::info("Archivo encontrado, URL para carrusel: {$rutaImagen}");
+                            $rutaEncontrada = true;
+                            $imagenes[] = $rutaImagen;
+                            break;
+                        }
+                    }
+
+                    // Si no encontramos el archivo, intentar con Storage::url como último recurso
+                    if (!$rutaEncontrada) {
+                        try {
+                            $rutaImagen = Storage::url($campana->archivo_path);
+                            $imagenes[] = $rutaImagen;
+                        } catch (\Exception $e) {
+                            \Log::error("Error al obtener URL del archivo: " . $e->getMessage());
                         }
                     }
 
@@ -275,6 +332,19 @@ class ZonaController extends Controller
                 $campanaSeleccionada = $campanasVideo->sortBy('prioridad')->first();
             }
 
+            // Asegurar que la campaña seleccionada se asocie correctamente con esta zona
+            if ($campanaSeleccionada) {
+                try {
+                    // Verificar si la relación ya existe
+                    if (!\DB::table('campana_zona')->where('zona_id', $zona->id)->where('campana_id', $campanaSeleccionada->id)->exists()) {
+                        \Log::info("Asociando campaña seleccionada en previewVideo: Zona {$zona->id} con Campaña {$campanaSeleccionada->id}");
+                        $zona->campanas()->attach($campanaSeleccionada->id);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error("Error al asociar campaña seleccionada con zona en previewVideo: " . $e->getMessage());
+                }
+            }
+
             // Obtener video de la campaña seleccionada
             if ($campanaSeleccionada && $campanaSeleccionada->archivo_path) {
                 // Cargar el video almacenado en la campaña
@@ -359,6 +429,19 @@ class ZonaController extends Controller
                 $campanaSeleccionada = $campanasVideo->sortBy('prioridad')->first();
             }
 
+            // Asegurar que la campaña de video seleccionada se asocie correctamente con esta zona
+            if ($campanaSeleccionada) {
+                try {
+                    // Verificar si la relación ya existe
+                    if (!\DB::table('campana_zona')->where('zona_id', $zona->id)->where('campana_id', $campanaSeleccionada->id)->exists()) {
+                        \Log::info("Asociando campaña de video en previewCampana: Zona {$zona->id} con Campaña {$campanaSeleccionada->id}");
+                        $zona->campanas()->attach($campanaSeleccionada->id);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error("Error al asociar campaña de video con zona en previewCampana: " . $e->getMessage());
+                }
+            }
+
             // Preparar contenido de video
             if ($campanaSeleccionada && $campanaSeleccionada->archivo_path) {
                 // Cargar el video almacenado en la campaña
@@ -383,6 +466,19 @@ class ZonaController extends Controller
                 $campanaSeleccionada = $campanasImagenes->random();
             } else { // prioridad
                 $campanaSeleccionada = $campanasImagenes->sortBy('prioridad')->first();
+            }
+
+            // Asegurar que la campaña de imágenes seleccionada se asocie correctamente con esta zona
+            if ($campanaSeleccionada) {
+                try {
+                    // Verificar si la relación ya existe
+                    if (!\DB::table('campana_zona')->where('zona_id', $zona->id)->where('campana_id', $campanaSeleccionada->id)->exists()) {
+                        \Log::info("Asociando campaña de imágenes en previewCampana: Zona {$zona->id} con Campaña {$campanaSeleccionada->id}");
+                        $zona->campanas()->attach($campanaSeleccionada->id);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error("Error al asociar campaña de imágenes con zona en previewCampana: " . $e->getMessage());
+                }
             }
 
             // Preparar contenido de imágenes
