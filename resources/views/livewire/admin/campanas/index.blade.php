@@ -14,6 +14,12 @@
             </div>
         @endif
 
+        @if (session()->has('error'))
+            <div class="bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-300 px-4 py-3 rounded relative m-4" role="alert">
+                <span class="block sm:inline">{{ session('error') }}</span>
+            </div>
+        @endif
+
         <!-- Filtros -->
         <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 dark:bg-zinc-900 dark:border-zinc-700">
             <div class="flex flex-wrap gap-4">
@@ -225,13 +231,20 @@
                                                 <span class="text-xs text-gray-500">(Dejar en blanco para mantener el actual)</span>
                                             @endif
                                         </label>
-                                        <input type="file" wire:model="archivo" id="archivo" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <input type="file" wire:model="archivo" id="archivo"
+                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                            @if($tipo === 'imagen')
+                                                accept="image/*"
+                                            @else
+                                                accept=".mp4,.mov,.ogg,.qt,.webm,.mpeg,.avi,video/*"
+                                            @endif>
+
                                         <div class="mt-2">
                                             @if ($archivo)
                                                 @if($tipo === 'imagen')
                                                     <img src="{{ $archivo->temporaryUrl() }}" class="h-20 w-auto">
                                                 @else
-                                                    <span class="text-sm text-gray-500">Video seleccionado: {{ $archivo->getClientOriginalName() }}</span>
+                                                    <span class="text-sm text-gray-500">Video seleccionado: {{ $archivo->getClientOriginalName() }} ({{ round($archivo->getSize() / 1048576, 2) }} MB)</span>
                                                 @endif
                                             @elseif($editando && $archivo_actual)
                                                 @if($tipo === 'imagen')
@@ -241,7 +254,22 @@
                                                 @endif
                                             @endif
                                         </div>
-                                        @error('archivo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+
+                                        @if ($tipo === 'video')
+                                            <div class="mt-2 text-xs text-gray-500">
+                                                Formatos permitidos: MP4, MOV, OGG, WebM, MPEG, AVI (máx. 100MB)
+                                            </div>
+                                            @if ($errors->has('archivo'))
+                                                <div class="mt-2 p-2 bg-red-100 text-red-700 text-xs rounded">
+                                                    <strong>Problema con el archivo:</strong> {{ $errors->first('archivo') }}
+                                                    <br>
+                                                    Si el archivo es muy grande (más de 100MB), considera usar el
+                                                    <a href="{{ url('/') }}/video-compressor.php" target="_blank" class="underline">compresor de videos</a>.
+                                                </div>
+                                            @endif
+                                        @else
+                                            @error('archivo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                        @endif
                                     </div>
                                     <!-- Visibilidad -->
                                     <div class="space-y-3">

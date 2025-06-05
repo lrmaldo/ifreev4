@@ -77,7 +77,7 @@ class Index extends Component
             // Para creación o cuando se sube un nuevo archivo en edición
             $validacionArchivo = $this->tipo === 'imagen'
                 ? ($this->editando ? 'nullable|image|max:2048' : 'required|image|max:2048')
-                : ($this->editando ? 'nullable|mimetypes:video/mp4,video/quicktime|max:20480' : 'required|mimetypes:video/mp4,video/quicktime|max:20480');
+                : ($this->editando ? 'nullable|mimes:mp4,mov,ogg,qt,webm,mpeg,avi|max:102400' : 'required|mimes:mp4,mov,ogg,qt,webm,mpeg,avi|max:102400');
 
             $rules['archivo'] = $validacionArchivo;
         }
@@ -112,7 +112,7 @@ class Index extends Component
         if (!$this->editando) {
             $this->resetForm();
             $this->showModal = true;
-            
+
             // Despachar evento para inicializar el JavaScript con las zonas seleccionadas
             $this->dispatch('initializeZonasSelect', $this->zonas_ids);
         }
@@ -129,28 +129,42 @@ class Index extends Component
     // Guardar la campaña
     public function save()
     {
-        $this->validate();
+        try {
+            $this->validate();
 
-        // Subir archivo
-        $archivoPath = $this->archivo_actual;
+            // Subir archivo
+            $archivoPath = $this->archivo_actual;
 
-        if ($this->archivo) {
-            // Si hay un archivo nuevo, eliminar el anterior si estamos editando
-            if ($this->editando && $this->archivo_actual) {
-                Storage::disk('public')->delete($this->archivo_actual);
+            if ($this->archivo) {
+                // Si hay un archivo nuevo, eliminar el anterior si estamos editando
+                if ($this->editando && $this->archivo_actual) {
+                    Storage::disk('public')->delete($this->archivo_actual);
+                }
+
+                // Generar un nombre único para el archivo
+                $extension = $this->archivo->getClientOriginalExtension();
+                $nombreArchivo = time() . '_' . Str::random(10) . '.' . $extension;
+
+                // Subir el archivo
+                $carpeta = $this->tipo === 'imagen' ? 'campanas/imagenes' : 'campanas/videos';
+                $archivoPath = $this->archivo->storeAs($carpeta, $nombreArchivo, 'public');
+                
+                // Log para debugging
+                \Log::info('Archivo subido correctamente', [
+                    'tipo' => $this->tipo,
+                    'nombre_original' => $this->archivo->getClientOriginalName(),
+                    'extension' => $extension,
+                    'tamaño' => $this->archivo->getSize(),
+                    'mime_type' => $this->archivo->getMimeType(),
+                    'ruta' => $archivoPath
+                ]);
+            } elseif (!$this->editando || !$this->archivo_actual) {
+                // Si no hay archivo y no estamos editando, o estamos editando pero no hay archivo actual
+                throw new \Exception("Se requiere un archivo " . ($this->tipo === 'imagen' ? 'de imagen' : 'de video'));
             }
 
-            // Generar un nombre único para el archivo
-            $extension = $this->archivo->getClientOriginalExtension();
-            $nombreArchivo = time() . '_' . Str::random(10) . '.' . $extension;
-
-            // Subir el archivo
-            $carpeta = $this->tipo === 'imagen' ? 'campanas/imagenes' : 'campanas/videos';
-            $archivoPath = $this->archivo->storeAs($carpeta, $nombreArchivo, 'public');
-        }
-
-        // Crear o actualizar la campaña
-        $data = [
+            // Crear o actualizar la campaña
+            $data = [
             'titulo' => $this->titulo,
             'descripcion' => $this->descripcion,
             'enlace' => $this->enlace,
@@ -177,6 +191,20 @@ class Index extends Component
         }
 
         $this->closeModal();
+        } catch (\Exception $e) {
+            // Log el error
+            \Log::error('Error al guardar campaña', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'tipo' => $this->tipo,
+                'tiene_archivo' => !empty($this->archivo),
+                'editando' => $this->editando,
+                'archivo_actual' => $this->archivo_actual
+            ]);
+            
+            // Mostrar mensaje de error al usuario
+            session()->flash('error', 'Error al guardar: ' . $e->getMessage());
+        }
     }
 
     // Editar una campaña existente
@@ -198,15 +226,15 @@ class Index extends Component
         $this->archivo_actual = $campana->archivo_path;
         $this->cliente_id = $campana->cliente_id;
         $this->prioridad = $campana->prioridad;
-        
+
         // Asegurarnos que las zonas se cargan correctamente
         $this->zonas_ids = $campana->zonas->pluck('id')->toArray();
-        
+
         $this->showModal = true;
-        
+
         // Esperar a que el DOM se actualice antes de inicializar Select2
         $this->dispatch('initializeZonasSelect', $this->zonas_ids);
-        
+
         // Para debugging
         $this->dispatch('consolelog', 'Zonas cargadas para edición: ' . implode(', ', $this->zonas_ids));
     }

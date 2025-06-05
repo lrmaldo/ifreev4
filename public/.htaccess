@@ -23,3 +23,29 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Aumentar límites de subida para PHP - para mod_php
+<IfModule mod_php.c>
+    php_value upload_max_filesize 100M
+    php_value post_max_size 100M
+    php_value memory_limit 256M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>
+
+# Aumentar límites para PHP-CGI o PHP-FPM
+<IfModule mod_fcgid.c>
+    FcgidMaxRequestLen 104857600
+    FcgidIOTimeout 300
+</IfModule>
+
+# Alternativa para PHP-FPM
+<IfModule mod_fastcgi.c>
+    FastCgiServer /usr/bin/php-cgi -idle-timeout 300 -processes 1
+</IfModule>
+
+# Aumentar límite de POST para Apache
+<IfModule mod_security.c>
+    SecRequestBodyLimit 104857600
+    SecRequestBodyNoFilesLimit 104857600
+</IfModule>
