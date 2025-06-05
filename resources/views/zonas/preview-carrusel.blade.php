@@ -37,6 +37,20 @@
             --animation-speed: 0.3s;
         }
 
+        /* Animación de pulso personalizada */
+        @keyframes custom-pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .animate-pulse {
+            animation: custom-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
         /* Estilos globales */
         body {
             font-family: 'Inter', 'Poppins', sans-serif;
@@ -297,10 +311,73 @@
                     <div class="ml-2">segundos para tu acceso</div>
                 </div>
 
-                @if($zona->tipo_registro == 'sin_registro' || !$mostrarFormulario)
-                <div class="text-center mt-6 text-sm text-gray-500">
-                    <p>Serás conectado automáticamente cuando termine la cuenta regresiva</p>
+                <!-- Mensaje de espera visible para todos los tipos de autenticación -->
+                <div class="text-center mt-2 text-sm text-gray-500">
+                    @if($zona->tipo_autenticacion_mikrotik == 'sin_autenticacion')
+                        <p id="auto-connect-message">Serás conectado automáticamente cuando termine la cuenta regresiva</p>
+                    @elseif($zona->tipo_autenticacion_mikrotik == 'pin')
+                        <p>Cuando termine la cuenta regresiva, ingresa el PIN o conéctate gratis</p>
+                    @elseif($zona->tipo_autenticacion_mikrotik == 'usuario_password')
+                        <p>Cuando termine la cuenta regresiva, ingresa tus credenciales o conéctate gratis</p>
+                    @endif
                 </div>
+
+                <!-- Botón de conexión gratuita para todos los tipos de autenticación (oculto inicialmente) -->
+                <div id="free-connection-container" class="text-center mt-6 mb-4 animate-pulse" style="display: none;">
+                    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 mb-3 rounded">
+                        <p class="text-sm">¿No tienes credenciales? Prueba nuestra conexión gratuita:</p>
+                    </div>
+                    <button id="free-connection-button" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 text-lg flex items-center mx-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                        </svg>
+                        ¡Conéctate Gratis Aquí!
+                    </button>
+                </div>
+
+                @if($zona->tipo_registro == 'sin_registro' || !$mostrarFormulario)
+                    @if($zona->tipo_autenticacion_mikrotik == 'pin')
+                        <!-- Formulario para autenticación con PIN -->
+                        <div class="mt-6 bg-gray-50 rounded-md p-4 border border-gray-200">
+                            <h3 class="text-md font-semibold mb-3">Ingresa el PIN de acceso</h3>
+                            <form id="mikrotik-pin-form" class="space-y-2">
+                                <div>
+                                    <label for="pin" class="sr-only">PIN</label>
+                                    <input type="text" id="pin" name="pin" placeholder="Introduce el PIN"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary">
+                                </div>
+                                <button type="submit" class="btn-primary py-2">
+                                    Conectar
+                                </button>
+                                <div class="text-center text-xs text-gray-500 mt-2">
+                                    <p>Solicita tu PIN al establecimiento</p>
+                                </div>
+                            </form>
+                        </div>
+                    @elseif($zona->tipo_autenticacion_mikrotik == 'usuario_password')
+                        <!-- Formulario para autenticación con Usuario y Contraseña -->
+                        <div class="mt-6 bg-gray-50 rounded-md p-4 border border-gray-200">
+                            <h3 class="text-md font-semibold mb-3">Ingresa tus credenciales</h3>
+                            <form id="mikrotik-user-form" class="space-y-2">
+                                <div>
+                                    <label for="username" class="sr-only">Usuario</label>
+                                    <input type="text" id="username" name="username" placeholder="Usuario"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary mb-2">
+                                </div>
+                                <div>
+                                    <label for="password" class="sr-only">Contraseña</label>
+                                    <input type="password" id="password" name="password" placeholder="Contraseña"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary">
+                                </div>
+                                <button type="submit" class="btn-primary py-2">
+                                    Conectar
+                                </button>
+                                <div class="text-center text-xs text-gray-500 mt-2">
+                                    <p>Utiliza tus credenciales de acceso</p>
+                                </div>
+                            </form>
+                        </div>
+                    @endif
                 @endif
             </div>
         </div>
@@ -397,9 +474,53 @@
 
                     if (tiempoRestante <= 0) {
                         clearInterval(countdownInterval);
-                        // En un entorno real, aquí redireccionaríamos al usuario
-                        // o lo autenticaríamos en el router Mikrotik
-                        alert('¡Conectado! Ahora tienes acceso a Internet.');
+
+                        // Mostrar botón de conexión gratuita en todos los casos
+                        const freeConnectionContainer = document.getElementById('free-connection-container');
+                        if (freeConnectionContainer) {
+                            freeConnectionContainer.style.display = 'block';
+                        }
+
+                        // Ocultar mensaje automático si existe
+                        const autoConnectMsg = document.getElementById('auto-connect-message');
+                        if (autoConnectMsg) {
+                            autoConnectMsg.style.display = 'none';
+                        }
+
+                        // Adicionalmente, dependiendo del tipo de autenticación, resaltar los formularios
+                        @if($zona->tipo_autenticacion_mikrotik == 'pin')
+                            // Mostrar el formulario de PIN con algún efecto
+                            const pinForm = document.getElementById('mikrotik-pin-form');
+                            if (pinForm) {
+                                // Si hay un contenedor padre, podemos añadir efectos
+                                const pinContainer = pinForm.closest('.mt-6');
+                                if (pinContainer) {
+                                    pinContainer.classList.add('shadow-lg');
+                                    pinContainer.classList.add('border-green-400');
+                                    pinContainer.style.transition = 'all 0.3s ease';
+                                    pinContainer.style.transform = 'scale(1.03)';
+                                    setTimeout(() => {
+                                        pinContainer.style.transform = 'scale(1)';
+                                    }, 500);
+                                }
+                            }
+                        @elseif($zona->tipo_autenticacion_mikrotik == 'usuario_password')
+                            // Mostrar el formulario de usuario/contraseña con algún efecto
+                            const userForm = document.getElementById('mikrotik-user-form');
+                            if (userForm) {
+                                // Si hay un contenedor padre, podemos añadir efectos
+                                const userContainer = userForm.closest('.mt-6');
+                                if (userContainer) {
+                                    userContainer.classList.add('shadow-lg');
+                                    userContainer.classList.add('border-green-400');
+                                    userContainer.style.transition = 'all 0.3s ease';
+                                    userContainer.style.transform = 'scale(1.03)';
+                                    setTimeout(() => {
+                                        userContainer.style.transform = 'scale(1)';
+                                    }, 500);
+                                }
+                            }
+                        @endif
 
                         // Podríamos usar una llamada AJAX para registrar la visualización
                         // y autorizar al usuario en el router
@@ -468,11 +589,70 @@
                     iniciarContador();
                 });
             }
-            // Si es modo sin registro o no hay campos configurados, iniciar contador automáticamente
+            // Configuración para formularios de autenticación Mikrotik
+            const mikrotikPinForm = document.getElementById('mikrotik-pin-form');
+            const mikrotikUserForm = document.getElementById('mikrotik-user-form');
+
+            // Si existe el formulario de PIN
+            if (mikrotikPinForm) {
+                mikrotikPinForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const pin = document.getElementById('pin').value;
+
+                    if (!pin) {
+                        alert('Por favor ingresa el PIN');
+                        return;
+                    }
+
+                    // En producción, aquí enviaríamos el PIN al router Mikrotik
+                    // Por ahora mostramos un mensaje de éxito
+                    console.log('PIN enviado:', pin);
+                    alert('Conectado con éxito. Disfruta tu navegación.');
+
+                    // Simulamos la redirección
+                    // window.location.href = '{{ $mikrotikData["link-orig"] ?? "https://www.google.com" }}';
+                });
+            }
+
+            // Si existe el formulario de usuario y contraseña
+            if (mikrotikUserForm) {
+                mikrotikUserForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+
+                    if (!username || !password) {
+                        alert('Por favor ingresa usuario y contraseña');
+                        return;
+                    }
+
+                    // En producción, aquí enviaríamos las credenciales al router Mikrotik
+                    console.log('Credenciales enviadas:', { username, password });
+                    alert('Conectado con éxito. Disfruta tu navegación.');
+
+                    // Simulamos la redirección
+                    // window.location.href = '{{ $mikrotikData["link-orig"] ?? "https://www.google.com" }}';
+                });
+            }
+
+            // Iniciar contador automáticamente en todos los casos
             @if($zona->tipo_registro == 'sin_registro' || !$mostrarFormulario)
-                // Iniciar cuenta regresiva directamente
+                // Iniciar cuenta regresiva directamente para todos los tipos de autenticación
                 iniciarContador();
             @endif
+
+            // Configurar botón de conexión gratuita
+            const freeConnectionButton = document.getElementById('free-connection-button');
+            if (freeConnectionButton) {
+                freeConnectionButton.addEventListener('click', function() {
+                    // En producción, aquí enviaríamos la solicitud al router Mikrotik
+                    console.log('Conexión gratuita solicitada');
+                    alert('¡Conectado! Ahora tienes acceso a Internet.');
+
+                    // Simulamos la redirección
+                    // window.location.href = '{{ $mikrotikData["link-orig"] ?? "https://www.google.com" }}';
+                });
+            }
         });
     </script>
 </body>

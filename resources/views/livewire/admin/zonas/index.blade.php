@@ -1188,6 +1188,34 @@
                             <div class="mb-4 p-3 bg-gray-50 rounded">
                                 <h5 class="font-bold">3. Configurar autenticación</h5>
                                 <p>Tipo de autenticación configurado: <strong>{{ $activeZonaForInstructions->tipo_autenticacion_mikrotik_label }}</strong></p>
+                                
+                                @if($activeZonaForInstructions->tipo_autenticacion_mikrotik == 'pin')
+                                    <div class="mt-2">
+                                        <p>Para la autenticación por PIN:</p>
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            <li>Los usuarios solo necesitan ingresar un código PIN para autenticarse.</li>
+                                            <li>Debes crear usuarios en Mikrotik donde el nombre de usuario sea el PIN.</li>
+                                            <li>La contraseña puede ser la misma que el PIN o dejarla vacía.</li>
+                                        </ul>
+                                    </div>
+                                @elseif($activeZonaForInstructions->tipo_autenticacion_mikrotik == 'usuario_password')
+                                    <div class="mt-2">
+                                        <p>Para la autenticación por Usuario y Contraseña:</p>
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            <li>Los usuarios deberán ingresar tanto el nombre de usuario como la contraseña.</li>
+                                            <li>Debes crear usuarios en Mikrotik con sus respectivos nombres y contraseñas.</li>
+                                        </ul>
+                                    </div>
+                                @elseif($activeZonaForInstructions->tipo_autenticacion_mikrotik == 'sin_autenticacion')
+                                    <div class="mt-2">
+                                        <p>Sin Autenticación Mikrotik:</p>
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            <li>Los usuarios serán conectados automáticamente sin necesidad de ingresar credenciales.</li>
+                                            <li>Se mostrará un contador regresivo y al finalizar se realizará la conexión.</li>
+                                            <li>Ideal para zonas con registro mínimo o sin registro de usuarios.</li>
+                                        </ul>
+                                    </div>
+                                @endif
                             </div>
                         @else
                             <p class="text-red-500">No se ha seleccionado ninguna zona.</p>

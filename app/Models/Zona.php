@@ -199,13 +199,24 @@ class Zona extends Model
     {
         return [
             'pin' => 'PIN',
-            'usuario_password' => 'Usuario y Contraseña'
+            'usuario_password' => 'Usuario y Contraseña',
+            'sin_autenticacion' => 'Sin Autenticación'
         ];
     }
 
     public function getTipoAutenticacionMikrotikLabelAttribute()
     {
         return $this->getTipoAutenticacionMikrotikOptions()[$this->tipo_autenticacion_mikrotik] ?? 'PIN';
+    }
+
+    /**
+     * Verifica si la zona requiere autenticación Mikrotik
+     *
+     * @return bool
+     */
+    public function getRequiereAutenticacionMikrotikAttribute()
+    {
+        return $this->tipo_autenticacion_mikrotik !== 'sin_autenticacion';
     }
 
     /**

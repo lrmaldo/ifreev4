@@ -53,7 +53,7 @@ class Index extends Component
         'zona.segundos' => 'required|integer|min:5',
         'zona.tipo_registro' => 'required|string|in:formulario,redes,sin_registro',
         'zona.login_sin_registro' => 'boolean',
-        'zona.tipo_autenticacion_mikrotik' => 'required|string|in:pin,usuario_password',
+        'zona.tipo_autenticacion_mikrotik' => 'required|string|in:pin,usuario_password,sin_autenticacion',
         'zona.script_head' => 'nullable|string',
         'zona.script_body' => 'nullable|string',
     ];

@@ -89,6 +89,14 @@ class ZonaController extends Controller
             $camposHtml[] = $this->renderizarCampo($campo);
         }
 
+        // Verificar el tipo de autenticación Mikrotik
+        if (!in_array($zona->tipo_autenticacion_mikrotik, ['pin', 'usuario_password', 'sin_autenticacion'])) {
+            // Si no tiene un tipo válido, establecer el valor predeterminado
+            $zona->tipo_autenticacion_mikrotik = 'sin_autenticacion';
+        }
+
+        \Log::info("Tipo de autenticación Mikrotik para zona {$zona->id}: {$zona->tipo_autenticacion_mikrotik}");
+
         // Obtener campañas activas de la zona usando el método del modelo
         $campanasActivas = $zona->getCampanasActivas();
 
