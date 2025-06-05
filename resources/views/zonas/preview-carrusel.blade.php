@@ -325,7 +325,11 @@
                 <!-- Botón de conexión gratuita para todos los tipos de autenticación (oculto inicialmente) -->
                 <div id="free-connection-container" class="text-center mt-6 mb-4 animate-pulse" style="display: none;">
                     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 mb-3 rounded">
-                        <p class="text-sm">¿No tienes credenciales? Prueba nuestra conexión gratuita:</p>
+                        @if($zona->tipo_autenticacion_mikrotik == 'sin_autenticacion')
+                            <p class="text-sm">Tu conexión estará lista en unos instantes:</p>
+                        @else
+                            <p class="text-sm">¿No tienes credenciales? Prueba nuestra conexión gratuita:</p>
+                        @endif
                     </div>
                     <button id="free-connection-button" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 text-lg flex items-center mx-auto">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
