@@ -148,7 +148,7 @@ class Index extends Component
                 // Subir el archivo
                 $carpeta = $this->tipo === 'imagen' ? 'campanas/imagenes' : 'campanas/videos';
                 $archivoPath = $this->archivo->storeAs($carpeta, $nombreArchivo, 'public');
-                
+
                 // Log para debugging
                 \Log::info('Archivo subido correctamente', [
                     'tipo' => $this->tipo,
@@ -201,7 +201,7 @@ class Index extends Component
                 'editando' => $this->editando,
                 'archivo_actual' => $this->archivo_actual
             ]);
-            
+
             // Mostrar mensaje de error al usuario
             session()->flash('error', 'Error al guardar: ' . $e->getMessage());
         }
@@ -265,6 +265,9 @@ class Index extends Component
     {
         // Reiniciamos el archivo cuando cambia el tipo para evitar validaciones cruzadas
         $this->reset('archivo');
+
+        // Emitimos un evento para informar que el tipo ha cambiado
+        $this->dispatch('tipo-changed', tipo: $this->tipo);
     }
 
     /**

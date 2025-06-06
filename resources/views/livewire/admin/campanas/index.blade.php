@@ -199,11 +199,11 @@
                                         <label class="block text-sm font-medium text-gray-700">Tipo de campaña</label>
                                         <div class="mt-2 space-x-4">
                                             <label class="inline-flex items-center">
-                                                <input type="radio" wire:model="tipo" value="imagen" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <input type="radio" wire:model.live="tipo" value="imagen" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
                                                 <span class="ml-2 text-sm text-gray-700">Imagen</span>
                                             </label>
                                             <label class="inline-flex items-center">
-                                                <input type="radio" wire:model="tipo" value="video" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <input type="radio" wire:model.live="tipo" value="video" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
                                                 <span class="ml-2 text-sm text-gray-700">Video</span>
                                             </label>
                                         </div>
@@ -225,19 +225,18 @@
 
                                     <!-- Archivo -->
                                     <div>
-                                        <label for="archivo" class="block text-sm font-medium text-gray-700">
+                                        <label for="archivo-{{ $tipo }}" class="block text-sm font-medium text-gray-700">
                                             {{ $tipo === 'imagen' ? 'Imagen' : 'Video' }}
                                             @if($editando && $archivo_actual)
                                                 <span class="text-xs text-gray-500">(Dejar en blanco para mantener el actual)</span>
                                             @endif
                                         </label>
-                                        <input type="file" wire:model="archivo" id="archivo"
+                                        <!-- Usamos un ID único dinámico basado en el tipo -->
+                                        <input type="file" 
+                                            wire:model="archivo" 
+                                            id="archivo-{{ $tipo }}" 
                                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                            @if($tipo === 'imagen')
-                                                accept="image/*"
-                                            @else
-                                                accept=".mp4,.mov,.ogg,.qt,.webm,.mpeg,.avi,video/*"
-                                            @endif>
+                                            accept="{{ $tipo === 'imagen' ? 'image/*' : '.mp4,.mov,.ogg,.qt,.webm,.mpeg,.avi,video/*' }}">
 
                                         <div class="mt-2">
                                             @if ($archivo)
@@ -379,6 +378,20 @@
         console.error('jQuery no está disponible! Cargando jQuery de respaldo...');
         document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"><\/script>');
     }
+    
+    // Script para manejar el cambio de tipo de archivo
+    document.addEventListener('livewire:initialized', function() {
+        Livewire.on('tipo-changed', function(data) {
+            // Limpiamos el input file para que refleje el nuevo tipo
+            const tipoActual = data.tipo;
+            setTimeout(() => {
+                const inputFile = document.getElementById('archivo-'+tipoActual);
+                if (inputFile) {
+                    inputFile.value = '';
+                }
+            }, 100);
+        });
+    });
 </script>
 
 <!-- Select2 CSS y JS -->
