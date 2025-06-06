@@ -232,9 +232,9 @@
                                             @endif
                                         </label>
                                         <!-- Usamos un ID único dinámico basado en el tipo -->
-                                        <input type="file" 
-                                            wire:model="archivo" 
-                                            id="archivo-{{ $tipo }}" 
+                                        <input type="file"
+                                            wire:model="archivo"
+                                            id="archivo-{{ $tipo }}"
                                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                             accept="{{ $tipo === 'imagen' ? 'image/*' : '.mp4,.mov,.ogg,.qt,.webm,.mpeg,.avi,video/*' }}">
 
@@ -341,12 +341,21 @@
                                                     wire:model.live.debounce.500ms="zonas_ids"
                                                     data-livewire-values="{{ json_encode($zonas_ids ?? []) }}">
                                                 @foreach($zonas as $zona)
-                                                    <option value="{{ $zona->id }}" {{ in_array($zona->id, $zonas_ids ?? []) ? 'selected' : '' }}>
+                                                    <option value="{{ $zona->id }}"
+                                                        @if(in_array($zona->id, $zonas_ids ?? [])) selected @endif>
                                                         {{ $zona->nombre }}
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            <small class="mt-1 text-xs text-gray-500">Si el selector no muestra las zonas correctamente, <a href="#" onclick="window.initializeZonasSelect2(); return false;" class="text-indigo-600 hover:underline">haz clic aquí</a> para reinicializarlo.</small>
+                                            <small class="mt-1 text-xs text-gray-500">
+                                                <strong>Estado:</strong>
+                                                @if(!empty($zonas_ids))
+                                                    {{ count($zonas_ids) }} zonas seleccionadas
+                                                    <span class="text-green-600">({{ collect($zonas)->whereIn('id', $zonas_ids)->pluck('nombre')->join(', ') }})</span>
+                                                @else
+                                                    <span class="text-gray-600">Ninguna zona seleccionada</span>
+                                                @endif
+                                            </small>
                                         </div>
                                         @error('zonas_ids') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
@@ -378,7 +387,7 @@
         console.error('jQuery no está disponible! Cargando jQuery de respaldo...');
         document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"><\/script>');
     }
-    
+
     // Script para manejar el cambio de tipo de archivo
     document.addEventListener('livewire:initialized', function() {
         Livewire.on('tipo-changed', function(data) {
@@ -415,19 +424,97 @@
         }
     });
 
-    // Inicializar Select2 automáticamente cuando el modal se abre
-    Livewire.on('initializeZonasSelect', function(zonasIds) {
-        console.log('Evento Livewire initializeZonasSelect recibido:', zonasIds);
+    // Implementación simplificada usando hooks de Livewire 3
+    document.addEventListener("livewire:init", function() {
+        console.log('🚀 Inicializando integración Select2 con Livewire 3');
 
-        // Esperar a que el modal esté completamente renderizado
-        setTimeout(function() {
-            window.initializeZonasSelect2();
-        }, 300);
+        function initializeZonasSelect2() {
+            const element = $("#zonas_select");
+
+            if (!element.length) {
+                console.log('❌ Elemento #zonas_select no encontrado');
+                return;
+            }
+
+            // Destruir Select2 existente si ya está inicializado
+            if (element.hasClass('select2-hidden-accessible')) {
+                console.log('🔄 Destruyendo Select2 existente');
+                element.select2('destroy');
+            }
+
+            console.log('✅ Inicializando Select2');
+            element.select2({
+                placeholder: "Seleccione zonas...",
+                allowClear: true,
+                width: '100%'
+            }).on("change", function() {
+                const values = $(this).val() || [];
+                console.log('📤 Select2 cambió, enviando a Livewire:', values);
+
+                // Usar la instancia global de Livewire para actualizar el componente
+                if (window.Livewire) {
+                    // Encontrar el componente Livewire más cercano
+                    const livewireEl = this.closest('[wire\\:id]');
+                    if (livewireEl) {
+                        const wireId = livewireEl.getAttribute('wire:id');
+                        const component = window.Livewire.find(wireId);
+                        if (component) {
+                            component.set('zonas_ids', values);
+                        }
+                    }
+                } else {
+                    // Fallback usando $wire si está disponible
+                    if (typeof $wire !== 'undefined') {
+                        $wire.set('zonas_ids', values);
+                    }
+                }
+            });
+
+            // Aplicar valores iniciales desde el atributo data-livewire-values
+            const initialValues = element.attr('data-livewire-values');
+            if (initialValues) {
+                try {
+                    const values = JSON.parse(initialValues);
+                    if (Array.isArray(values) && values.length > 0) {
+                        console.log('📝 Aplicando valores iniciales:', values);
+                        element.val(values).trigger('change.select2');
+                    }
+                } catch (e) {
+                    console.error('❌ Error al parsear valores iniciales:', e);
+                }
+            }
+        }
+
+        // Inicializar cuando se carga la página
+        initializeZonasSelect2();
+
+        // Re-inicializar después de cada actualización de Livewire
+        Livewire.hook("morph", () => {
+            console.log('🔄 Hook morph - Reinicializando Select2');
+            setTimeout(() => {
+                initializeZonasSelect2();
+            }, 100);
+        });
+
+        // También escuchar el evento específico de edición de campaña
+        Livewire.on('campanEditLoaded', (data) => {
+            console.log('🎯 Evento campanEditLoaded - Configurando para edición:', data);
+
+            setTimeout(() => {
+                initializeZonasSelect2();
+
+                // Aplicar valores específicos de la campaña
+                if (data && data.zonasIds && data.zonasIds.length > 0) {
+                    const element = $("#zonas_select");
+                    if (element.length) {
+                        console.log('📝 Aplicando zonas de la campaña:', data.zonasIds);
+                        element.val(data.zonasIds).trigger('change.select2');
+                    }
+                }
+            }, 200);
+        });
     });
 </script>
-
-<!-- Script de integración Select2 con Livewire -->
-<script src="{{ asset('js/select2-zonas.js') }}"></script>
 @endpush
 
 

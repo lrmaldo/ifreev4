@@ -111,11 +111,9 @@ class Index extends Component
         // Solo reset si no estamos editando (para no sobreescribir datos de edición)
         if (!$this->editando) {
             $this->resetForm();
-            $this->showModal = true;
-
-            // Despachar evento para inicializar el JavaScript con las zonas seleccionadas
-            $this->dispatch('initializeZonasSelect', $this->zonas_ids);
         }
+
+        $this->showModal = true;
     }
 
     // Cerrar el modal
@@ -213,7 +211,7 @@ class Index extends Component
         $this->editando = true;
         $this->campana_id = $id;
 
-        $campana = Campana::find($id);
+        $campana = Campana::with('zonas')->find($id);
         $this->titulo = $campana->titulo;
         $this->descripcion = $campana->descripcion;
         $this->enlace = $campana->enlace;
@@ -227,16 +225,24 @@ class Index extends Component
         $this->cliente_id = $campana->cliente_id;
         $this->prioridad = $campana->prioridad;
 
-        // Asegurarnos que las zonas se cargan correctamente
-        $this->zonas_ids = $campana->zonas->pluck('id')->toArray();
+        // Cargar zonas relacionadas
+        $zonas_raw = $campana->zonas->pluck('id')->toArray();
+        $this->zonas_ids = array_map('intval', $zonas_raw);
+
+        // Log simplificado para debugging
+        \Log::debug('Editando campaña', [
+            'campana_id' => $id,
+            'zonas_ids' => $this->zonas_ids,
+            'total_zonas' => count($this->zonas_ids)
+        ]);
 
         $this->showModal = true;
 
-        // Esperar a que el DOM se actualice antes de inicializar Select2
-        $this->dispatch('initializeZonasSelect', $this->zonas_ids);
-
-        // Para debugging
-        $this->dispatch('consolelog', 'Zonas cargadas para edición: ' . implode(', ', $this->zonas_ids));
+        // Despachar evento simplificado para Select2
+        $this->dispatch('campanEditLoaded', [
+            'zonasIds' => $this->zonas_ids,
+            'campanaTitulo' => $this->titulo
+        ]);
     }
 
     // Eliminar una campaña
@@ -323,6 +329,14 @@ class Index extends Component
         // Filtrar valores vacíos y asegurarse que son enteros
         $this->zonas_ids = array_map('intval', array_filter($zonasIds));
 
+        // Log para debugging
+        \Log::info('sincronizarZonas llamado', [
+            'zonasIds_recibidas' => $zonasIds,
+            'zonas_ids_procesadas' => $this->zonas_ids,
+            'editando' => $this->editando,
+            'campana_id' => $this->campana_id
+        ]);
+
         // Despachar evento para actualizar el JavaScript con los nuevos valores
         $this->dispatch('zonasActualizadas', $this->zonas_ids);
 
@@ -358,7 +372,15 @@ class Index extends Component
      */
     protected function sincronizarZonasInterno(Campana $campana)
     {
+        // Log para debugging
+        \Log::info('sincronizarZonasInterno llamado', [
+            'campana_id' => $campana->id,
+            'zonas_ids' => $this->zonas_ids,
+            'zonas_ids_count' => count($this->zonas_ids ?? [])
+        ]);
+
         if (empty($this->zonas_ids)) {
+            \Log::info('Desvinculando todas las zonas de la campaña', ['campana_id' => $campana->id]);
             $campana->zonas()->detach();
             return;
         }
@@ -367,6 +389,10 @@ class Index extends Component
 
         // Si es admin, puede asignar cualquier zona
         if ($user->hasRole('admin')) {
+            \Log::info('Admin sincronizando zonas', [
+                'campana_id' => $campana->id,
+                'zonas_ids' => $this->zonas_ids
+            ]);
             $campana->zonas()->sync($this->zonas_ids);
             return;
         }
@@ -376,6 +402,12 @@ class Index extends Component
                                ->whereIn('id', $this->zonas_ids)
                                ->pluck('id')
                                ->toArray();
+
+        \Log::info('Usuario normal sincronizando zonas', [
+            'campana_id' => $campana->id,
+            'zonas_solicitadas' => $this->zonas_ids,
+            'zonas_autorizadas' => $zonasAutorizadas
+        ]);
 
         $campana->zonas()->sync($zonasAutorizadas);
 

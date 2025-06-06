@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Edición Campañas - Select2 con Zonas</title>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f9f9f9; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .select2-container { width: 100% !important; }
+        .debug { background: #f5f5f5; padding: 15px; margin: 20px 0; border-left: 4px solid #007cba; border-radius: 5px; }
+        .button { background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .button:hover { background: #005a8b; }
+        .button.success { background: #28a745; }
+        .button.warning { background: #ffc107; color: #333; }
+        .button.danger { background: #dc3545; }
+        .campana-card { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .campana-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .campana-info { color: #666; font-size: 14px; margin-bottom: 15px; }
+        .log-entry { margin: 5px 0; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        .log-info { background: #e3f2fd; border-left: 4px solid #2196f3; }
+        .log-warn { background: #fff3e0; border-left: 4px solid #ff9800; }
+        .log-error { background: #ffebee; border-left: 4px solid #f44336; }
+        .log-success { background: #e8f5e8; border-left: 4px solid #4caf50; }
+        #debug-log { max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Edición Campañas - Select2 con Zonas</h1>
+
+    <div class="debug">
+        <h3>📊 Simulación de Campañas</h3>
+        <p>Este test simula el problema reportado donde las zonas no se cargan correctamente al editar campañas.</p>
+    </div>
+
+    <!-- Lista de Campañas Simuladas -->
+    <div id="campanas-list">
+        <div class="campana-card">
+            <div class="campana-title">Campaña #1 - test</div>
+            <div class="campana-info">Zonas asignadas: Zona de Prueba, Zona Norte (IDs: 1,2)</div>
+            <button class="button" onclick="editarCampana(1, 'test', [1, 2])">Editar Campaña</button>
+        </div>
+
+        <div class="campana-card">
+            <div class="campana-title">Campaña #2 - test</div>
+            <div class="campana-info">Zonas asignadas: Ninguna (IDs: [])</div>
+            <button class="button" onclick="editarCampana(2, 'test', [])">Editar Campaña</button>
+        </div>
+
+        <div class="campana-card">
+            <div class="campana-title">Campaña #3 - test</div>
+            <div class="campana-info">Zonas asignadas: Ninguna (IDs: [])</div>
+            <button class="button" onclick="editarCampana(3, 'test', [])">Editar Campaña</button>
+        </div>
+    </div>
+
+    <div class="debug">
+        <h3>🛠 Herramientas de Debug</h3>
+        <button class="button warning" onclick="window.select2Debug && window.select2Debug.getStatus ? console.log('Estado Select2:', window.select2Debug.getStatus()) : console.log('select2Debug no disponible')">Ver Estado Select2</button>
+        <button class="button" onclick="window.select2Debug && window.select2Debug.reinitialize ? window.select2Debug.reinitialize() : console.log('reinitialize no disponible')">Reinicializar Select2</button>
+        <button class="button success" onclick="clearLogs()">Limpiar Logs</button>
+    </div>
+
+    <div class="debug">
+        <h3>📝 Logs de Debug (últimos 15):</h3>
+        <div id="debug-log"></div>
+    </div>
+
+    <!-- Modal de Edición -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Editar Campaña</h2>
+
+            <div class="form-group">
+                <label for="titulo">Título de la Campaña:</label>
+                <input type="text" id="titulo" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+
+            <div class="form-group">
+                <label for="zonas_select">Zonas donde mostrar esta campaña:</label>
+                <div wire:ignore>
+                    <select id="zonas_select"
+                            class="select2"
+                            multiple
+                            wire:model.live.debounce.500ms="zonas_ids"
+                            data-livewire-values="[]">
+                        <option value="1">Zona de Prueba</option>
+                        <option value="2">Zona Norte</option>
+                        <option value="3">Zona Sur</option>
+                        <option value="4">Zona Centro</option>
+                        <option value="5">Zona Este</option>
+                        <option value="6">Zona Oeste</option>
+                    </select>
+                </div>
+                <small class="text-gray-500" style="font-size: 12px; color: #666; margin-top: 5px; display: block;">
+                    <strong>Estado actual:</strong><br>
+                    • Zonas seleccionadas: <span id="zonas-info">Ninguna</span><br>
+                    • Total zonas disponibles: 6<br><br>
+                    <strong>Herramientas:</strong><br>
+                    <a href="#" onclick="window.select2Debug && window.select2Debug.reinitialize(); return false;" style="color: #007cba;">Reinicializar</a> |
+                    <a href="#" onclick="console.log('Estado:', window.select2Debug && window.select2Debug.getStatus()); return false;" style="color: #007cba;">Ver estado</a> |
+                    <a href="#" onclick="testUpdateValues(); return false;" style="color: #007cba;">Forzar valores</a>
+                </small>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <button class="button success" onclick="guardarCampana()">Guardar</button>
+                <button class="button" onclick="cerrarModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incluir nuestro script Select2 -->
+    <script src="js/select2-zonas.js"></script>
+
+    <script>
+        // Variables globales para el test
+        let campanasData = {};
+        let currentCampanaId = null;
+        let logs = [];
+
+        // Función para agregar logs con timestamp
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.unshift({ message: logEntry, type: type });
+
+            // Mantener solo los últimos 15 logs
+            if (logs.length > 15) {
+                logs = logs.slice(0, 15);
+            }
+
+            updateLogDisplay();
+            console.log(`[TEST] ${logEntry}`);
+        }
+
+        function updateLogDisplay() {
+            const logContainer = document.getElementById('debug-log');
+            logContainer.innerHTML = logs.map(log =>
+                `<div class="log-entry log-${log.type}">${log.message}</div>`
+            ).join('');
+        }
+
+        function clearLogs() {
+            logs = [];
+            updateLogDisplay();
+        }
+
+        // Simular la función editarCampana del componente Livewire
+        function editarCampana(id, titulo, zonasIds) {
+            addLog(`🎯 Editando campaña ${id} con zonas: [${zonasIds.join(',')}]`, 'info');
+
+            currentCampanaId = id;
+            campanasData[id] = { titulo, zonasIds };
+
+            // Actualizar el modal
+            document.getElementById('modal-title').textContent = `Editar Campaña #${id}`;
+            document.getElementById('titulo').value = titulo;
+
+            // Mostrar el modal
+            document.getElementById('modal').classList.add('active');
+
+            // Simular el evento campanEditLoaded con un pequeño delay para simular Livewire
+            setTimeout(() => {
+                addLog(`📡 Emitiendo evento campanEditLoaded para campaña ${id}`, 'info');
+
+                const eventData = {
+                    zonasIds: zonasIds,
+                    campanaTitulo: titulo
+                };
+
+                // Emitir el evento personalizado
+                document.dispatchEvent(new CustomEvent('campanEditLoaded', {
+                    detail: eventData
+                }));
+
+                addLog(`✅ Evento campanEditLoaded emitido con datos: ${JSON.stringify(eventData)}`, 'success');
+            }, 100);
+        }
+
+        function cerrarModal() {
+            addLog('🔒 Cerrando modal', 'info');
+            document.getElementById('modal').classList.remove('active');
+
+            // Emitir evento de limpieza
+            document.dispatchEvent(new CustomEvent('clearZonasSelect'));
+            addLog('🧹 Evento clearZonasSelect emitido', 'info');
+        }
+
+        function guardarCampana() {
+            if (!currentCampanaId) return;
+
+            const element = document.getElementById('zonas_select');
+            const selectedValues = $(element).val() || [];
+
+            addLog(`💾 Guardando campaña ${currentCampanaId} con zonas: [${selectedValues.join(',')}]`, 'success');
+
+            // Actualizar los datos
+            campanasData[currentCampanaId].zonasIds = selectedValues.map(v => parseInt(v));
+
+            // Actualizar la vista de la campaña
+            updateCampanaDisplay(currentCampanaId);
+
+            cerrarModal();
+        }
+
+        function updateCampanaDisplay(id) {
+            const campana = campanasData[id];
+            if (!campana) return;
+
+            const zonasNames = campana.zonasIds.map(id => {
+                const option = document.querySelector(`#zonas_select option[value="${id}"]`);
+                return option ? option.textContent : `Zona ${id}`;
+            });
+
+            const infoText = campana.zonasIds.length > 0
+                ? `Zonas asignadas: ${zonasNames.join(', ')} (IDs: ${campana.zonasIds.join(',')})`
+                : 'Zonas asignadas: Ninguna (IDs: [])';
+
+            // Buscar y actualizar el elemento en la lista
+            const campanasCards = document.querySelectorAll('.campana-card');
+            campanasCards.forEach(card => {
+                const title = card.querySelector('.campana-title');
+                if (title && title.textContent.includes(`Campaña #${id}`)) {
+                    const info = card.querySelector('.campana-info');
+                    if (info) {
+                        info.textContent = infoText;
+                    }
+                }
+            });
+        }
+
+        function testUpdateValues() {
+            if (!window.select2Debug || !window.select2Debug.updateValues) {
+                addLog('❌ select2Debug.updateValues no está disponible', 'error');
+                return;
+            }
+
+            const testValues = currentCampanaId ? campanasData[currentCampanaId].zonasIds : [1, 3];
+            addLog(`🔧 Forzando valores de prueba: [${testValues.join(',')}]`, 'info');
+            window.select2Debug.updateValues(testValues);
+        }
+
+        function updateZonasInfo() {
+            const element = document.getElementById('zonas_select');
+            if (!element) return;
+
+            const selectedValues = $(element).val() || [];
+            const zonasInfo = document.getElementById('zonas-info');
+
+            if (selectedValues.length > 0) {
+                const names = selectedValues.map(id => {
+                    const option = element.querySelector(`option[value="${id}"]`);
+                    return option ? option.textContent : `Zona ${id}`;
+                });
+                zonasInfo.textContent = `${names.join(', ')} (${selectedValues.length} zonas)`;
+            } else {
+                zonasInfo.textContent = 'Ninguna zona seleccionada';
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('🚀 DOM cargado, iniciando test', 'success');
+
+            // Monitorear cambios en Select2
+            $(document).on('change', '#zonas_select', function() {
+                const values = $(this).val() || [];
+                addLog(`📊 Select2 cambió: [${values.join(',')}]`, 'info');
+                updateZonasInfo();
+            });
+        });
+
+        // Interceptar logs del script select2-zonas.js
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            const message = args.join(' ');
+            if (message.includes('Select2 Zonas:')) {
+                const type = message.includes('❌') ? 'error' :
+                           message.includes('⚠️') ? 'warn' :
+                           message.includes('✅') ? 'success' : 'info';
+                addLog(message, type);
+            }
+            originalConsoleLog.apply(console, args);
+        };
+
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cerrarModal();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simplificado - Select2 + Livewire 3</title>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .test-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .log-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-success { color: #4CAF50; }
+        .log-error { color: #f44336; }
+        .log-warning { color: #FF9800; }
+        .log-info { color: #2196F3; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Test Simplificado - Select2 + Livewire 3</h1>
+        <p class="text-muted">Esta prueba simula la nueva implementación simplificada usando hooks de Livewire 3</p>
+
+        <div class="test-panel">
+            <h5>🎯 Nueva Implementación Simplificada</h5>
+            <p>Características principales:</p>
+            <ul>
+                <li>✅ Usa <code>document.addEventListener("livewire:init")</code></li>
+                <li>✅ Hook <code>Livewire.hook("morph")</code> para reinicialización automática</li>
+                <li>✅ Comunicación directa con <code>$wire.set()</code> o <code>component.set()</code></li>
+                <li>✅ Menos código, más confiable</li>
+            </ul>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <button class="btn btn-primary" onclick="testCampaignEdit(1, [1,2])">Probar Campaña 1 (Zonas 1,2)</button>
+                    <button class="btn btn-success mt-2" onclick="testCampaignEdit(2, [])">Probar Campaña 2 (Sin zonas)</button>
+                    <button class="btn btn-warning mt-2" onclick="testCampaignEdit(3, [3,4,5])">Probar Campaña 3 (Zonas 3,4,5)</button>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-info" onclick="testNewCampaign()">Nueva Campaña</button>
+                    <button class="btn btn-secondary mt-2" onclick="clearLogs()">Limpiar Logs</button>
+                    <button class="btn btn-dark mt-2" onclick="getSelect2Status()">Estado Select2</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Simulación del formulario de campaña -->
+        <div class="card" id="campaignForm" style="display: none;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 id="formTitle">Nueva Campaña</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="closeForm()">✕</button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="titulo" class="form-label">Título</label>
+                    <input type="text" class="form-control" id="titulo" placeholder="Título de la campaña">
+                </div>
+                
+                <!-- Select de zonas - usando la misma estructura que en la aplicación real -->
+                <div class="mb-3">
+                    <label for="zonas_select" class="form-label">Zonas donde mostrar esta campaña</label>
+                    <select id="zonas_select" 
+                            class="form-select" 
+                            multiple 
+                            data-livewire-values="[]">
+                        <option value="1">Zona Norte</option>
+                        <option value="2">Zona Sur</option>
+                        <option value="3">Zona Este</option>
+                        <option value="4">Zona Oeste</option>
+                        <option value="5">Zona Centro</option>
+                        <option value="6">Zona Industrial</option>
+                        <option value="7">Zona Comercial</option>
+                    </select>
+                    <small class="form-text text-muted">
+                        Estado: <span id="zonesStatus">Ninguna zona seleccionada</span>
+                    </small>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" onclick="saveCampaign()">Guardar</button>
+                    <button class="btn btn-secondary" onclick="closeForm()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de logs -->
+        <div class="mt-4">
+            <h5>📋 Logs del Sistema</h5>
+            <div id="logOutput" class="log-output">
+                <div class="log-entry log-info">🚀 Sistema iniciado - Esperando acciones...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        // Simulación de Livewire 3
+        window.Livewire = {
+            hook: function(event, callback) {
+                log(`📌 Hook registrado: ${event}`, 'info');
+                if (event === 'morph') {
+                    window.livewireHooks = window.livewireHooks || {};
+                    window.livewireHooks.morph = callback;
+                }
+            },
+            on: function(event, callback) {
+                log(`📡 Listener registrado: ${event}`, 'info');
+                window.livewireEvents = window.livewireEvents || {};
+                window.livewireEvents[event] = callback;
+            },
+            find: function(id) {
+                return {
+                    set: function(property, value) {
+                        log(`📤 Livewire.set: ${property} = ${JSON.stringify(value)}`, 'success');
+                        updateZonesStatus(value);
+                    }
+                };
+            }
+        };
+
+        // Simulación de $wire
+        window.$wire = {
+            set: function(property, value) {
+                log(`📤 $wire.set: ${property} = ${JSON.stringify(value)}`, 'success');
+                updateZonesStatus(value);
+            }
+        };
+
+        // Variables globales
+        let currentCampaignId = null;
+        let currentZones = [];
+
+        // Función de logging
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logOutput = document.getElementById('logOutput');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `[${timestamp}] ${message}`;
+            logOutput.appendChild(entry);
+            logOutput.scrollTop = logOutput.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLogs() {
+            document.getElementById('logOutput').innerHTML = 
+                '<div class="log-entry log-info">🚀 Logs limpiados - Sistema listo</div>';
+        }
+
+        function updateZonesStatus(zones) {
+            const statusEl = document.getElementById('zonesStatus');
+            if (zones && zones.length > 0) {
+                const zoneNames = zones.map(id => {
+                    const option = document.querySelector(`#zonas_select option[value="${id}"]`);
+                    return option ? option.textContent : `Zona ${id}`;
+                });
+                statusEl.textContent = `${zones.length} zonas: ${zoneNames.join(', ')}`;
+                statusEl.className = 'text-success';
+            } else {
+                statusEl.textContent = 'Ninguna zona seleccionada';
+                statusEl.className = 'text-muted';
+            }
+        }
+
+        // IMPLEMENTACIÓN SIMPLIFICADA - IGUAL QUE EN LA APLICACIÓN REAL
+        document.addEventListener("livewire:init", function() {
+            log('🚀 Inicializando integración Select2 con Livewire 3', 'success');
+            
+            function initializeZonasSelect2() {
+                const element = $("#zonas_select");
+                
+                if (!element.length) {
+                    log('❌ Elemento #zonas_select no encontrado', 'error');
+                    return;
+                }
+
+                // Destruir Select2 existente si ya está inicializado
+                if (element.hasClass('select2-hidden-accessible')) {
+                    log('🔄 Destruyendo Select2 existente', 'warning');
+                    element.select2('destroy');
+                }
+
+                log('✅ Inicializando Select2', 'success');
+                element.select2({
+                    placeholder: "Seleccione zonas...",
+                    allowClear: true,
+                    width: '100%'
+                }).on("change", function() {
+                    const values = $(this).val() || [];
+                    log(`📤 Select2 cambió, enviando a Livewire: ${JSON.stringify(values)}`, 'info');
+                    
+                    // Usar la instancia global de Livewire para actualizar el componente
+                    if (window.Livewire) {
+                        // Encontrar el componente Livewire más cercano
+                        const livewireEl = this.closest('[wire\\:id]');
+                        if (livewireEl) {
+                            const wireId = livewireEl.getAttribute('wire:id');
+                            const component = window.Livewire.find(wireId);
+                            if (component) {
+                                component.set('zonas_ids', values);
+                            }
+                        } else {
+                            // Simulación: usar Livewire global
+                            window.Livewire.find('test').set('zonas_ids', values);
+                        }
+                    } else {
+                        // Fallback usando $wire si está disponible
+                        if (typeof $wire !== 'undefined') {
+                            $wire.set('zonas_ids', values);
+                        }
+                    }
+                });
+
+                // Aplicar valores iniciales desde el atributo data-livewire-values
+                const initialValues = element.attr('data-livewire-values');
+                if (initialValues) {
+                    try {
+                        const values = JSON.parse(initialValues);
+                        if (Array.isArray(values) && values.length > 0) {
+                            log(`📝 Aplicando valores iniciales: ${JSON.stringify(values)}`, 'info');
+                            element.val(values).trigger('change.select2');
+                        }
+                    } catch (e) {
+                        log(`❌ Error al parsear valores iniciales: ${e.message}`, 'error');
+                    }
+                }
+            }
+
+            // Inicializar cuando se carga la página
+            initializeZonasSelect2();
+
+            // Re-inicializar después de cada actualización de Livewire
+            Livewire.hook("morph", () => {
+                log('🔄 Hook morph - Reinicializando Select2', 'info');
+                setTimeout(() => {
+                    initializeZonasSelect2();
+                }, 100);
+            });
+
+            // También escuchar el evento específico de edición de campaña
+            Livewire.on('campanEditLoaded', (data) => {
+                log(`🎯 Evento campanEditLoaded - Configurando para edición: ${JSON.stringify(data)}`, 'success');
+                
+                setTimeout(() => {
+                    initializeZonasSelect2();
+                    
+                    // Aplicar valores específicos de la campaña
+                    if (data && data.zonasIds && data.zonasIds.length > 0) {
+                        const element = $("#zonas_select");
+                        if (element.length) {
+                            log(`📝 Aplicando zonas de la campaña: ${JSON.stringify(data.zonasIds)}`, 'success');
+                            element.val(data.zonasIds).trigger('change.select2');
+                        }
+                    }
+                }, 200);
+            });
+        });
+
+        // Funciones de prueba
+        function testCampaignEdit(id, zones) {
+            log(`🔧 Iniciando prueba: Editar campaña ${id} con zonas ${JSON.stringify(zones)}`, 'info');
+            
+            currentCampaignId = id;
+            currentZones = zones;
+            
+            // Mostrar formulario
+            document.getElementById('campaignForm').style.display = 'block';
+            document.getElementById('formTitle').textContent = `Editar Campaña ${id}`;
+            document.getElementById('titulo').value = `Campaña Test ${id}`;
+            
+            // Actualizar el atributo data-livewire-values
+            const element = $("#zonas_select");
+            element.attr('data-livewire-values', JSON.stringify(zones));
+            
+            // Simular el evento campanEditLoaded
+            if (window.livewireEvents && window.livewireEvents.campanEditLoaded) {
+                setTimeout(() => {
+                    log(`📡 Disparando evento campanEditLoaded`, 'info');
+                    window.livewireEvents.campanEditLoaded({
+                        zonasIds: zones,
+                        campanaTitulo: `Campaña Test ${id}`
+                    });
+                }, 100);
+            } else {
+                // Aplicar valores directamente
+                setTimeout(() => {
+                    if (element.length) {
+                        log(`📝 Aplicando valores directamente: ${JSON.stringify(zones)}`, 'info');
+                        element.val(zones).trigger('change.select2');
+                    }
+                }, 100);
+            }
+        }
+
+        function testNewCampaign() {
+            log('🆕 Iniciando prueba: Nueva campaña', 'info');
+            
+            currentCampaignId = null;
+            currentZones = [];
+            
+            // Mostrar formulario
+            document.getElementById('campaignForm').style.display = 'block';
+            document.getElementById('formTitle').textContent = 'Nueva Campaña';
+            document.getElementById('titulo').value = '';
+            
+            // Limpiar Select2
+            const element = $("#zonas_select");
+            element.attr('data-livewire-values', '[]');
+            
+            // Simular hook morph
+            if (window.livewireHooks && window.livewireHooks.morph) {
+                setTimeout(() => {
+                    log('🔄 Simulando hook morph', 'info');
+                    window.livewireHooks.morph();
+                }, 100);
+            }
+        }
+
+        function closeForm() {
+            document.getElementById('campaignForm').style.display = 'none';
+            log('❌ Formulario cerrado', 'info');
+        }
+
+        function saveCampaign() {
+            const values = $("#zonas_select").val() || [];
+            log(`💾 Guardando campaña con zonas: ${JSON.stringify(values)}`, 'success');
+            alert(`Campaña guardada con ${values.length} zonas seleccionadas`);
+        }
+
+        function getSelect2Status() {
+            const element = $("#zonas_select");
+            const isInitialized = element.hasClass('select2-hidden-accessible');
+            const currentValues = element.val() || [];
+            
+            log(`📊 Estado Select2:`, 'info');
+            log(`   - Inicializado: ${isInitialized}`, 'info');
+            log(`   - Valores actuales: ${JSON.stringify(currentValues)}`, 'info');
+            log(`   - Elemento existe: ${element.length > 0}`, 'info');
+        }
+
+        // Disparar evento livewire:init después de cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                log('📡 Disparando evento livewire:init', 'info');
+                document.dispatchEvent(new Event('livewire:init'));
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -23,11 +23,11 @@
     let dependencyRetries = 0;
     let initRetries = 0;
     const MAX_RETRIES = 10; // Aumentar reintentos para dar más margen
-    
+
     // Función para cargar jQuery usando script tag si no está disponible
     function cargarJQuery(callback) {
         console.log('Select2 Zonas: 🔄 Intentando cargar jQuery manualmente...');
-        
+
         const script = document.createElement('script');
         script.src = 'https://code.jquery.com/jquery-3.7.1.min.js';
         script.integrity = 'sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=';
@@ -45,13 +45,13 @@
     // Función para cargar Select2 usando script tag si no está disponible
     function cargarSelect2(callback) {
         console.log('Select2 Zonas: 🔄 Intentando cargar Select2 manualmente...');
-        
+
         // Primero el CSS
         const link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css';
         document.head.appendChild(link);
-        
+
         // Luego el JS
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js';
@@ -64,7 +64,7 @@
         };
         document.head.appendChild(script);
     }
-    
+
     // Función para verificar dependencias con reintentos limitados
     function checkDependencies() {
         // Verificar jQuery
@@ -72,7 +72,7 @@
             dependencyRetries++;
             if (dependencyRetries <= MAX_RETRIES) {
                 console.log(`Select2 Zonas: ⏳ jQuery no está disponible, reintento ${dependencyRetries}/${MAX_RETRIES}...`);
-                
+
                 // Si llevamos varios reintentos, intentar cargar jQuery manualmente
                 if (dependencyRetries === 3) {
                     cargarJQuery();
@@ -82,13 +82,13 @@
             }
             return false;
         }
-        
+
         // Si jQuery está disponible pero Select2 no
         if (typeof $.fn.select2 === 'undefined') {
             dependencyRetries++;
             if (dependencyRetries <= MAX_RETRIES) {
                 console.log(`Select2 Zonas: ⏳ Select2 no está disponible, reintento ${dependencyRetries}/${MAX_RETRIES}...`);
-                
+
                 // Si llevamos varios reintentos, intentar cargar Select2 manualmente
                 if (dependencyRetries === 3) {
                     cargarSelect2();
@@ -98,7 +98,7 @@
             }
             return false;
         }
-        
+
         console.log(`Select2 Zonas: ✅ Dependencias verificadas: jQuery v${$.fn.jquery} y Select2 v${$.fn.select2.amd.require.VERSION || 'desconocida'}`);
         dependencyRetries = 0; // Reiniciar contador si tenemos éxito
         return true;
@@ -150,15 +150,31 @@
             try {
                 const values = JSON.parse(livewireValues);
                 if (Array.isArray(values) && values.length > 0) {
+                    console.log('Select2 Zonas: Aplicando valores iniciales de data-livewire-values:', values);
                     isUpdatingFromLivewire = true;
-                    $(element).val(values).trigger('change');
-                    lastSelectedValues = [...values];
-                    console.log('Select2 Zonas: Valores iniciales establecidos:', values);
+
+                    // Convertir a strings para consistencia
+                    const stringValues = values.map(v => String(v));
+                    $(element).val(stringValues).trigger('change');
+                    lastSelectedValues = [...stringValues];
+
+                    console.log('Select2 Zonas: ✅ Valores iniciales establecidos correctamente');
                     isUpdatingFromLivewire = false;
                 }
             } catch (e) {
                 console.error('Select2 Zonas: Error al parsear valores iniciales:', e);
             }
+        }
+
+        // También verificar los atributos selected en las opciones
+        const selectedOptions = element.querySelectorAll('option[selected]');
+        if (selectedOptions.length > 0 && !livewireValues) {
+            const selectedValues = Array.from(selectedOptions).map(option => option.value);
+            console.log('Select2 Zonas: Aplicando valores de opciones selected:', selectedValues);
+            isUpdatingFromLivewire = true;
+            $(element).val(selectedValues).trigger('change');
+            lastSelectedValues = [...selectedValues];
+            isUpdatingFromLivewire = false;
         }
 
         // Evento change para enviar cambios a Livewire
@@ -179,13 +195,13 @@
                 e.preventDefault();
 
                 // Si hay un modelo wire:model vinculado, actualizar directamente
-                if (element.hasAttribute('wire:model') || 
-                    element.hasAttribute('wire:model.live') || 
+                if (element.hasAttribute('wire:model') ||
+                    element.hasAttribute('wire:model.live') ||
                     element.hasAttribute('wire:model.live.debounce.500ms')) {
-                    
+
                     // El modelo se actualiza automáticamente por wire:model
                     console.log('Select2 Zonas: 📤 Usando wire:model para actualizar Livewire');
-                    
+
                     // Actualizar también data-livewire-values para mantener consistencia
                     element.setAttribute('data-livewire-values', JSON.stringify(currentValues));
                 } else {
@@ -206,10 +222,10 @@
                         const livewireComponent = window.Livewire.find(wireId);
                         if (livewireComponent && livewireComponent.call) {
                             console.log('Select2 Zonas: 📤 Enviando datos a Livewire usando sincronizarZonas:', currentValues);
-                            
+
                             // Actualizar el atributo antes de llamar
                             element.setAttribute('data-livewire-values', JSON.stringify(currentValues));
-                            
+
                             livewireComponent.call('sincronizarZonas', currentValues);
                         } else {
                             console.error('Select2 Zonas: ❌ Componente Livewire no encontrado o método call no disponible');
@@ -230,19 +246,78 @@
     function updateFromLivewire(values) {
         const element = document.getElementById('zonas_select');
 
-        if (!element || !isInitialized) {
-            console.log('Select2 Zonas: Elemento no encontrado o no inicializado para actualización');
-            return;
+        if (!element) {
+            console.log('Select2 Zonas: ⚠️ Elemento #zonas_select no encontrado para actualización');
+            return false;
         }
 
+        if (!isInitialized || !$(element).hasClass('select2-hidden-accessible')) {
+            console.log('Select2 Zonas: ⚠️ Select2 no inicializado, intentando inicializar...');
+            if (initializeSelect2()) {
+                // Intentar actualizar después de la inicialización
+                setTimeout(() => updateFromLivewire(values), 100);
+                return false;
+            } else {
+                console.error('Select2 Zonas: ❌ No se pudo inicializar Select2');
+                return false;
+            }
+        }
+
+        // Asegurar que values es un array
+        if (!Array.isArray(values)) {
+            console.warn('Select2 Zonas: ⚠️ Los valores no son un array:', values);
+            values = [];
+        }
+
+        // Convertir a strings para comparación consistente
+        const stringValues = values.map(v => String(v));
+        const currentValues = ($(element).val() || []).map(v => String(v));
+
+        console.log('Select2 Zonas: 🔄 Comparando valores:', {
+            nuevos: stringValues,
+            actuales: currentValues,
+            sonIguales: arraysEqual(stringValues.sort(), currentValues.sort())
+        });
+
         // Solo actualizar si hay cambios reales
-        const currentValues = $(element).val() || [];
-        if (!arraysEqual(values.sort(), currentValues.sort())) {
-            console.log('Select2 Zonas: Actualizando desde Livewire:', values);
-            isUpdatingFromLivewire = true;
-            $(element).val(values).trigger('change');
-            lastSelectedValues = [...values];
-            isUpdatingFromLivewire = false;
+        if (!arraysEqual(stringValues.sort(), currentValues.sort())) {
+            console.log('Select2 Zonas: 📝 Actualizando desde Livewire:', stringValues);
+
+            try {
+                isUpdatingFromLivewire = true;
+
+                // Usar valores string para Select2
+                $(element).val(stringValues).trigger('change');
+                lastSelectedValues = [...stringValues];
+
+                // Actualizar también el atributo data-livewire-values
+                element.setAttribute('data-livewire-values', JSON.stringify(stringValues));
+
+                console.log('Select2 Zonas: ✅ Valores actualizados correctamente');
+
+                // Verificar que los valores se aplicaron
+                setTimeout(() => {
+                    const verificationValues = ($(element).val() || []).map(v => String(v));
+                    if (arraysEqual(stringValues.sort(), verificationValues.sort())) {
+                        console.log('Select2 Zonas: ✅ Verificación exitosa - Valores aplicados correctamente');
+                    } else {
+                        console.warn('Select2 Zonas: ⚠️ Verificación falló - Los valores no se aplicaron correctamente:', {
+                            esperados: stringValues,
+                            obtenidos: verificationValues
+                        });
+                    }
+                }, 50);
+
+                return true;
+            } catch (error) {
+                console.error('Select2 Zonas: ❌ Error al actualizar valores:', error);
+                return false;
+            } finally {
+                isUpdatingFromLivewire = false;
+            }
+        } else {
+            console.log('Select2 Zonas: ℹ️ Los valores ya están actualizados, no es necesario cambiar');
+            return true;
         }
     }
 
@@ -283,18 +358,27 @@
     document.addEventListener('livewire:updated', function() {
         console.log('Select2 Zonas: Livewire actualizado');
 
-        if (!isInitialized) {
-            // Intentar inicializar si no está inicializado
-            initializeSelect2();
-        } else {
-            // Actualizar valores si ya está inicializado
-            const element = document.getElementById('zonas_select');
-            if (element) {
+        // Verificar si el elemento existe y si tiene el modal visible
+        const element = document.getElementById('zonas_select');
+        const modal = element ? element.closest('.fixed.z-10.inset-0') : null;
+
+        if (element && modal) {
+            console.log('Select2 Zonas: Modal detectado, verificando inicialización...');
+
+            if (!isInitialized) {
+                // Intentar inicializar si no está inicializado
+                console.log('Select2 Zonas: Inicializando Select2 en modal...');
+                setTimeout(() => {
+                    initializeSelect2();
+                }, 100);
+            } else {
+                // Actualizar valores si ya está inicializado
                 const livewireValues = element.getAttribute('data-livewire-values');
                 if (livewireValues) {
                     try {
                         const values = JSON.parse(livewireValues);
                         if (Array.isArray(values)) {
+                            console.log('Select2 Zonas: Actualizando valores desde livewire:updated:', values);
                             updateFromLivewire(values);
                         }
                     } catch (e) {
@@ -302,6 +386,9 @@
                     }
                 }
             }
+        } else if (!isInitialized) {
+            // Intentar inicializar si no está inicializado (fuera del modal)
+            initializeSelect2();
         }
     });
 
@@ -327,10 +414,98 @@
         }, 250); // Aumentar delay para asegurar que el modal esté completamente renderizado
     });
 
+    // Nuevo evento específico para cuando se carga una campaña para edición
+    document.addEventListener('campanEditLoaded', function(event) {
+        console.log('Select2 Zonas: 📡 Evento campanEditLoaded recibido:', event.detail);
+
+        if (event.detail && event.detail.zonasIds) {
+            console.log('Select2 Zonas: 🔄 Configurando Select2 para edición de campaña:', event.detail.campanaTitulo);
+            console.log('Select2 Zonas: 📊 Zonas a cargar:', event.detail.zonasIds);
+
+            // Estrategia mejorada: múltiples intentos con delays incrementales
+            let attemptCount = 0;
+            const maxAttempts = 5;
+            const baseDelay = 200;
+
+            function attemptInitialization() {
+                attemptCount++;
+                const currentDelay = baseDelay * attemptCount;
+
+                setTimeout(() => {
+                    const element = document.getElementById('zonas_select');
+                    if (!element) {
+                        console.warn(`Select2 Zonas: ⚠️ Intento ${attemptCount}: Elemento #zonas_select no encontrado`);
+                        if (attemptCount < maxAttempts) {
+                            attemptInitialization();
+                        }
+                        return;
+                    }
+
+                    console.log(`Select2 Zonas: 🔄 Intento ${attemptCount}: Configurando Select2...`);
+
+                    // Actualizar el atributo data-livewire-values
+                    element.setAttribute('data-livewire-values', JSON.stringify(event.detail.zonasIds));
+
+                    // Asegurar que Select2 esté inicializado
+                    if (!isInitialized || !$(element).hasClass('select2-hidden-accessible')) {
+                        console.log('Select2 Zonas: 🔧 Inicializando Select2...');
+                        if (initializeSelect2()) {
+                            // Esperar un poco más después de la inicialización
+                            setTimeout(() => {
+                                updateFromLivewire(event.detail.zonasIds);
+                                console.log('Select2 Zonas: ✅ Valores establecidos después de inicialización');
+                            }, 100);
+                        } else if (attemptCount < maxAttempts) {
+                            console.log('Select2 Zonas: ⚠️ Inicialización falló, reintentando...');
+                            attemptInitialization();
+                        }
+                    } else {
+                        // Select2 ya está inicializado, actualizar valores directamente
+                        console.log('Select2 Zonas: 📝 Select2 ya inicializado, actualizando valores...');
+                        updateFromLivewire(event.detail.zonasIds);
+
+                        // Verificar que los valores se aplicaron correctamente
+                        setTimeout(() => {
+                            const currentValues = $(element).val() || [];
+                            console.log('Select2 Zonas: 🔍 Verificación - Valores aplicados:', currentValues);
+                            console.log('Select2 Zonas: 🔍 Verificación - Valores esperados:', event.detail.zonasIds);
+
+                            if (currentValues.length !== event.detail.zonasIds.length && attemptCount < maxAttempts) {
+                                console.log('Select2 Zonas: ⚠️ Los valores no coinciden, reintentando...');
+                                attemptInitialization();
+                            } else {
+                                console.log('Select2 Zonas: ✅ Configuración completada exitosamente');
+                            }
+                        }, 100);
+                    }
+                }, currentDelay);
+            }
+
+            // Iniciar el proceso de configuración
+            attemptInitialization();
+        } else {
+            console.warn('Select2 Zonas: ⚠️ Evento campanEditLoaded sin zonasIds válidas:', event.detail);
+        }
+    });
+
     document.addEventListener('updateLivewireAttribute', function(event) {
         console.log('Select2 Zonas: 📡 Evento updateLivewireAttribute recibido:', event.detail);
         if (event.detail && Array.isArray(event.detail)) {
             updateFromLivewire(event.detail);
+        }
+    });
+
+    // Listener para limpiar Select2 cuando se cierra el modal
+    document.addEventListener('clearZonasSelect', function(event) {
+        console.log('Select2 Zonas: 📡 Evento clearZonasSelect recibido');
+        const element = document.getElementById('zonas_select');
+        if (element && isInitialized) {
+            isUpdatingFromLivewire = true;
+            $(element).val(null).trigger('change');
+            lastSelectedValues = [];
+            element.setAttribute('data-livewire-values', '[]');
+            isUpdatingFromLivewire = false;
+            console.log('Select2 Zonas: ✅ Select2 limpiado');
         }
     });
 
@@ -348,9 +523,22 @@
             };
         },
         reinitialize: function() {
+            console.log('Select2 Zonas: 🔄 Reinicializando completamente...');
+
+            // Destruir Select2 existente si existe
+            const element = document.getElementById('zonas_select');
+            if (element && $(element).hasClass('select2-hidden-accessible')) {
+                $(element).select2('destroy');
+                console.log('Select2 Zonas: Select2 existente destruido');
+            }
+
+            // Reiniciar variables
             isInitialized = false;
             dependencyRetries = 0;
             initRetries = 0;
+            lastSelectedValues = [];
+
+            // Inicializar de nuevo
             return initializeSelect2();
         },
         updateValues: function(values) {
@@ -368,12 +556,12 @@
         },
         forceInit: function(conDependencias) {
             console.log('Select2 Zonas: 🔧 Forzando inicialización...');
-            
+
             // Reiniciar contadores
             isInitialized = false;
             dependencyRetries = 0;
             initRetries = 0;
-            
+
             if (conDependencias) {
                 this.cargarDependencias(function() {
                     const success = initializeSelect2();
@@ -387,7 +575,7 @@
             }
         }
     };
-    
+
     // Exponer la función para uso global
     window.initializeZonasSelect2 = function() {
         console.log('Select2 Zonas: 🚀 Inicialización manual activada');
