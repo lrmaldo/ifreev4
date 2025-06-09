@@ -28,6 +28,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'ver estadísticas',
             'ver publicidad',
             'administrar hotspot',
+            // Métricas de Hotspot
+            'ver metricas hotspot',
+            'gestionar metricas hotspot',
             // Usuarios
             'ver usuarios',
             'crear usuarios',
@@ -53,10 +56,10 @@ class RolesAndPermissionsSeeder extends Seeder
         $admin->syncPermissions($permissions);
 
         $cliente = Role::firstOrCreate(['name' => 'cliente']);
-        $cliente->givePermissionTo(['ver publicidad']);
+        $cliente->givePermissionTo(['ver publicidad', 'ver metricas hotspot']);
 
         $tecnico = Role::firstOrCreate(['name' => 'tecnico']);
-        $tecnico->givePermissionTo(['ver estadísticas', 'administrar hotspot']);
+        $tecnico->givePermissionTo(['ver estadísticas', 'administrar hotspot', 'ver metricas hotspot', 'gestionar metricas hotspot']);
 
         // Crear usuario admin
         $user = User::firstOrCreate(

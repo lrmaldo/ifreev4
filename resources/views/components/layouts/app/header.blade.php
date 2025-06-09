@@ -38,12 +38,28 @@
                 <flux:navbar.item icon="presentation-chart-bar" :href="route('admin.campanas.index')" :current="request()->routeIs('admin.campanas.*')" wire:navigate>
                     {{ __('Campañas') }}
                 </flux:navbar.item>
+                <flux:navbar.item icon="chart-bar" :href="route('admin.hotspot-metrics.index')" :current="request()->routeIs('admin.hotspot-metrics.*')" wire:navigate>
+                    {{ __('Métricas Hotspot') }}
+                </flux:navbar.item>
                 @endhasrole
 
                 @hasrole('cliente')
                 <flux:navbar.item icon="map-pin" :href="route('cliente.zonas.index')" :current="request()->routeIs('cliente.zonas.*')" wire:navigate>
                     {{ __('Mis Zonas') }}
                 </flux:navbar.item>
+                @can('ver metricas hotspot')
+                <flux:navbar.item icon="chart-bar" :href="route('hotspot-metrics.index')" :current="request()->routeIs('hotspot-metrics.*')" wire:navigate>
+                    {{ __('Métricas') }}
+                </flux:navbar.item>
+                @endcan
+                @endhasrole
+
+                @hasrole('tecnico')
+                @can('ver metricas hotspot')
+                <flux:navbar.item icon="chart-bar" :href="route('hotspot-metrics.index')" :current="request()->routeIs('hotspot-metrics.*')" wire:navigate>
+                    {{ __('Métricas Hotspot') }}
+                </flux:navbar.item>
+                @endcan
                 @endhasrole
             </flux:navbar>
 

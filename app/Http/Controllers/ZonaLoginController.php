@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\HotspotMetric;
+use Jenssegers\Agent\Agent;
 
 class ZonaLoginController extends Controller
 {
@@ -31,6 +33,9 @@ class ZonaLoginController extends Controller
             'mac', 'ip', 'username', 'link-login', 'link-orig', 'error',
             'chap-id', 'chap-challenge', 'link-login-only', 'link-orig-esc', 'mac-esc'
         ]);
+
+        // Registrar métrica de entrada al portal
+        $this->registrarMetricaEntrada($zona, $mikrotikData);
 
         // Aquí puedes procesar los datos como sea necesario
         // Por ejemplo, guardarlos en una base de datos, verificar si el usuario está autorizado, etc.
@@ -80,5 +85,29 @@ class ZonaLoginController extends Controller
             'zona' => $zona,
             'mikrotikData' => $mikrotikData
         ]);
+    }
+
+    /**
+     * Registrar métrica de entrada al portal cautivo
+     */
+    protected function registrarMetricaEntrada($zona, $mikrotikData)
+    {
+        try {
+            $agent = new Agent();
+
+            $data = [
+                'zona_id' => $zona->id,
+                'mac_address' => $mikrotikData['mac'] ?? 'unknown',
+                'dispositivo' => $agent->device() ?: 'Desconocido',
+                'navegador' => $agent->browser() . ' ' . $agent->version($agent->browser()),
+                'tipo_visual' => 'formulario', // Por defecto
+                'duracion_visual' => 0,
+                'clic_boton' => false,
+            ];
+
+            HotspotMetric::registrarMetrica($data);
+        } catch (\Exception $e) {
+            \Log::error('Error registrando métrica de entrada: ' . $e->getMessage());
+        }
     }
 }

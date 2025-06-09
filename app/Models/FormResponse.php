@@ -34,6 +34,14 @@ class FormResponse extends Model
     }
 
     /**
+     * Relación con las métricas de hotspot
+     */
+    public function metricas()
+    {
+        return $this->hasMany(HotspotMetric::class, 'formulario_id');
+    }
+
+    /**
      * Obtener respuestas formateadas para mostrar
      */
     public function getRespuestasFormateadasAttribute()

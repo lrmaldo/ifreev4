@@ -36,6 +36,12 @@ Route::post('/form-responses', [\App\Http\Controllers\FormResponseController::cl
     ->withoutMiddleware(['web'])
     ->middleware(['throttle:60,1']);
 
+// Ruta para registrar métricas de hotspot desde el portal cautivo
+Route::post('/hotspot-metrics/track', [\App\Http\Controllers\HotspotMetricController::class, 'track'])
+    ->name('hotspot-metrics.track')
+    ->withoutMiddleware(['web'])
+    ->middleware(['throttle:120,1']);
+
 // Rutas para el registro de usuarios en zonas WiFi
 Route::get('/zona/{zonaId}/registro/formulario', function($zonaId) {
     $zona = \App\Models\Zona::findOrFail($zonaId);
@@ -104,6 +110,17 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/zonas/{zonaId}/form-responses', [\App\Http\Controllers\FormResponseController::class, 'index'])
             ->name('admin.zona.form-responses');
 
+        // Rutas para métricas de hotspot (solo admin)
+        Route::middleware(['permission:ver metricas hotspot'])->group(function () {
+            Route::get('/hotspot-metrics', [\App\Http\Controllers\HotspotMetricController::class, 'index'])
+                ->name('admin.hotspot-metrics.index');
+            Route::get('/hotspot-metrics/analytics', [\App\Http\Controllers\HotspotMetricController::class, 'analytics'])
+                ->name('admin.hotspot-metrics.analytics');
+        });
+        Route::get('/hotspot-metrics/export', [\App\Http\Controllers\HotspotMetricController::class, 'export'])
+            ->middleware(['permission:gestionar metricas hotspot'])
+            ->name('admin.hotspot-metrics.export');
+
         Route::get('/clientes', function() {
             return view('clientes');
         })->name('admin.clientes.index');
@@ -139,6 +156,17 @@ Route::middleware(['auth'])->group(function () {
         // Rutas para ver respuestas de formularios (cliente y admin ven solo sus zonas)
         Route::get('/zonas/{zonaId}/form-responses', [\App\Http\Controllers\FormResponseController::class, 'index'])
             ->name('cliente.zona.form-responses');
+
+        // Rutas para métricas de hotspot (clientes y técnicos)
+        Route::middleware(['permission:ver metricas hotspot'])->group(function () {
+            Route::get('/hotspot-metrics', [\App\Http\Controllers\HotspotMetricController::class, 'index'])
+                ->name('hotspot-metrics.index');
+            Route::get('/hotspot-metrics/analytics', [\App\Http\Controllers\HotspotMetricController::class, 'analytics'])
+                ->name('hotspot-metrics.analytics');
+        });
+        Route::get('/hotspot-metrics/export', [\App\Http\Controllers\HotspotMetricController::class, 'export'])
+            ->middleware(['permission:gestionar metricas hotspot'])
+            ->name('hotspot-metrics.export');
     });
 });
 

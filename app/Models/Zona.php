@@ -62,6 +62,11 @@ class Zona extends Model
     {
         return $this->belongsToMany(Campana::class, 'campana_zona')
                     ->withTimestamps();
+    }
+
+    public function metricas()
+    {
+        return $this->hasMany(HotspotMetric::class);
     }    public function getCampanasActivas()
     {
         \Log::info("Obteniendo campañas activas para Zona {$this->id}");

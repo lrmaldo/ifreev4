@@ -23,5 +23,8 @@ class DatabaseSeeder extends Seeder
 
         // Seeder para los campos de formulario dinámicos
         $this->call(FormFieldsSeeder::class);
+
+        // Seeder para las métricas de hotspot
+        $this->call(HotspotMetricsSeeder::class);
     }
 }
