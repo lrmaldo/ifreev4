@@ -53,6 +53,11 @@ class Zona extends Model
         return $this->hasMany(FormField::class, 'zona_id');
     }
 
+    public function respuestas()
+    {
+        return $this->hasMany(FormResponse::class);
+    }
+
     public function campanas()
     {
         return $this->belongsToMany(Campana::class, 'campana_zona')

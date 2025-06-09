@@ -30,6 +30,12 @@ Route::post('/portal-cautivo/{zonaId}/video-completado', [\App\Http\Controllers\
     ->withoutMiddleware(['web'])
     ->middleware(['throttle:60,1']);
 
+// Ruta para guardar respuestas de formularios desde el portal cautivo
+Route::post('/form-responses', [\App\Http\Controllers\FormResponseController::class, 'store'])
+    ->name('form-responses.store')
+    ->withoutMiddleware(['web'])
+    ->middleware(['throttle:60,1']);
+
 // Rutas para el registro de usuarios en zonas WiFi
 Route::get('/zona/{zonaId}/registro/formulario', function($zonaId) {
     $zona = \App\Models\Zona::findOrFail($zonaId);
@@ -93,6 +99,11 @@ Route::middleware(['auth'])->group(function () {
         // Ruta para administrar opciones de un campo de formulario
         Route::get('/form-fields/{formField}/options', \App\Livewire\Admin\FormFieldOptions::class)
             ->name('admin.form-fields.options');
+
+        // Rutas para ver respuestas de formularios (admin ve todas las zonas)
+        Route::get('/zonas/{zonaId}/form-responses', [\App\Http\Controllers\FormResponseController::class, 'index'])
+            ->name('admin.zona.form-responses');
+
         Route::get('/clientes', function() {
             return view('clientes');
         })->name('admin.clientes.index');
@@ -124,6 +135,10 @@ Route::middleware(['auth'])->group(function () {
         // Ruta para previsualizar portal cautivo con contenido dinámico de campañas
         Route::get('/zonas/{id}/preview/campana', [\App\Http\Controllers\ZonaController::class, 'previewCampana'])
             ->name('cliente.zona.preview.campana');
+
+        // Rutas para ver respuestas de formularios (cliente y admin ven solo sus zonas)
+        Route::get('/zonas/{zonaId}/form-responses', [\App\Http\Controllers\FormResponseController::class, 'index'])
+            ->name('cliente.zona.form-responses');
     });
 });
 

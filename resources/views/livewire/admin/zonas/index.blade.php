@@ -713,6 +713,10 @@
                                             <flux:menu.item icon="clipboard-document" :href="route('cliente.zona.formulario', ['zonaId' => $zona->id])" target="_blank">
                                                 Ver Formulario
                                             </flux:menu.item>
+
+                                            <flux:menu.item icon="chart-bar" :href="route('admin.zona.form-responses', ['zonaId' => $zona->id])">
+                                                Ver Respuestas
+                                            </flux:menu.item>
                                         @endif
 
                                         <!-- Grupo de Vista previa -->
@@ -1188,7 +1192,7 @@
                             <div class="mb-4 p-3 bg-gray-50 rounded">
                                 <h5 class="font-bold">3. Configurar autenticación</h5>
                                 <p>Tipo de autenticación configurado: <strong>{{ $activeZonaForInstructions->tipo_autenticacion_mikrotik_label }}</strong></p>
-                                
+
                                 @if($activeZonaForInstructions->tipo_autenticacion_mikrotik == 'pin')
                                     <div class="mt-2">
                                         <p>Para la autenticación por PIN:</p>
