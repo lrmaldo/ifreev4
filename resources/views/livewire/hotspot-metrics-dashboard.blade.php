@@ -163,7 +163,7 @@
     </div>    <!-- Gráficos -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Visitas por Día -->
-        <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+        <div class="bg-white rounded-lg shadow-md p-4 md:p-6" wire:ignore>
             <h3 class="text-lg font-semibold text-gray-900 mb-4">
                 <div class="flex items-center gap-2">
                     <svg class="w-5 h-5" style="color: #ff3f00;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,7 +172,9 @@
                     Visitas Diarias (Últimos 30 días)
                 </div>
             </h3>
-            <canvas id="visitasChart" height="200"></canvas>
+            <div wire:ignore>
+                <canvas id="visitasChart" height="200"></canvas>
+            </div>
         </div>
 
         <!-- Dispositivos Populares -->
@@ -313,58 +315,217 @@
     </div>
 </div>
 
-@script
 <script>
-    // Gráfico de visitas por día
-    const ctx = document.getElementById('visitasChart').getContext('2d');
-    const visitasData = @json($visitasPorDia);
-
-    // Preparar datos para los últimos 30 días
-    const labels = [];
-    const data = [];
-
-    for (let i = 29; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        labels.push(date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }));
-        data.push(visitasData[dateStr] || 0);
+    // Usar window para evitar redeclaraciones en Livewire
+    if (!window.visitasChart) {
+        window.visitasChart = null;
+    }
+    if (!window.chartInitialized) {
+        window.chartInitialized = false;
     }
 
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Visitas',
-                data: data,
-                borderColor: '#ff3f00',
-                backgroundColor: 'rgba(255, 63, 0, 0.1)',
-                tension: 0.4,
-                fill: true,
-                pointBackgroundColor: '#ff3f00',
-                pointBorderColor: '#ff3f00',
-                pointHoverBackgroundColor: '#ff3f00',
-                pointHoverBorderColor: '#ff3f00'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
+    function initVisitasChart() {
+        // Verificar que Chart.js esté disponible
+        if (typeof Chart === 'undefined') {
+            console.log('Chart.js no está disponible, intentando cargar...');
+            loadChartJS();
+            return;
+        }
+
+        const canvas = document.getElementById('visitasChart');
+        if (!canvas) {
+            console.log('Canvas visitasChart no encontrado');
+            return;
+        }
+
+        // Si ya está inicializado, solo actualizar datos
+        if (window.chartInitialized && window.visitasChart) {
+            console.log('Gráfico ya inicializado, actualizando datos...');
+            updateChartData();
+            return;
+        }
+
+        // Destruir el gráfico anterior si existe y tiene el método destroy
+        if (window.visitasChart && typeof window.visitasChart.destroy === 'function') {
+            console.log('Destruyendo gráfico anterior...');
+            window.visitasChart.destroy();
+            window.visitasChart = null;
+        }
+
+        const ctx = canvas.getContext('2d');
+
+        // Usar datos iniciales del componente
+        const visitasData = @json($visitasPorDia);
+
+        // Preparar datos para los últimos 30 días
+        const labels = [];
+        const data = [];
+
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            labels.push(date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }));
+            data.push(visitasData[dateStr] || 0);
+        }
+
+        try {
+            window.visitasChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Visitas',
+                        data: data,
+                        borderColor: '#ff3f00',
+                        backgroundColor: 'rgba(255, 63, 0, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#ff3f00',
+                        pointBorderColor: '#ff3f00',
+                        pointHoverBackgroundColor: '#ff3f00',
+                        pointHoverBorderColor: '#ff3f00'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
                     }
                 }
-            }
+            });
+
+            window.chartInitialized = true;
+            console.log('Gráfico de visitas inicializado correctamente');
+        } catch (error) {
+            console.error('Error al inicializar el gráfico:', error);
+            window.chartInitialized = false;
+        }
+    }
+
+    function loadChartJS() {
+        if (document.querySelector('script[src*="chart"]')) {
+            // Chart.js ya está siendo cargado, esperar
+            setTimeout(initVisitasChart, 500);
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.onload = function() {
+            console.log('Chart.js cargado exitosamente');
+            setTimeout(initVisitasChart, 100);
+        };
+        script.onerror = function() {
+            console.error('Error al cargar Chart.js');
+        };
+        document.head.appendChild(script);
+    }
+
+    function updateChartData(newData = null) {
+        if (!window.visitasChart || typeof Chart === 'undefined') return;
+
+        // Usar datos nuevos si se proporcionan, sino usar los datos del componente
+        const visitasData = newData || @json($visitasPorDia);
+        const labels = [];
+        const data = [];
+
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            labels.push(date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }));
+            data.push(visitasData[dateStr] || 0);
+        }
+
+        try {
+            // Reemplazar completamente los datos en lugar de agregar
+            window.visitasChart.data.labels = labels;
+            window.visitasChart.data.datasets[0].data = data;
+            window.visitasChart.update('none');
+            console.log('Gráfico actualizado con nuevos datos', data);
+        } catch (error) {
+            console.error('Error al actualizar datos del gráfico:', error);
+        }
+    }
+
+    // Variable para controlar las actualizaciones
+    let updateTimeout = null;
+    let isUpdating = false;
+    let lastUpdate = 0;
+
+    // Inicializar cuando la página cargue
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(initVisitasChart, 100);
+    });
+
+    // Inicializar cuando Livewire navegue
+    document.addEventListener('livewire:navigated', function () {
+        window.chartInitialized = false;
+        window.visitasChart = null;
+        setTimeout(initVisitasChart, 100);
+    });
+
+    // Escuchar evento de actualización de datos del gráfico
+    window.addEventListener('chartDataUpdated', function (event) {
+        console.log('Evento chartDataUpdated recibido:', event.detail);
+        const newData = event.detail;
+        if (window.chartInitialized && window.visitasChart) {
+            updateChartData(newData);
         }
     });
+
+    // Actualizar datos cuando el componente cambie - con control de frecuencia
+    document.addEventListener('livewire:updated', function (event) {
+        // Solo procesar actualizaciones del componente correcto
+        if (!event.detail || !event.detail.component ||
+            !event.detail.component.fingerprint ||
+            event.detail.component.fingerprint.name !== 'hotspot-metrics-dashboard') {
+            return;
+        }
+
+        const now = Date.now();
+
+        // Evitar actualizaciones muy frecuentes (máximo una cada 500ms)
+        if (now - lastUpdate < 500) {
+            return;
+        }
+
+        // Cancelar timeout anterior si existe
+        if (updateTimeout) {
+            clearTimeout(updateTimeout);
+        }
+
+        // Evitar actualizaciones múltiples simultáneas
+        if (isUpdating) {
+            return;
+        }
+
+        // Debounce la actualización
+        updateTimeout = setTimeout(() => {
+            isUpdating = true;
+            lastUpdate = Date.now();
+
+            if (window.chartInitialized && window.visitasChart) {
+                updateChartData();
+            } else {
+                initVisitasChart();
+            }
+
+            setTimeout(() => {
+                isUpdating = false;
+            }, 100);
+        }, 300);
+    });
 </script>
-@endscript

@@ -1,4 +1,5 @@
 /**
+ /**
  * Script para integración de Select2 con Livewire en selector de zonas
  * Versión 3.1 - Con inicialización manual forzada y comprobación mejorada
  */

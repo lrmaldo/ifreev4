@@ -49,6 +49,9 @@ class HotspotMetricsDashboard extends Component
         if (in_array($property, ['zona_id', 'fecha_inicio', 'fecha_fin'])) {
             $this->resetPage();
             $this->loadAnalytics();
+
+            // Emitir evento para actualizar gráfico
+            $this->js('window.dispatchEvent(new CustomEvent("chartDataUpdated", { detail: ' . json_encode($this->visitasPorDia) . ' }))');
         }
     }
 
@@ -97,7 +100,7 @@ class HotspotMetricsDashboard extends Component
         // Visitas por día (últimos 30 días)
         $this->visitasPorDia = HotspotMetric::selectRaw('DATE(created_at) as fecha, SUM(veces_entradas) as total')
             ->byZona($this->zona_id)
-            ->where('created_at', '>=', Carbon::now()->subDays(30))
+            ->byDateRange($fechaInicio, $fechaFin)
             ->groupBy('fecha')
             ->orderBy('fecha')
             ->get()
