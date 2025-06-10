@@ -1,5 +1,13 @@
-<!DOCTYPE html>
-<html lang="es">
+<!DOCT    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <!-- Fuentes locales (reemplazan Google Fonts para funcionar sin internet) -->
+    <link rel="stylesheet" href="{{ asset('css/fonts-local.css') }}">
+
+    <!-- Tailwind CSS del sistema -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- Swiper CSS local -->
+    <link rel="stylesheet" href="{{ asset('css/swiper-local.css') }}">
 <head>
     <title>Portal Cautivo - {{ $zona->nombre }}</title>
     <meta charset="utf-8">
@@ -7,14 +15,15 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    {{-- <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-      <!-- Tailwind CSS del sistema -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"> --}}
+
+    <!-- Tailwind CSS del sistema -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <!-- Swiper CSS para carrusel -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+    <!-- Swiper CSS local -->
+    <link rel="stylesheet" href="{{ asset('css/swiper-local.css') }}">>
 
     <style>
         /* Variables CSS personalizables */
@@ -43,7 +52,7 @@
         }
 
         body {
-            font-family: 'Inter', 'Poppins', sans-serif;
+            font-family: var(--font-inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', sans-serif);
             background-color: var(--color-background);
             color: var(--color-text);
             line-height: 1.6;
@@ -646,7 +655,7 @@
 
     <!-- Scripts -->
     <script src="{{ asset('js/md5.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+    <script src="{{ asset('js/swiper-local.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Configuración inicial
@@ -666,16 +675,13 @@
 
             // Inicializar Swiper si hay imágenes
             @if(count($imagenes) > 0)
-            const swiper = new Swiper('.swiper-container', {
+            const swiper = new SwiperLocal('.swiper-container', {
                 loop: {{ count($imagenes) > 1 ? 'true' : 'false' }},
                 autoplay: {
                     delay: 4000,
                     disableOnInteraction: false
                 },
-                pagination: {
-                    el: '.swiper-pagination',
-                    clickable: true,
-                },
+                pagination: true,
                 allowTouchMove: {{ count($imagenes) > 1 ? 'true' : 'false' }},
                 effect: 'fade',
                 fadeEffect: {
@@ -835,6 +841,9 @@
 
             // Función global para validación y autenticación de login de Mikrotik
             window.doLogin = function() {
+                // Registrar clic en botón de login
+                actualizarMetricaClic('login');
+
                 // Validar campos según el tipo de autenticación
                 @if($zona->tipo_autenticacion_mikrotik == 'pin')
                     const pinInput = document.getElementById('pin-username');
@@ -842,10 +851,10 @@
                         alert('Por favor ingresa el PIN');
                         return false;
                     }
-                    
+
                     // Para PIN, usar autenticación directa
                     return true;
-                    
+
                 @elseif($zona->tipo_autenticacion_mikrotik == 'usuario_password')
                     const username = document.getElementById('username');
                     const password = document.getElementById('password');
@@ -861,18 +870,18 @@
                     // Si hay CHAP challenge, usar autenticación CHAP
                     const chapId = '{{ $mikrotikData["chap-id"] ?? "" }}';
                     const chapChallenge = '{{ $mikrotikData["chap-challenge"] ?? "" }}';
-                    
+
                     if (chapId && chapChallenge && typeof hexMD5 === 'function') {
                         // Autenticación CHAP
                         const chapPassword = hexMD5(chapId + password.value + chapChallenge);
-                        
+
                         // Usar formulario oculto para CHAP
                         document.sendin.username.value = username.value;
                         document.sendin.password.value = chapPassword;
                         document.sendin.submit();
                         return false; // Prevenir el envío del formulario visible
                     }
-                    
+
                     // Autenticación normal (sin CHAP)
                     return true;
                 @endif
@@ -882,14 +891,49 @@
 
             // Función global auxiliar para autenticación de trial/conexión gratuita
             window.doTrial = function() {
+                // Registrar clic en botón de trial
+                actualizarMetricaClic('trial');
+
                 // Enviar formulario para conexión de prueba
-                const trialLink = '{{ $mikrotikData["link-login-only"] ?? "" }}' + 
-                                '?dst=' + encodeURIComponent('{{ $mikrotikData["link-orig-esc"] ?? "" }}') + 
+                const trialLink = '{{ $mikrotikData["link-login-only"] ?? "" }}' +
+                                '?dst=' + encodeURIComponent('{{ $mikrotikData["link-orig-esc"] ?? "" }}') +
                                 '&username=' + encodeURIComponent('T-{{ $mikrotikData["mac-esc"] ?? "" }}');
-                
+
                 window.location.href = trialLink;
                 return false;
             };
+
+            // Función para actualizar métricas (duración, clics)
+            function actualizarMetrica(datos) {
+                fetch('/hotspot-metrics/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        zona_id: {{ $zona->id }},
+                        mac_address: '{{ $mikrotikData["mac"] ?? "" }}',
+                        ...datos
+                    })
+                }).catch(error => console.log('Error actualizando métrica:', error));
+            }
+
+            // Función para registrar clics en botones
+            function actualizarMetricaClic(tipoBoton) {
+                actualizarMetrica({
+                    clic_boton: true,
+                    tipo_visual: tipoBoton
+                });
+            }
+
+            // Actualizar duración visual periódicamente
+            setInterval(function() {
+                const tiempoActual = Math.floor((Date.now() - tiempoInicio) / 1000);
+                actualizarMetrica({
+                    duracion_visual: tiempoActual
+                });
+            }, 10000); // Cada 10 segundos
 
             // Iniciar contador si no hay formulario
             @if(!$mostrarFormulario)

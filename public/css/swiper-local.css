@@ -1,0 +1,165 @@
+/**
+ * Swiper 10.0.4
+ * Estilos mínimos para el carrusel del portal cautivo
+ * Extraído de Swiper CSS para uso local sin CDN
+ */
+
+.swiper {
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  overflow: hidden;
+  list-style: none;
+  padding: 0;
+  z-index: 1;
+}
+
+.swiper-container {
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  display: flex;
+  transition-property: transform;
+  box-sizing: content-box;
+}
+
+.swiper-slide {
+  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition-property: transform;
+}
+
+.swiper-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.swiper-slide video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Paginación */
+.swiper-pagination {
+  position: absolute;
+  text-align: center;
+  transition: 0.3s opacity;
+  transform: translate3d(0, 0, 0);
+  z-index: 10;
+}
+
+.swiper-pagination.swiper-pagination-hidden {
+  opacity: 0;
+}
+
+.swiper-pagination-bullet {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  border-radius: 50%;
+  background: #000;
+  opacity: 0.2;
+  margin: 0 4px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.swiper-pagination-bullet-active {
+  opacity: 1;
+  background: var(--color-primary, #ff5e2c);
+}
+
+.swiper-pagination-bullets.swiper-pagination-horizontal {
+  bottom: 10px;
+  left: 0;
+  width: 100%;
+}
+
+/* Efecto Fade */
+.swiper-fade .swiper-slide {
+  pointer-events: none;
+  transition-property: opacity;
+}
+
+.swiper-fade .swiper-slide .swiper-slide {
+  pointer-events: none;
+}
+
+.swiper-fade .swiper-slide-active,
+.swiper-fade .swiper-slide-active .swiper-slide-active {
+  pointer-events: auto;
+}
+
+.swiper-fade .swiper-slide-active {
+  opacity: 1;
+}
+
+.swiper-fade .swiper-slide:not(.swiper-slide-active) {
+  opacity: 0;
+}
+
+/* Navegación */
+.swiper-button-prev,
+.swiper-button-next {
+  position: absolute;
+  top: 50%;
+  width: 27px;
+  height: 44px;
+  margin-top: -22px;
+  z-index: 10;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary, #ff5e2c);
+  opacity: 0.7;
+  transition: 0.2s;
+}
+
+.swiper-button-prev:hover,
+.swiper-button-next:hover {
+  opacity: 1;
+}
+
+.swiper-button-prev {
+  left: 10px;
+  right: auto;
+}
+
+.swiper-button-next {
+  right: 10px;
+  left: auto;
+}
+
+.swiper-button-prev:after,
+.swiper-button-next:after {
+  font-family: swiper-icons;
+  font-size: 44px;
+  text-transform: none !important;
+  letter-spacing: 0;
+  font-variant: initial;
+  line-height: 1;
+}
+
+.swiper-button-prev:after {
+  content: 'prev';
+}
+
+.swiper-button-next:after {
+  content: 'next';
+}
+
+/* Autoplay */
+.swiper-autoplay-paused .swiper-slide {
+  transition-property: none;
+}

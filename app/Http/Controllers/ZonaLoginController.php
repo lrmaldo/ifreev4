@@ -68,13 +68,37 @@ class ZonaLoginController extends Controller
      */
     protected function mostrarPortalCautivo($zona, $mikrotikData, $metricaInfo)
     {
-        // Obtener los campos del formulario con su HTML renderizado
-        $formFields = \App\Models\FormField::where('zona_id', $zona->id)->orderBy('orden')->get();
+        $macAddress = $mikrotikData['mac'] ?? '';
+
+        // Verificar si la MAC ya tiene respuesta de formulario
+        $respuestaExistente = null;
+        $mostrarFormulario = false;
+
+        if ($macAddress) {
+            $respuestaExistente = \App\Models\FormResponse::where('zona_id', $zona->id)
+                ->where('mac_address', $macAddress)
+                ->first();
+        }
+
+        // NUEVA LÓGICA: Registrar/actualizar métrica independientemente del formulario
+        $this->registrarMetricaCompleta($zona->id, $macAddress, $metricaInfo);
+
+        // Determinar si mostrar formulario SOLO si no existe respuesta previa
+        if (!$respuestaExistente && $zona->tipo_registro !== 'sin_registro' && $zona->campos->count() > 0) {
+            $mostrarFormulario = true;
+        }
+
+        // Obtener los campos del formulario con su HTML renderizado solo si es necesario
+        $formFields = [];
         $camposHtml = [];
 
-        // Usar el trait RenderizaFormFields para generar el HTML
-        foreach ($formFields as $campo) {
-            $camposHtml[] = $this->renderizarCampo($campo);
+        if ($mostrarFormulario) {
+            $formFields = \App\Models\FormField::where('zona_id', $zona->id)->orderBy('orden')->get();
+
+            // Usar el trait RenderizaFormFields para generar el HTML
+            foreach ($formFields as $campo) {
+                $camposHtml[] = $this->renderizarCampo($campo);
+            }
         }
 
         // Obtener campañas activas para mostrar en el carrusel/video
@@ -108,8 +132,8 @@ class ZonaLoginController extends Controller
             }
         }
 
-        // Verificar si se debe mostrar formulario
-        $mostrarFormulario = $zona->tipo_registro !== 'sin_registro' && $zona->campos->count() > 0;
+        // Verificar si se debe mostrar formulario (ya calculado arriba)
+        // $mostrarFormulario ya está definido
 
         // Tiempo de visualización
         $tiempoVisualizacion = $zona->tiempo_visualizacion ?? 15;
@@ -124,8 +148,71 @@ class ZonaLoginController extends Controller
             'videoUrl',
             'campanaSeleccionada',
             'mostrarFormulario',
-            'tiempoVisualizacion'
+            'tiempoVisualizacion',
+            'respuestaExistente'
         ));
+    }
+
+    /**
+     * Registrar métrica completa incluyendo veces de entrada y duración
+     */
+    protected function registrarMetricaCompleta($zonaId, $macAddress, $metricaInfo)
+    {
+        if (!$macAddress) {
+            return;
+        }
+
+        $agent = new \Jenssegers\Agent\Agent();
+
+        $metricaData = [
+            'zona_id' => $zonaId,
+            'mac_address' => $macAddress,
+            'dispositivo' => $agent->device() ?: 'Desconocido',
+            'navegador' => $agent->browser() . ' ' . $agent->version($agent->browser()),
+            'tipo_visual' => $metricaInfo['tipo_visual'] ?? 'portal_cautivo',
+            'duracion_visual' => 0, // Se actualizará desde el frontend
+            'clic_boton' => false,  // Se actualizará cuando haga clic
+            'veces_entradas' => 1   // Se incrementará automáticamente si ya existe
+        ];
+
+        // Usar el método del modelo para registrar/actualizar la métrica
+        \App\Models\HotspotMetric::registrarMetrica($metricaData);
+    }
+
+    /**
+     * Actualizar métrica de visita para usuarios recurrentes
+     * @deprecated - Reemplazado por registrarMetricaCompleta
+     */
+    protected function actualizarMetricaVisita($zonaId, $macAddress)
+    {
+        if (!$macAddress) {
+            return;
+        }
+
+        // Buscar métrica existente del día actual
+        $metricaHoy = \App\Models\HotspotMetric::where('zona_id', $zonaId)
+            ->where('mac_address', $macAddress)
+            ->whereDate('created_at', today())
+            ->first();
+
+        if ($metricaHoy) {
+            // Actualizar métrica existente
+            $metricaHoy->increment('veces_entrada');
+            $metricaHoy->touch(); // Actualizar timestamp
+        } else {
+            // Crear nueva métrica para hoy
+            \App\Models\HotspotMetric::create([
+                'zona_id' => $zonaId,
+                'mac_address' => $macAddress,
+                'dispositivo' => (new \Jenssegers\Agent\Agent())->device() ?: 'Desconocido',
+                'navegador' => (new \Jenssegers\Agent\Agent())->browser(),
+                'tipo_visual' => 'portal_entrada',
+                'tiempo_activo' => 0,
+                'veces_entrada' => 1,
+                'clics_botones' => 0,
+                'tiempo_visualizacion' => 0,
+            ]);
+        }
     }
 
     /**
@@ -237,6 +324,64 @@ class ZonaLoginController extends Controller
             HotspotMetric::registrarMetrica($data);
         } catch (\Exception $e) {
             \Log::error('Error registrando métrica de entrada: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Actualizar métricas desde el frontend (duración visual, clics)
+     */
+    public function actualizarMetrica(\Illuminate\Http\Request $request)
+    {
+        try {
+            $request->validate([
+                'zona_id' => 'required|integer',
+                'mac_address' => 'required|string',
+                'duracion_visual' => 'nullable|integer',
+                'clic_boton' => 'nullable|boolean',
+                'tipo_visual' => 'nullable|string'
+            ]);
+
+            $metrica = \App\Models\HotspotMetric::where('zona_id', $request->zona_id)
+                ->where('mac_address', $request->mac_address)
+                ->orderBy('updated_at', 'desc')
+                ->first();
+
+            if ($metrica) {
+                $datosActualizar = [];
+
+                if ($request->has('duracion_visual')) {
+                    $datosActualizar['duracion_visual'] = $request->duracion_visual;
+                }
+
+                if ($request->has('clic_boton')) {
+                    $datosActualizar['clic_boton'] = $request->clic_boton;
+                }
+
+                if ($request->has('tipo_visual')) {
+                    $datosActualizar['tipo_visual'] = $request->tipo_visual;
+                }
+
+                if (!empty($datosActualizar)) {
+                    $metrica->update($datosActualizar);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Métrica actualizada correctamente'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Métrica no encontrada'
+            ], 404);
+
+        } catch (\Exception $e) {
+            \Log::error('Error actualizando métrica: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar métrica'
+            ], 500);
         }
     }
 }

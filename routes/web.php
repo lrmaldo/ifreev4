@@ -48,6 +48,12 @@ Route::post('/hotspot-metrics/track', [\App\Http\Controllers\HotspotMetricContro
     ->withoutMiddleware(['web'])
     ->middleware(['throttle:120,1']);
 
+// Ruta para actualizar métricas desde el frontend
+Route::post('/hotspot-metrics/update', [\App\Http\Controllers\ZonaLoginController::class, 'actualizarMetrica'])
+    ->name('hotspot-metrics.update')
+    ->withoutMiddleware(['web'])
+    ->middleware(['throttle:120,1']);
+
 // Rutas para el registro de usuarios en zonas WiFi
 Route::get('/zona/{zonaId}/registro/formulario', function($zonaId) {
     $zona = \App\Models\Zona::findOrFail($zonaId);
