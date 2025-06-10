@@ -12,8 +12,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Para SQLite, necesitamos recrear la tabla para modificar una columna enum
-        Schema::getConnection()->statement('PRAGMA foreign_keys=off;');
+        // Verificar el motor de base de datos
+        $driver = Schema::getConnection()->getDriverName();
+
+        if ($driver === 'mysql') {
+            // Para MySQL, podemos modificar el ENUM directamente
+            DB::statement("ALTER TABLE hotspot_metrics MODIFY tipo_visual ENUM('formulario', 'carrusel', 'video', 'portal_cautivo', 'portal_entrada', 'login') DEFAULT 'formulario'");
+        } elseif ($driver === 'sqlite') {
+            // Para SQLite, necesitamos recrear la tabla para modificar una columna enum
+            Schema::getConnection()->statement('PRAGMA foreign_keys=off;');
 
         // 1. Crear tabla temporal con la nueva definición
         Schema::create('hotspot_metrics_temp', function (Blueprint $table) {
@@ -60,6 +67,7 @@ return new class extends Migration
         });
 
         Schema::getConnection()->statement('PRAGMA foreign_keys=on;');
+        }
     }
 
     /**
@@ -67,8 +75,21 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Para revertir, recreamos la tabla con los valores originales
-        Schema::getConnection()->statement('PRAGMA foreign_keys=off;');
+        // Verificar el motor de base de datos
+        $driver = Schema::getConnection()->getDriverName();
+
+        if ($driver === 'mysql') {
+            // Para MySQL, revertir el ENUM a los valores originales
+            DB::statement("ALTER TABLE hotspot_metrics MODIFY tipo_visual ENUM('formulario', 'carrusel', 'video') DEFAULT 'formulario'");
+
+            // Actualizar registros que tengan valores no válidos
+            DB::table('hotspot_metrics')
+                ->whereIn('tipo_visual', ['portal_cautivo', 'portal_entrada', 'login'])
+                ->update(['tipo_visual' => 'formulario']);
+
+        } elseif ($driver === 'sqlite') {
+            // Para SQLite, recrear la tabla con los valores originales
+            Schema::getConnection()->statement('PRAGMA foreign_keys=off;');
 
         Schema::create('hotspot_metrics_temp', function (Blueprint $table) {
             $table->id();
@@ -101,5 +122,6 @@ return new class extends Migration
         });
 
         Schema::getConnection()->statement('PRAGMA foreign_keys=on;');
+        }
     }
 };

@@ -12,8 +12,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Para SQLite, necesitamos recrear la tabla para modificar una columna enum
-        Schema::getConnection()->statement('PRAGMA foreign_keys=off;');
+        // Verificar el motor de base de datos
+        $driver = Schema::getConnection()->getDriverName();
+
+        if ($driver === 'mysql') {
+            // Para MySQL, podemos modificar el ENUM directamente
+            DB::statement("ALTER TABLE hotspot_metrics MODIFY tipo_visual ENUM('formulario', 'carrusel', 'video', 'portal_cautivo', 'portal_entrada', 'login') DEFAULT 'formulario'");
+        } elseif ($driver === 'sqlite') {
+            // Para SQLite, necesitamos recrear la tabla para modificar una columna enum
+            Schema::getConnection()->statement('PRAGMA foreign_keys=off;');
 
         // 1. Crear tabla temporal con la nueva definición que incluye 'login'
         Schema::create('hotspot_metrics_new', function (Blueprint $table) {
@@ -60,6 +67,7 @@ return new class extends Migration
         });
 
         Schema::getConnection()->statement('PRAGMA foreign_keys=on;');
+        }
     }
 
     /**
@@ -67,8 +75,24 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('hotspot_metrics', function (Blueprint $table) {
-            //
-        });
+        // Verificar el motor de base de datos
+        $driver = Schema::getConnection()->getDriverName();
+
+        if ($driver === 'mysql') {
+            // Para MySQL, revertir el ENUM quitando 'login'
+            DB::statement("ALTER TABLE hotspot_metrics MODIFY tipo_visual ENUM('formulario', 'carrusel', 'video', 'portal_cautivo', 'portal_entrada') DEFAULT 'formulario'");
+
+            // Actualizar registros que tengan 'login' a 'formulario'
+            DB::table('hotspot_metrics')
+                ->where('tipo_visual', 'login')
+                ->update(['tipo_visual' => 'formulario']);
+
+        } elseif ($driver === 'sqlite') {
+            // Para SQLite, no implementamos rollback para evitar pérdida de datos
+            // Solo actualizar los valores 'login' a 'formulario'
+            DB::table('hotspot_metrics')
+                ->where('tipo_visual', 'login')
+                ->update(['tipo_visual' => 'formulario']);
+        }
     }
 };
