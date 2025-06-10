@@ -58,16 +58,15 @@ trait RenderizaFormFields
                 break;
 
             case 'radio':
-                $html .= '<div class="mt-2 space-y-2">';
+                $html .= '<div class="radio-group">';
 
                 foreach ($campo->opciones as $opcion) {
                     $radioId = $id . '_' . $opcion->id;
                     $checked = ($valor == $opcion->valor) ? 'checked' : '';
 
-                    $html .= '<div class="flex items-center">';
-                    $html .= '<input type="radio" id="' . $radioId . '" name="' . $nombre . '" value="' . $opcion->valor . '" ' . $checked . ' ' . $required .
-                            ' class="h-4 w-4 text-indigo-600 focus:ring-indigo-500">';
-                    $html .= '<label for="' . $radioId . '" class="ml-2 block text-sm text-gray-700">' . $opcion->etiqueta . '</label>';
+                    $html .= '<div class="radio-option">';
+                    $html .= '<input type="radio" id="' . $radioId . '" name="' . $nombre . '" value="' . $opcion->valor . '" ' . $checked . ' ' . $required . '>';
+                    $html .= '<label for="' . $radioId . '">' . $opcion->etiqueta . '</label>';
                     $html .= '</div>';
                 }
 
@@ -84,17 +83,16 @@ trait RenderizaFormFields
                     }
                     $html .= '</div>';
 
-                    $html .= '<div class="mt-2 space-y-2">';
+                    $html .= '<div class="checkbox-group">';
 
                     foreach ($campo->opciones as $opcion) {
                         $checkId = $id . '_' . $opcion->id;
                         $checkName = $prefijo . '[' . $campo->campo . '][' . $opcion->valor . ']';
                         $checked = (isset($valores[$campo->campo][$opcion->valor])) ? 'checked' : '';
 
-                        $html .= '<div class="flex items-center">';
-                        $html .= '<input type="checkbox" id="' . $checkId . '" name="' . $checkName . '" value="1" ' . $checked .
-                                ' class="h-4 w-4 text-indigo-600 focus:ring-indigo-500">';
-                        $html .= '<label for="' . $checkId . '" class="ml-2 block text-sm text-gray-700">' . $opcion->etiqueta . '</label>';
+                        $html .= '<div class="checkbox-option">';
+                        $html .= '<input type="checkbox" id="' . $checkId . '" name="' . $checkName . '" value="1" ' . $checked . '>';
+                        $html .= '<label for="' . $checkId . '">' . $opcion->etiqueta . '</label>';
                         $html .= '</div>';
                     }
 
@@ -102,10 +100,9 @@ trait RenderizaFormFields
                 } else {
                     // Checkbox único (como "Acepto los términos y condiciones")
                     $checked = ($valor) ? 'checked' : '';
-                    $html .= '<div class="flex items-center mt-2">';
-                    $html .= '<input type="checkbox" id="' . $id . '" name="' . $nombre . '" value="1" ' . $checked . ' ' . $required .
-                            ' class="h-4 w-4 text-indigo-600 focus:ring-indigo-500">';
-                    $html .= '<label for="' . $id . '" class="ml-2 block text-sm text-gray-700">' . $campo->etiqueta;
+                    $html .= '<div class="checkbox-option">';
+                    $html .= '<input type="checkbox" id="' . $id . '" name="' . $nombre . '" value="1" ' . $checked . ' ' . $required . '>';
+                    $html .= '<label for="' . $id . '">' . $campo->etiqueta;
                     if ($campo->obligatorio) {
                         $html .= ' <span class="text-red-500">*</span>';
                     }

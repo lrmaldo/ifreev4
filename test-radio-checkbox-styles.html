@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Radio Buttons y Checkboxes</title>
+    <style>
+        /* Variables CSS personalizables */
+        :root {
+            --color-background: #f9fafb;
+            --color-primary: #ff5e2c;
+            --color-primary-light: rgba(255, 94, 44, 0.1);
+            --color-secondary: #ff8159;
+            --color-secondary-light: rgba(255, 129, 89, 0.15);
+            --color-secondary-dark: #e64a1c;
+            --color-text: #1f2937;
+            --color-text-light: #6b7280;
+            --color-border: #e5e7eb;
+            --color-input-focus: #ffeee8;
+            --color-button-hover: #e64a1c;
+            --color-success: #10b981;
+            --color-success-light: rgba(16, 185, 129, 0.1);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-full: 9999px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --animation-speed: 0.3s;
+        }
+
+        body {
+            font-family: 'Inter', 'Poppins', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Estilos para formularios */
+        .form-field {
+            margin-bottom: 2rem;
+        }
+
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            transition: border-color var(--animation-speed) ease, box-shadow var(--animation-speed) ease;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-input-focus);
+        }
+
+        .form-field label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--color-text);
+        }
+
+        /* Estilos específicos para radio buttons y checkboxes */
+        .form-field input[type="radio"],
+        .form-field input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            padding: 0;
+            position: relative;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--color-border);
+            background-color: white;
+            cursor: pointer;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        /* Radio buttons - circular */
+        .form-field input[type="radio"] {
+            border-radius: 50%;
+        }
+
+        /* Checkboxes - square with rounded corners */
+        .form-field input[type="checkbox"] {
+            border-radius: 3px;
+        }
+
+        /* Estado checked para radio buttons */
+        .form-field input[type="radio"]:checked {
+            border-color: var(--color-primary);
+            background-color: var(--color-primary);
+        }
+
+        .form-field input[type="radio"]:checked::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background-color: white;
+            border-radius: 50%;
+        }
+
+        /* Estado checked para checkboxes */
+        .form-field input[type="checkbox"]:checked {
+            border-color: var(--color-primary);
+            background-color: var(--color-primary);
+        }
+
+        .form-field input[type="checkbox"]:checked::before {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        /* Estados hover y focus */
+        .form-field input[type="radio"]:hover,
+        .form-field input[type="checkbox"]:hover {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px var(--color-input-focus);
+        }
+
+        .form-field input[type="radio"]:focus,
+        .form-field input[type="checkbox"]:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-input-focus);
+        }
+
+        /* Contenedores para opciones de radio y checkbox */
+        .radio-group,
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .radio-option,
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            transition: background-color var(--animation-speed) ease;
+            cursor: pointer;
+        }
+
+        .radio-option:hover,
+        .checkbox-option:hover {
+            background-color: var(--color-primary-light);
+        }
+
+        .radio-option label,
+        .checkbox-option label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 400;
+            line-height: 1.4;
+            user-select: none;
+        }
+
+        h2 {
+            color: var(--color-primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--color-border);
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; margin-bottom: 2rem; color: var(--color-primary);">Test de Radio Buttons y Checkboxes</h1>
+
+        <form>
+            <!-- Radio buttons -->
+            <h2>Radio Buttons (selección única)</h2>
+            <div class="form-field">
+                <label>¿Cuál es tu género?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="genero1" name="genero" value="masculino">
+                        <label for="genero1">Masculino</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="genero2" name="genero" value="femenino">
+                        <label for="genero2">Femenino</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="genero3" name="genero" value="otro">
+                        <label for="genero3">Otro</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="genero4" name="genero" value="no_especificar">
+                        <label for="genero4">Prefiero no especificar</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Checkboxes múltiples -->
+            <h2>Checkboxes Múltiples</h2>
+            <div class="form-field">
+                <label>¿Qué servicios te interesan? (puedes seleccionar varios)</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="servicio1" name="servicios[]" value="wifi">
+                        <label for="servicio1">WiFi gratuito</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="servicio2" name="servicios[]" value="cafe">
+                        <label for="servicio2">Servicio de café</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="servicio3" name="servicios[]" value="comida">
+                        <label for="servicio3">Servicio de comida</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="servicio4" name="servicios[]" value="musica">
+                        <label for="servicio4">Música en vivo</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="servicio5" name="servicios[]" value="estacionamiento">
+                        <label for="servicio5">Estacionamiento</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Checkbox único -->
+            <h2>Checkbox Único</h2>
+            <div class="form-field">
+                <div class="checkbox-option">
+                    <input type="checkbox" id="terminos" name="terminos" value="1">
+                    <label for="terminos">Acepto los términos y condiciones de uso</label>
+                </div>
+            </div>
+
+            <div class="form-field">
+                <div class="checkbox-option">
+                    <input type="checkbox" id="newsletter" name="newsletter" value="1">
+                    <label for="newsletter">Suscribirme al boletín de noticias</label>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Rango de edad con radio -->
+            <h2>Rango de Edad</h2>
+            <div class="form-field">
+                <label>¿En qué rango de edad te encuentras?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="edad1" name="edad" value="18-25">
+                        <label for="edad1">18-25 años</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="edad2" name="edad" value="26-35">
+                        <label for="edad2">26-35 años</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="edad3" name="edad" value="36-45">
+                        <label for="edad3">36-45 años</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="edad4" name="edad" value="46-60">
+                        <label for="edad4">46-60 años</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="edad5" name="edad" value="60+">
+                        <label for="edad5">Más de 60 años</label>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div style="text-align: center; margin-top: 2rem; padding: 1rem; background-color: var(--color-primary-light); border-radius: var(--radius-md);">
+            <p style="margin: 0; font-size: 0.875rem; color: var(--color-text-light);">
+                <strong>Test completado:</strong> Los radio buttons y checkboxes ahora tienen estilos uniformes y proporcionales.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Script para demostrar que los elementos funcionan correctamente
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            
+            form.addEventListener('change', function(e) {
+                if (e.target.type === 'radio' || e.target.type === 'checkbox') {
+                    console.log('Campo cambiado:', e.target.name, '=', e.target.value, 'checked:', e.target.checked);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

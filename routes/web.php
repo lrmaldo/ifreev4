@@ -12,6 +12,12 @@ Route::post('/login_formulario/{id}', [ZonaLoginController::class, 'handle'])
     ->withoutMiddleware(['web'])  // No requerimos CSRF para esta ruta ya que viene del Mikrotik
     ->middleware(['throttle:60,1']); // Protección contra abusos
 
+// Ruta para procesar formularios del portal cautivo
+Route::post('/zona/formulario/responder', [ZonaLoginController::class, 'procesarFormulario'])
+    ->name('zona.formulario.responder')
+    ->withoutMiddleware(['web'])
+    ->middleware(['throttle:30,1']);
+
 // Rutas para el portal cautivo
 Route::get('/portal-cautivo/{zonaId}/campanas', [\App\Http\Controllers\PortalCautivoController::class, 'obtenerCampanas'])
     ->name('portal.campanas')
