@@ -73,11 +73,31 @@ class Index extends Component
         if ($this->editando && !$this->archivo) {
             // Si estamos editando y no se ha subido un nuevo archivo, no validamos
             // porque mantendremos el archivo existente
+            \Log::info('No validando archivo en edición sin nuevo archivo');
         } else {
             // Para creación o cuando se sube un nuevo archivo en edición
-            $validacionArchivo = $this->tipo === 'imagen'
-                ? ($this->editando ? 'nullable|image|max:2048' : 'required|image|max:2048')
-                : ($this->editando ? 'nullable|mimes:mp4,mov,ogg,qt,webm,mpeg,avi|max:102400' : 'required|mimes:mp4,mov,ogg,qt,webm,mpeg,avi|max:102400');
+            if ($this->tipo === 'imagen') {
+                $validacionArchivo = $this->editando
+                    ? 'nullable|image|max:2048'
+                    : 'required|image|max:2048';
+
+                \Log::info('Validando imagen', [
+                    'reglas' => $validacionArchivo,
+                    'editando' => $this->editando,
+                    'archivo_presente' => !empty($this->archivo)
+                ]);
+            } else {
+                // Para videos
+                $validacionArchivo = $this->editando
+                    ? 'nullable|mimes:mp4,mov,ogg,qt,webm,mpeg,avi|max:102400'
+                    : 'required|mimes:mp4,mov,ogg,qt,webm,mpeg,avi|max:102400';
+
+                \Log::info('Validando video', [
+                    'reglas' => $validacionArchivo,
+                    'editando' => $this->editando,
+                    'archivo_presente' => !empty($this->archivo)
+                ]);
+            }
 
             $rules['archivo'] = $validacionArchivo;
         }
@@ -128,34 +148,82 @@ class Index extends Component
     public function save()
     {
         try {
-            $this->validate();
+            \Log::info('Iniciando guardado de campaña', [
+                'tipo' => $this->tipo,
+                'editando' => $this->editando,
+                'tiene_archivo' => !empty($this->archivo),
+                'archivo_actual' => $this->archivo_actual,
+                'archivo_info' => $this->archivo ? [
+                    'nombre' => $this->archivo->getClientOriginalName(),
+                    'tamaño' => $this->archivo->getSize(),
+                    'mime' => $this->archivo->getMimeType()
+                ] : null
+            ]);
+
+            $validated = $this->validate();
+
+            \Log::info('Validación completada', [
+                'campos_validados' => array_keys($validated)
+            ]);
 
             // Subir archivo
             $archivoPath = $this->archivo_actual;
 
             if ($this->archivo) {
-                // Si hay un archivo nuevo, eliminar el anterior si estamos editando
-                if ($this->editando && $this->archivo_actual) {
-                    Storage::disk('public')->delete($this->archivo_actual);
+                try {
+                    // Log para debugging antes de procesar el archivo
+                    \Log::info('Procesando archivo', [
+                        'tipo' => $this->tipo,
+                        'nombre_original' => $this->archivo->getClientOriginalName(),
+                        'tamaño' => $this->archivo->getSize(),
+                        'mime_type' => $this->archivo->getMimeType(),
+                        'hash' => $this->archivo->getFilename(),
+                        'is_valid' => $this->archivo->isValid(),
+                        'error_code' => $this->archivo->getError()
+                    ]);
+
+                    // Si hay un archivo nuevo, eliminar el anterior si estamos editando
+                    if ($this->editando && $this->archivo_actual) {
+                        Storage::disk('public')->delete($this->archivo_actual);
+                    }
+
+                    // Generar un nombre único para el archivo
+                    $extension = $this->archivo->getClientOriginalExtension();
+                    $nombreArchivo = time() . '_' . Str::random(10) . '.' . $extension;
+
+                    // Subir el archivo
+                    $carpeta = $this->tipo === 'imagen' ? 'campanas/imagenes' : 'campanas/videos';
+
+                    // Verificar que las carpetas existan y crearlas si no
+                    $fullPath = 'public/' . $carpeta;
+                    if (!Storage::exists($fullPath)) {
+                        Storage::makeDirectory($fullPath);
+                    }
+
+                    $archivoPath = $this->archivo->storeAs($carpeta, $nombreArchivo, 'public');
+
+                    if (!$archivoPath) {
+                        throw new \Exception("Error al subir el archivo. No se pudo guardar en el almacenamiento.");
+                    }
+
+                    // Log para debugging
+                    \Log::info('Archivo subido correctamente', [
+                        'tipo' => $this->tipo,
+                        'nombre_original' => $this->archivo->getClientOriginalName(),
+                        'extension' => $extension,
+                        'tamaño' => $this->archivo->getSize(),
+                        'mime_type' => $this->archivo->getMimeType(),
+                        'ruta' => $archivoPath
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Error en la subida del archivo', [
+                        'error' => $e->getMessage(),
+                        'tipo_archivo' => $this->tipo,
+                        'mensaje' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    throw new \Exception("Error al procesar el archivo: " . $e->getMessage());
                 }
-
-                // Generar un nombre único para el archivo
-                $extension = $this->archivo->getClientOriginalExtension();
-                $nombreArchivo = time() . '_' . Str::random(10) . '.' . $extension;
-
-                // Subir el archivo
-                $carpeta = $this->tipo === 'imagen' ? 'campanas/imagenes' : 'campanas/videos';
-                $archivoPath = $this->archivo->storeAs($carpeta, $nombreArchivo, 'public');
-
-                // Log para debugging
-                \Log::info('Archivo subido correctamente', [
-                    'tipo' => $this->tipo,
-                    'nombre_original' => $this->archivo->getClientOriginalName(),
-                    'extension' => $extension,
-                    'tamaño' => $this->archivo->getSize(),
-                    'mime_type' => $this->archivo->getMimeType(),
-                    'ruta' => $archivoPath
-                ]);
             } elseif (!$this->editando || !$this->archivo_actual) {
                 // Si no hay archivo y no estamos editando, o estamos editando pero no hay archivo actual
                 throw new \Exception("Se requiere un archivo " . ($this->tipo === 'imagen' ? 'de imagen' : 'de video'));
@@ -189,15 +257,35 @@ class Index extends Component
         }
 
         $this->closeModal();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Log error de validación específico
+            \Log::error('Error de validación al guardar campaña', [
+                'error' => $e->getMessage(),
+                'errores' => $e->validator->errors()->toArray(),
+                'tipo' => $this->tipo,
+                'tiene_archivo' => !empty($this->archivo),
+                'editando' => $this->editando
+            ]);
+
+            // No necesitamos hacer flash aquí porque Livewire muestra los errores de validación automáticamente
+
         } catch (\Exception $e) {
-            // Log el error
+            // Log error general con más detalles
             \Log::error('Error al guardar campaña', [
                 'error' => $e->getMessage(),
+                'clase' => get_class($e),
                 'trace' => $e->getTraceAsString(),
                 'tipo' => $this->tipo,
                 'tiene_archivo' => !empty($this->archivo),
                 'editando' => $this->editando,
-                'archivo_actual' => $this->archivo_actual
+                'archivo_actual' => $this->archivo_actual,
+                'archivo_info' => $this->archivo ? [
+                    'nombre' => $this->archivo->getClientOriginalName(),
+                    'tamaño' => $this->archivo->getSize(),
+                    'mime_type' => $this->archivo->getMimeType(),
+                    'error_code' => $this->archivo->getError(),
+                    'is_valid' => $this->archivo->isValid()
+                ] : 'No hay archivo'
             ]);
 
             // Mostrar mensaje de error al usuario
@@ -431,5 +519,159 @@ class Index extends Component
 
         // Si es cliente, solo sus zonas
         return Zona::where('user_id', $user->id)->orderBy('nombre')->get();
+    }
+
+    /**
+     * Método para diagnóstico de problemas de subida de archivos
+     */
+    public function diagnosticarProblemasArchivo()
+    {
+        try {
+            LogFacade::info('---- DIAGNÓSTICO DE PROBLEMAS DE SUBIDA DE ARCHIVOS ----');
+
+            // Información básica PHP
+            LogFacade::info('Configuración PHP:', [
+                'upload_max_filesize' => ini_get('upload_max_filesize'),
+                'post_max_size' => ini_get('post_max_size'),
+                'max_input_time' => ini_get('max_input_time'),
+                'max_execution_time' => ini_get('max_execution_time'),
+                'memory_limit' => ini_get('memory_limit')
+            ]);
+
+            // Verificar permisos de escritura
+            $carpetas = [
+                'storage_path' => storage_path(),
+                'public_path' => public_path(),
+                'storage_app_public' => storage_path('app/public'),
+                'storage_app_public_campanas' => storage_path('app/public/campanas')
+            ];
+
+            foreach ($carpetas as $nombre => $ruta) {
+                LogFacade::info('Verificando permisos carpeta: ' . $nombre, [
+                    'ruta' => $ruta,
+                    'existe' => file_exists($ruta) ? 'Sí' : 'No',
+                    'es_escribible' => is_writable($ruta) ? 'Sí' : 'No',
+                    'permisos' => file_exists($ruta) ? substr(sprintf('%o', fileperms($ruta)), -4) : 'N/A'
+                ]);
+            }
+
+            // Verificar configuración Livewire
+            $livewireConfig = config('livewire');
+            LogFacade::info('Configuración Livewire para archivos:', [
+                'temporary_file_upload_rules' => $livewireConfig['temporary_file_upload']['rules'] ?? 'No configurado',
+                'temporary_file_upload_directory' => $livewireConfig['temporary_file_upload']['directory'] ?? 'Por defecto',
+                'temporary_file_upload_max_time' => $livewireConfig['temporary_file_upload']['max_upload_time'] ?? 'Por defecto'
+            ]);
+
+            // Verificar discos de almacenamiento
+            $filesystemConfig = config('filesystems');
+            LogFacade::info('Configuración discos de almacenamiento:', [
+                'default' => $filesystemConfig['default'] ?? 'No configurado',
+                'public_disk' => array_key_exists('public', $filesystemConfig['disks']) ? 'Configurado' : 'No encontrado',
+                'public_disk_root' => $filesystemConfig['disks']['public']['root'] ?? 'No configurado',
+                'public_disk_url' => $filesystemConfig['disks']['public']['url'] ?? 'No configurado'
+            ]);
+
+            // Intentar crear directorios necesarios
+            $directoriosNecesarios = [
+                'campanas/imagenes',
+                'campanas/videos'
+            ];
+
+            foreach ($directoriosNecesarios as $dir) {
+                $fullPath = 'public/' . $dir;
+                $exists = Storage::exists($fullPath);
+
+                LogFacade::info('Verificando directorio ' . $dir, [
+                    'existe' => $exists ? 'Sí' : 'No'
+                ]);
+
+                if (!$exists) {
+                    Storage::makeDirectory($fullPath);
+                    LogFacade::info('Directorio creado: ' . $fullPath);
+                }
+            }
+
+            return 'El diagnóstico ha sido registrado en los logs. Por favor revisa storage/logs/laravel.log';
+        } catch (\Exception $e) {
+            LogFacade::error('Error durante el diagnóstico:', [
+                'mensaje' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return 'Error durante el diagnóstico: ' . $e->getMessage();
+        }
+    }
+
+    /**
+     * Ejecutar diagnóstico y reparar problemas comunes
+     */
+    public function ejecutarDiagnostico()
+    {
+        try {
+            // Registrar información de diagnóstico
+            $resultadoDiagnostico = $this->diagnosticarProblemasArchivo();
+
+            // Intentar crear los directorios necesarios
+            $carpetas = ['campanas/imagenes', 'campanas/videos'];
+            foreach ($carpetas as $carpeta) {
+                $fullPath = 'public/' . $carpeta;
+                if (!Storage::exists($fullPath)) {
+                    Storage::makeDirectory($fullPath);
+                    LogFacade::info('Directorio creado: ' . $fullPath);
+                }
+            }
+
+            // Verificar el enlace simbólico de storage
+            $publicPath = public_path('storage');
+            $storagePath = storage_path('app/public');
+
+            if (!file_exists($publicPath) || !is_link($publicPath)) {
+                // Si estamos en Windows, el enlace simbólico puede ser complicado
+                // En su lugar, verificamos si el directorio existe y tiene archivos
+                if (PHP_OS_FAMILY === 'Windows') {
+                    LogFacade::info('Sistema operativo Windows detectado');
+                    if (!file_exists($publicPath) || !is_dir($publicPath)) {
+                        LogFacade::warning('El directorio public/storage no existe. Se creará un directorio.');
+                        if (!file_exists($publicPath)) {
+                            @mkdir($publicPath, 0755, true);
+                        }
+                    }
+                } else {
+                    // En sistemas Unix podemos intentar crear el enlace simbólico
+                    @symlink($storagePath, $publicPath);
+                    LogFacade::info('Enlace simbólico creado de ' . $storagePath . ' a ' . $publicPath);
+                }
+            }
+
+            // Verificar permisos de carpetas
+            $carpetas = [
+                storage_path('app/public'),
+                storage_path('app/public/campanas'),
+                storage_path('app/public/campanas/imagenes'),
+                storage_path('app/public/campanas/videos')
+            ];
+
+            foreach ($carpetas as $carpeta) {
+                if (!file_exists($carpeta)) {
+                    @mkdir($carpeta, 0755, true);
+                    LogFacade::info('Carpeta creada: ' . $carpeta);
+                }
+
+                // Intenta ajustar permisos
+                @chmod($carpeta, 0755);
+            }
+
+            session()->flash('message', 'Diagnóstico completado. Se han realizado reparaciones automáticas. Revisa los logs para más detalles.');
+
+            // Sugerir revisar el diagnóstico detallado
+            return redirect(url('/diagnostico-archivos-livewire.php'));
+        } catch (\Exception $e) {
+            LogFacade::error('Error durante la reparación automática', [
+                'mensaje' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            session()->flash('error', 'Error durante la reparación: ' . $e->getMessage());
+        }
     }
 }

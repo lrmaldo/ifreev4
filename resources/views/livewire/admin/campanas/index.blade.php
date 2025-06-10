@@ -39,6 +39,17 @@
                         <span class="ml-2 text-sm text-gray-700">Solo activas</span>
                     </label>
                 </div>
+                @if(auth()->user()->hasRole('admin'))
+                <div>
+                    <button wire:click="ejecutarDiagnostico" class="px-3 py-2 text-sm bg-yellow-600 hover:bg-yellow-700 text-white rounded-md flex items-center" title="Ejecutar diagnóstico de subida de archivos">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        Diagnóstico
+                    </button>
+                </div>
+                @endif
             </div>
         </div>
 
@@ -225,26 +236,31 @@
 
                                     <!-- Archivo -->
                                     <div>
-                                        <label for="archivo-{{ $tipo }}" class="block text-sm font-medium text-gray-700">
+                                        <label for="archivo-input" class="block text-sm font-medium text-gray-700">
                                             {{ $tipo === 'imagen' ? 'Imagen' : 'Video' }}
                                             @if($editando && $archivo_actual)
                                                 <span class="text-xs text-gray-500">(Dejar en blanco para mantener el actual)</span>
                                             @endif
                                         </label>
-                                        <!-- Usamos un ID único dinámico basado en el tipo -->
+                                        <!-- Usamos un ID fijo para simplificar el manejo del input -->
                                         <input type="file"
                                             wire:model="archivo"
-                                            id="archivo-{{ $tipo }}"
+                                            id="archivo-input"
                                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                             accept="{{ $tipo === 'imagen' ? 'image/*' : '.mp4,.mov,.ogg,.qt,.webm,.mpeg,.avi,video/*' }}">
 
                                         <div class="mt-2">
                                             @if ($archivo)
-                                                @if($tipo === 'imagen')
-                                                    <img src="{{ $archivo->temporaryUrl() }}" class="h-20 w-auto">
-                                                @else
-                                                    <span class="text-sm text-gray-500">Video seleccionado: {{ $archivo->getClientOriginalName() }} ({{ round($archivo->getSize() / 1048576, 2) }} MB)</span>
-                                                @endif
+                                                <div wire:loading wire:target="archivo" class="text-sm text-blue-600">
+                                                    Cargando archivo... Por favor espere.
+                                                </div>
+                                                <div wire:loading.remove wire:target="archivo">
+                                                    @if($tipo === 'imagen')
+                                                        <img src="{{ $archivo->temporaryUrl() }}" class="h-20 w-auto">
+                                                    @else
+                                                        <span class="text-sm text-gray-500">Video seleccionado: {{ $archivo->getClientOriginalName() }} ({{ round($archivo->getSize() / 1048576, 2) }} MB)</span>
+                                                    @endif
+                                                </div>
                                             @elseif($editando && $archivo_actual)
                                                 @if($tipo === 'imagen')
                                                     <img src="{{ Storage::url($archivo_actual) }}" class="h-20 w-auto">
@@ -393,10 +409,23 @@
         Livewire.on('tipo-changed', function(data) {
             // Limpiamos el input file para que refleje el nuevo tipo
             const tipoActual = data.tipo;
+            console.log('Tipo cambiado a:', tipoActual);
+
             setTimeout(() => {
-                const inputFile = document.getElementById('archivo-'+tipoActual);
+                // Usamos el ID fijo ahora
+                const inputFile = document.getElementById('archivo-input');
                 if (inputFile) {
+                    console.log('Limpiando el input file');
                     inputFile.value = '';
+
+                    // Actualizar el atributo accept según el tipo
+                    if (tipoActual === 'imagen') {
+                        inputFile.setAttribute('accept', 'image/*');
+                    } else {
+                        inputFile.setAttribute('accept', '.mp4,.mov,.ogg,.qt,.webm,.mpeg,.avi,video/*');
+                    }
+                } else {
+                    console.error('No se encontró el input file');
                 }
             }, 100);
         });
