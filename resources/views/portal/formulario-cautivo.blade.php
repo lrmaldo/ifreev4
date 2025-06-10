@@ -363,6 +363,59 @@
             border: 1px solid var(--color-border);
         }
 
+        .auth-form h3 {
+            color: var(--color-primary);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .auth-form .form-field {
+            margin-bottom: 1rem;
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            transition: border-color var(--animation-speed) ease, box-shadow var(--animation-speed) ease;
+            background-color: white;
+        }
+
+        .auth-form input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-input-focus);
+        }
+
+        .auth-form button {
+            width: 100%;
+            padding: 0.75rem 1.25rem;
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color var(--animation-speed) ease;
+            font-size: 1rem;
+        }
+
+        .auth-form button:hover {
+            background-color: var(--color-button-hover);
+        }
+
+        .auth-form .text-red-500 {
+            color: #dc2626;
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+
         /* Loading spinner */
         .loading-spinner {
             display: inline-block;
@@ -519,7 +572,7 @@
                             <p>¿No tienes credenciales? Prueba nuestra conexión gratuita:</p>
                         @endif
                     </div>
-                    <button id="connect-btn" class="btn-connection">
+                    <button type="button" onclick="doTrial()" class="btn-connection" id="gratis">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
                         </svg>
@@ -531,10 +584,23 @@
                 @if($zona->tipo_autenticacion_mikrotik == 'pin')
                     <div class="auth-form hidden" id="pin-form">
                         <h3 class="text-md font-semibold mb-3">Ingresa el PIN de acceso</h3>
-                        <form id="mikrotik-pin-form" class="space-y-3">
-                            <input type="text" id="pin" name="pin" placeholder="Introduce el PIN"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary">
-                            <button type="submit" class="btn-primary">Conectar</button>
+                        <form name="login" action="{{ $mikrotikData['link-login-only'] ?? '' }}" method="post" class="space-y-3" onSubmit="return doLogin()">
+                            <input type="hidden" name="dst" value="{{ $mikrotikData['link-orig'] ?? '' }}" />
+                            <input type="hidden" name="popup" value="true" />
+
+                            <div class="form-field">
+                                <input type="text" name="username" id="pin-username" placeholder="Introduce el PIN"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary">
+                            </div>
+
+                            <button type="submit" class="btn-primary w-full">Conectar con PIN</button>
+
+                            @if(!empty($mikrotikData['error']))
+                                <div class="text-center text-xs text-red-500 mt-2">
+                                    {{ $mikrotikData['error'] }}
+                                </div>
+                            @endif
+
                             <div class="text-center text-xs text-gray-500">
                                 <p>Solicita tu PIN al establecimiento</p>
                             </div>
@@ -543,12 +609,27 @@
                 @elseif($zona->tipo_autenticacion_mikrotik == 'usuario_password')
                     <div class="auth-form hidden" id="user-form">
                         <h3 class="text-md font-semibold mb-3">Ingresa tus credenciales</h3>
-                        <form id="mikrotik-user-form" class="space-y-3">
-                            <input type="text" id="username" name="username" placeholder="Usuario"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary">
-                            <input type="password" id="password" name="password" placeholder="Contraseña"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary">
-                            <button type="submit" class="btn-primary">Conectar</button>
+                        <form name="login" action="{{ $mikrotikData['link-login-only'] ?? '' }}" method="post" class="space-y-3" onSubmit="return doLogin()">
+                            <input type="hidden" name="dst" value="{{ $mikrotikData['link-orig'] ?? '' }}" />
+                            <input type="hidden" name="popup" value="true" />
+
+                            <div class="form-field">
+                                <input type="text" name="username" id="username" placeholder="Usuario"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary">
+                            </div>
+
+                            <div class="form-field">
+                                <input type="password" name="password" id="password" placeholder="Contraseña"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary">
+                            </div>
+
+                            <button type="submit" class="btn-primary w-full">Entrar</button>
+
+                            @if(!empty($mikrotikData['error']))
+                                <div class="text-center text-xs text-red-500 mt-2">
+                                    {{ $mikrotikData['error'] }}
+                                </div>
+                            @endif
                         </form>
                     </div>
                 @endif
@@ -556,7 +637,15 @@
         </div>
     </div>
 
+    <!-- Formulario oculto para autenticación CHAP con Mikrotik -->
+    <form name="sendin" action="{{ $mikrotikData['link-login-only'] ?? '' }}" method="post" style="display: none;">
+        <input type="hidden" name="username" />
+        <input type="hidden" name="password" />
+        <input type="hidden" name="dst" value="{{ $mikrotikData['link-orig'] ?? '' }}" />
+    </form>
+
     <!-- Scripts -->
+    <script src="{{ asset('js/md5.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -679,7 +768,7 @@
                             if (match) {
                                 const campo = match[1];
                                 const subcampo = match[2];
-                                
+
                                 if (subcampo) {
                                     // Es un checkbox múltiple: form[campo][opcion]
                                     if (!respuestas[campo]) {
@@ -744,40 +833,63 @@
                 @endif
             }
 
-            // Manejar conexión gratuita
-            document.getElementById('connect-btn').addEventListener('click', function() {
-                // Simular conexión (en producción enviaría al router Mikrotik)
-                alert('¡Conectado! Ahora tienes acceso a Internet.');
-                // window.location.href = document.getElementById('mikrotik_redirect').value;
-            });
+            // Función global para validación y autenticación de login de Mikrotik
+            window.doLogin = function() {
+                // Validar campos según el tipo de autenticación
+                @if($zona->tipo_autenticacion_mikrotik == 'pin')
+                    const pinInput = document.getElementById('pin-username');
+                    if (!pinInput || !pinInput.value.trim()) {
+                        alert('Por favor ingresa el PIN');
+                        return false;
+                    }
+                    
+                    // Para PIN, usar autenticación directa
+                    return true;
+                    
+                @elseif($zona->tipo_autenticacion_mikrotik == 'usuario_password')
+                    const username = document.getElementById('username');
+                    const password = document.getElementById('password');
+                    if (!username || !username.value.trim()) {
+                        alert('Por favor ingresa el nombre de usuario');
+                        return false;
+                    }
+                    if (!password || !password.value.trim()) {
+                        alert('Por favor ingresa la contraseña');
+                        return false;
+                    }
 
-            // Manejar formularios de autenticación Mikrotik
-            @if($zona->tipo_autenticacion_mikrotik == 'pin')
-            document.getElementById('mikrotik-pin-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const pin = document.getElementById('pin').value;
-                if (!pin) {
-                    alert('Por favor ingresa el PIN');
-                    return;
-                }
-                console.log('PIN enviado:', pin);
-                alert('Conectado con éxito. Disfruta tu navegación.');
-            });
-            @endif
+                    // Si hay CHAP challenge, usar autenticación CHAP
+                    const chapId = '{{ $mikrotikData["chap-id"] ?? "" }}';
+                    const chapChallenge = '{{ $mikrotikData["chap-challenge"] ?? "" }}';
+                    
+                    if (chapId && chapChallenge && typeof hexMD5 === 'function') {
+                        // Autenticación CHAP
+                        const chapPassword = hexMD5(chapId + password.value + chapChallenge);
+                        
+                        // Usar formulario oculto para CHAP
+                        document.sendin.username.value = username.value;
+                        document.sendin.password.value = chapPassword;
+                        document.sendin.submit();
+                        return false; // Prevenir el envío del formulario visible
+                    }
+                    
+                    // Autenticación normal (sin CHAP)
+                    return true;
+                @endif
 
-            @if($zona->tipo_autenticacion_mikrotik == 'usuario_password')
-            document.getElementById('mikrotik-user-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
-                if (!username || !password) {
-                    alert('Por favor ingresa usuario y contraseña');
-                    return;
-                }
-                console.log('Credenciales enviadas:', { username, password });
-                alert('Conectado con éxito. Disfruta tu navegación.');
-            });
-            @endif
+                return true;
+            };
+
+            // Función global auxiliar para autenticación de trial/conexión gratuita
+            window.doTrial = function() {
+                // Enviar formulario para conexión de prueba
+                const trialLink = '{{ $mikrotikData["link-login-only"] ?? "" }}' + 
+                                '?dst=' + encodeURIComponent('{{ $mikrotikData["link-orig-esc"] ?? "" }}') + 
+                                '&username=' + encodeURIComponent('T-{{ $mikrotikData["mac-esc"] ?? "" }}');
+                
+                window.location.href = trialLink;
+                return false;
+            };
 
             // Iniciar contador si no hay formulario
             @if(!$mostrarFormulario)
