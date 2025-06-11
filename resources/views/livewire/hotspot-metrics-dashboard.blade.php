@@ -199,7 +199,32 @@
                 @endforeach
             </div>
         </div>
-    </div>    <!-- Tabla de Métricas Detalladas -->
+    </div>
+
+    <!-- Sistemas Operativos Populares -->
+    <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5" style="color: #ff3f00;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                Sistemas Operativos Más Utilizados
+            </div>
+        </h3>
+        <div class="space-y-3">
+            @foreach($sistemasOperativosPopulares as $so)
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-700">{{ $so['sistema_operativo'] ?: 'Desconocido' }}</span>
+                <span class="text-sm font-semibold text-gray-900">{{ number_format($so['total']) }}</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="h-2 rounded-full" style="width: {{ ($so['total'] / ($sistemasOperativosPopulares[0]['total'] ?? 1)) * 100 }}%; background-color: #ff3f00;"></div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- Tabla de Métricas Detalladas -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-200 sm:px-6">
             <h3 class="text-lg font-medium text-gray-900">
@@ -235,6 +260,9 @@
                             Dispositivo
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Sistema Operativo
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Tipo Visual
                         </th>
                         <th wire:click="sortBy('veces_entradas')"
@@ -265,6 +293,9 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ $metrica->dispositivo }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ $metrica->sistema_operativo ?? 'Desconocido' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
@@ -299,7 +330,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                            <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
                                 No se encontraron métricas para los filtros seleccionados.
                             </td>
                         </tr>

@@ -16,6 +16,7 @@ class HotspotMetric extends Model
         'formulario_id',
         'dispositivo',
         'navegador',
+        'sistema_operativo',
         'tipo_visual',
         'duracion_visual',
         'clic_boton',
@@ -108,6 +109,7 @@ class HotspotMetric extends Model
             $existingMetric->update([
                 'dispositivo' => $data['dispositivo'],
                 'navegador' => $data['navegador'],
+                'sistema_operativo' => $data['sistema_operativo'] ?? null,
                 'tipo_visual' => $data['tipo_visual'],
                 'duracion_visual' => $data['duracion_visual'] ?? 0,
                 'clic_boton' => $data['clic_boton'] ?? false,

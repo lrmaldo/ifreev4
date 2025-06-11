@@ -25,6 +25,7 @@ class HotspotMetricsDashboard extends Component
     public $visitasPorDia = [];
     public $dispositivosPopulares = [];
     public $navegadoresPopulares = [];
+    public $sistemasOperativosPopulares = [];
     public $tiposVisuales = [];
 
     protected $queryString = [
@@ -124,6 +125,17 @@ class HotspotMetricsDashboard extends Component
             ->byZona($this->zona_id)
             ->byDateRange($fechaInicio, $fechaFin)
             ->groupBy('navegador')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get()
+            ->toArray();
+
+        // Sistemas operativos populares
+        $this->sistemasOperativosPopulares = HotspotMetric::selectRaw('sistema_operativo, COUNT(*) as total')
+            ->byZona($this->zona_id)
+            ->byDateRange($fechaInicio, $fechaFin)
+            ->whereNotNull('sistema_operativo')
+            ->groupBy('sistema_operativo')
             ->orderByDesc('total')
             ->limit(5)
             ->get()

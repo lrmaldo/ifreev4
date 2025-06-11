@@ -7,7 +7,7 @@ use App\Models\Zona;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use Jenssegers\Agent\Agent;
+use Karmendra\LaravelAgentDetector\AgentDetector;
 
 class HotspotMetricController extends Controller
 {
@@ -24,17 +24,18 @@ class HotspotMetricController extends Controller
      */
     public function store(Request $request)
     {
-        $agent = new Agent();
+        $agent = new AgentDetector();
 
         $data = [
             'zona_id' => $request->zona_id,
             'mac_address' => $request->mac_address,
             'formulario_id' => $request->formulario_id,
-            'dispositivo' => $agent->device() ?: 'Desconocido',
-            'navegador' => $agent->browser() . ' ' . $agent->version($agent->browser()),
+            'dispositivo' => trim($agent->device() . ' ' . $agent->deviceModel()) ?: 'Desconocido',
+            'navegador' => trim($agent->browser() . ' ' . $agent->browserVersion()),
             'tipo_visual' => $request->tipo_visual ?? 'formulario',
             'duracion_visual' => $request->duracion_visual ?? 0,
             'clic_boton' => $request->boolean('clic_boton', false),
+            'sistema_operativo' => trim($agent->platform() . ' ' . $agent->platformVersion()),
         ];
 
         $metrica = HotspotMetric::registrarMetrica($data);
@@ -94,6 +95,16 @@ class HotspotMetricController extends Controller
             ->limit(5)
             ->get();
 
+        // Sistemas operativos más utilizados
+        $sistemasOperativosPopulares = HotspotMetric::selectRaw('sistema_operativo, COUNT(*) as total')
+            ->byZona($zona_id)
+            ->byDateRange($fecha_inicio, $fecha_fin)
+            ->whereNotNull('sistema_operativo')
+            ->groupBy('sistema_operativo')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
         // Tipos de contenido visual
         $tiposVisuales = HotspotMetric::selectRaw('tipo_visual, COUNT(*) as total')
             ->byZona($zona_id)
@@ -134,6 +145,7 @@ class HotspotMetricController extends Controller
             'visitas_por_dia' => $visitasPorDia,
             'dispositivos_populares' => $dispositivosPopulares,
             'navegadores_populares' => $navegadoresPopulares,
+            'sistemas_operativos_populares' => $sistemasOperativosPopulares,
             'tipos_visuales' => $tiposVisuales,
             'fecha_inicio' => $fecha_inicio->format('Y-m-d'),
             'fecha_fin' => $fecha_fin->format('Y-m-d')
@@ -166,17 +178,18 @@ class HotspotMetricController extends Controller
     public function track(Request $request)
     {
         try {
-            $agent = new Agent();
+            $agent = new AgentDetector();
 
             $data = [
                 'zona_id' => $request->zona_id,
                 'mac_address' => $request->mac_address,
                 'formulario_id' => $request->formulario_id,
-                'dispositivo' => $agent->device() ?: 'Desconocido',
-                'navegador' => $agent->browser() . ' ' . $agent->version($agent->browser()),
+                'dispositivo' => trim($agent->device() . ' ' . $agent->deviceModel()) ?: 'Desconocido',
+                'navegador' => trim($agent->browser() . ' ' . $agent->browserVersion()),
                 'tipo_visual' => $request->tipo_visual ?? 'formulario',
                 'duracion_visual' => $request->duracion_visual ?? 0,
                 'clic_boton' => $request->boolean('clic_boton', false),
+                'sistema_operativo' => trim($agent->platform() . ' ' . $agent->platformVersion()),
             ];
 
             HotspotMetric::registrarMetrica($data);
@@ -219,6 +232,7 @@ class HotspotMetricController extends Controller
                 'MAC Address',
                 'Dispositivo',
                 'Navegador',
+                'Sistema Operativo',
                 'Tipo Visual',
                 'Duración (seg)',
                 'Clic Botón',
@@ -235,12 +249,13 @@ class HotspotMetricController extends Controller
                     $metrica->mac_address,
                     $metrica->dispositivo,
                     $metrica->navegador,
+                    $metrica->sistema_operativo ?? 'Desconocido',
                     $metrica->tipo_visual,
                     $metrica->duracion_visual,
                     $metrica->clic_boton ? 'Sí' : 'No',
                     $metrica->veces_entradas,
                     $metrica->formulario_id ? 'Sí' : 'No',
-                    $metrica->created_at->format('Y-m-d H:i:s')
+                    $metrica->created_at->format('d-m-Y H:i:s')
                 ]);
             }
 
