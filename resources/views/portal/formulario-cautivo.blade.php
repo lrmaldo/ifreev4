@@ -1001,7 +1001,10 @@
             const metricaData = {
                 zona_id: {{ $zona->id }},
                 mac_address: '{{ $mikrotikData["mac"] ?? "" }}',
-                tipo_visual: '{{ $videoUrl ? "video" : (count($imagenes) > 0 ? "carrusel" : "formulario") }}'
+                tipo_visual: '{{ $videoUrl ? "video" : (count($imagenes) > 0 ? "carrusel" : "formulario") }}',
+                dispositivo: navigator.userAgent,
+                navegador: navigator.userAgent,
+                sistema_operativo: navigator.platform || 'Desconocido'
             };
 
             fetch('/hotspot-metrics/track', {

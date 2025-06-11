@@ -214,16 +214,22 @@ class HotspotMetricController extends Controller
         try {
             $agent = new AgentDetector();
 
+            // Intentar detectar con AgentDetector
+            $dispositivoDetectado = trim($agent->device() . ' ' . $agent->deviceModel());
+            $navegadorDetectado = trim($agent->browser() . ' ' . $agent->browserVersion());
+            $sistemaOperativoDetectado = trim($agent->platform() . ' ' . $agent->platformVersion());
+
+            // Usar valores detectados o los proporcionados en la solicitud, o valores por defecto
             $data = [
                 'zona_id' => $request->zona_id,
                 'mac_address' => $request->mac_address,
                 'formulario_id' => $request->formulario_id,
-                'dispositivo' => trim($agent->device() . ' ' . $agent->deviceModel()) ?: 'Desconocido',
-                'navegador' => trim($agent->browser() . ' ' . $agent->browserVersion()),
+                'dispositivo' => $dispositivoDetectado ?: ($request->dispositivo ?: 'Desconocido'),
+                'navegador' => $navegadorDetectado ?: ($request->navegador ?: 'Desconocido'),
                 'tipo_visual' => $request->tipo_visual ?? 'formulario',
                 'duracion_visual' => $request->duracion_visual ?? 0,
                 'clic_boton' => $request->boolean('clic_boton', false),
-                'sistema_operativo' => trim($agent->platform() . ' ' . $agent->platformVersion()),
+                'sistema_operativo' => $sistemaOperativoDetectado ?: ($request->sistema_operativo ?: 'Desconocido'),
             ];
 
             $metrica = HotspotMetric::registrarMetrica($data);

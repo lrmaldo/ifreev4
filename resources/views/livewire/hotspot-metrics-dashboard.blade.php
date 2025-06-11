@@ -304,9 +304,12 @@
                                     @if($metrica->tipo_visual === 'formulario') bg-blue-100 text-blue-800
                                     @elseif($metrica->tipo_visual === 'carrusel') bg-green-100 text-green-800
                                     @elseif($metrica->tipo_visual === 'video') bg-purple-100 text-purple-800
+                                    @elseif($metrica->tipo_visual === 'login') bg-orange-100 text-orange-800
+                                    @elseif($metrica->tipo_visual === 'portal_cautivo') bg-yellow-100 text-yellow-800
+                                    @elseif($metrica->tipo_visual === 'portal_entrada') bg-indigo-100 text-indigo-800
                                     @else bg-gray-100 text-gray-800
                                     @endif">
-                                    {{ ucfirst($metrica->tipo_visual) }}
+                                    {{ ucfirst(str_replace('_', ' ', $metrica->tipo_visual)) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
