@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\HotspotMetric;
+use App\Models\MetricaDetalle;
 use App\Models\Zona;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -225,9 +226,24 @@ class HotspotMetricController extends Controller
                 'sistema_operativo' => trim($agent->platform() . ' ' . $agent->platformVersion()),
             ];
 
-            HotspotMetric::registrarMetrica($data);
+            $metrica = HotspotMetric::registrarMetrica($data);
 
-            return response()->json(['success' => true]);
+            // Registrar un evento de vista en los detalles
+            if ($metrica) {
+                MetricaDetalle::create([
+                    'metrica_id' => $metrica->id,
+                    'tipo_evento' => 'vista',
+                    'contenido' => $request->tipo_visual ?? 'formulario',
+                    'detalle' => 'Entrada al portal',
+                    'fecha_hora' => now()
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'metric_id' => $metrica->id ?? null,
+                'veces_entradas' => $metrica->veces_entradas ?? 1
+            ]);
         } catch (\Exception $e) {
             \Log::error('Error registrando métrica hotspot: ' . $e->getMessage());
             return response()->json(['success' => false], 500);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\HotspotMetric;
+use App\Models\MetricaDetalle;
 use App\Traits\RenderizaFormFields;
 use Jenssegers\Agent\Agent;
 use Illuminate\Support\Facades\Storage;
