@@ -889,18 +889,37 @@
                 // Registrar clic en botón de trial
                 actualizarMetricaClic('trial');
 
-                // Usar valores proporcionados por Mikrotik
-                const mac = '{{ $mikrotikData["mac"] ?? "" }}';
-                const macEsc = encodeURIComponent(mac);
-                const linkOrig = '{{ $mikrotikData["link-orig"] ?? "" }}';
-                const linkOrigEsc = encodeURIComponent(linkOrig);
+                // Usar valores proporcionados directamente por Mikrotik
+                const macEsc = '{{ $mikrotikData["mac-esc"] ?? "" }}';
+                const linkOrigEsc = '{{ $mikrotikData["link-orig-esc"] ?? "" }}';
                 const linkLoginOnly = '{{ $mikrotikData["link-login-only"] ?? "" }}';
 
-                // Crear la URL exacta para conexión trial
-                const trialUrl = linkLoginOnly + '?dst=' + linkOrigEsc + '&username=T-' + macEsc;
+                // Si tenemos los parámetros escapados directamente, los usamos
+                if (macEsc && linkOrigEsc && linkLoginOnly) {
+                    // Crear la URL exacta para conexión trial
+                    const trialUrl = linkLoginOnly + '?dst=' + linkOrigEsc + '&username=T-' + macEsc;
+                    console.log("Conectando con trial (parámetros escapados):", trialUrl);
+                    window.location = trialUrl;
+                } else {
+                    // Fallback: intentamos hacerlo manual como antes
+                    const mac = '{{ $mikrotikData["mac"] ?? "" }}';
+                    const macEscManual = encodeURIComponent(mac);
+                    const linkOrig = '{{ $mikrotikData["link-orig"] ?? "" }}';
+                    const linkOrigEscManual = encodeURIComponent(linkOrig);
 
-                console.log("Conectando con trial:", trialUrl);
-                window.location = trialUrl;
+                    // Asegurarnos de tener el link-login-only
+                    const loginOnly = '{{ $mikrotikData["link-login-only"] ?? "" }}';
+
+                    if (mac && linkOrig && loginOnly) {
+                        const trialUrlManual = loginOnly + '?dst=' + linkOrigEscManual + '&username=T-' + macEscManual;
+                        console.log("Conectando con trial (codificación manual):", trialUrlManual);
+                        window.location = trialUrlManual;
+                    } else {
+                        console.error("Error: Faltan parámetros necesarios para la conexión trial");
+                        alert("No se pueden obtener los datos necesarios para la conexión. Por favor, intente de nuevo.");
+                    }
+                }
+
                 return false;
             };
 
