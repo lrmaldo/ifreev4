@@ -1357,45 +1357,7 @@
                 return true;
             };
 
-            // Función global auxiliar para autenticación de trial/conexión gratuita
-            window.doTrial = function() {
-                // Registrar clic en botón de trial con información sobre dispositivo
-                const dispositivo = navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop';
-                actualizarMetricaClic('trial', 'device_' + dispositivo);
-
-                // Usar valores proporcionados directamente por Mikrotik
-                const macEsc = '{{ $mikrotikData["mac-esc"] ?? "" }}';
-                const linkOrigEsc = '{{ $mikrotikData["link-orig-esc"] ?? "" }}';
-                const linkLoginOnly = '{{ $mikrotikData["link-login-only"] ?? "" }}';
-
-                // Si tenemos los parámetros escapados directamente, los usamos
-                if (macEsc && linkOrigEsc && linkLoginOnly) {
-                    // Crear la URL exacta para conexión trial
-                    const trialUrl = linkLoginOnly + '?dst=' + linkOrigEsc + '&username=T-' + macEsc;
-                    console.log("Conectando con trial (parámetros escapados):", trialUrl);
-                    window.location = trialUrl;
-                } else {
-                    // Fallback: intentamos hacerlo manual como antes
-                    const mac = '{{ $mikrotikData["mac"] ?? "" }}';
-                    const macEscManual = encodeURIComponent(mac);
-                    const linkOrig = '{{ $mikrotikData["link-orig"] ?? "" }}';
-                    const linkOrigEscManual = encodeURIComponent(linkOrig);
-
-                    // Asegurarnos de tener el link-login-only
-                    const loginOnly = '{{ $mikrotikData["link-login-only"] ?? "" }}';
-
-                    if (mac && linkOrig && loginOnly) {
-                        const trialUrlManual = loginOnly + '?dst=' + linkOrigEscManual + '&username=T-' + macEscManual;
-                        console.log("Conectando con trial (codificación manual):", trialUrlManual);
-                        window.location = trialUrlManual;
-                    } else {
-                        console.error("Error: Faltan parámetros necesarios para la conexión trial");
-                        alert("No se pueden obtener los datos necesarios para la conexión. Por favor, intente de nuevo.");
-                    }
-                }
-
-                return false;
-            };
+            // La función doTrial se ha movido a una implementación unificada más abajo en el código
 
             // Función para actualizar métricas (duración, clics)
             function actualizarMetrica(datos) {
@@ -1701,23 +1663,26 @@
                 }
                 @endif
 
-                // Configurar datos de acceso gratis para Mikrotik
-                const loginForm = document.sendin;
-                if (loginForm) {
-                    loginForm.username.value = '@trial';
-                    loginForm.password.value = '';
+                // Usar el formato correcto para Mikrotik trial URL
+                const linkLoginOnly = '{{ $mikrotikData["link-login-only"] ?? "" }}';
+                const linkOrigEsc = '{{ $mikrotikData["link-orig-esc"] ?? "" }}';
+                const macEsc = '{{ $mikrotikData["mac-esc"] ?? "" }}';
 
-                    // Envío del formulario tras breve espera
-                    setTimeout(() => {
-                        loginForm.submit();
-                    }, 300);
+                // Verificar que tenemos todos los datos necesarios para la URL de trial
+                if (linkLoginOnly && linkOrigEsc && macEsc) {
+                    // Crear la URL exacta según el formato de Mikrotik: $(link-login-only)?dst=$(link-orig-esc)&amp;username=T-$(mac-esc)
+                    const trialUrl = linkLoginOnly + '?dst=' + linkOrigEsc + '&username=T-' + macEsc;
+                    console.log("Conectando con trial:", trialUrl);
+
+                    // Redireccionar a la URL de trial
+                    window.location = trialUrl;
                 } else {
-                    console.error('Error: No se encontró el formulario de envío para autenticación');
-                    // Intento de redirección directa como fallback
-                    const redirectUrl = '{{ $mikrotikData['link-orig'] ?? '' }}';
-                    if (redirectUrl) {
-                        window.location.href = redirectUrl;
-                    }
+                    console.error("Error: Faltan parámetros necesarios para la conexión trial", {
+                        linkLoginOnly,
+                        linkOrigEsc,
+                        macEsc
+                    });
+                    alert("No se pueden obtener los datos necesarios para la conexión. Por favor, intente de nuevo.");
                 }
             }
         });
