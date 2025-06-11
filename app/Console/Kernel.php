@@ -38,5 +38,10 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         \App\Console\Commands\VerificarRelacionesCampanas::class,
+        \App\Console\Commands\VerificarRespuestasFormularioCommand::class,
+        \App\Console\Commands\CrearRespuestaEjemploCommand::class,
+        \App\Console\Commands\FormatearMetricasCommand::class,
+        \App\Console\Commands\ProbarFormateadorRespuestasCommand::class,
+        \App\Console\Commands\CorregirRespuestasFormularioCommand::class,
     ];
 }

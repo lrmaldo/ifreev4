@@ -56,13 +56,40 @@ class FormResponse extends Model
         $campos = $zona->campos;
         $formateadas = [];
 
-        foreach ($respuestas as $campoId => $valor) {
-            $campo = $campos->find($campoId);
+        foreach ($respuestas as $campoKey => $valor) {
+            // Buscar el campo por su nombre (campo)
+            $campo = $campos->where('campo', $campoKey)->first();
+
             if ($campo) {
                 $formateadas[] = [
                     'etiqueta' => $campo->etiqueta,
                     'valor' => $this->formatearValor($campo, $valor)
                 ];
+            } else {
+                // Si es un campo anidado (como intereses)
+                if (is_array($valor) || is_object($valor)) {
+                    foreach ($valor as $subCampo => $subValor) {
+                        $campoSubCampo = $campos->where('campo', $subCampo)->first();
+                        if ($campoSubCampo) {
+                            $formateadas[] = [
+                                'etiqueta' => $campoSubCampo->etiqueta,
+                                'valor' => $this->formatearValor($campoSubCampo, $subValor)
+                            ];
+                        } else {
+                            // Si no se encuentra el campo, mostrar con la clave como etiqueta
+                            $formateadas[] = [
+                                'etiqueta' => ucfirst($subCampo),
+                                'valor' => $subValor
+                            ];
+                        }
+                    }
+                } else {
+                    // Agregar al listado sin formato especial (clave como etiqueta)
+                    $formateadas[] = [
+                        'etiqueta' => ucfirst($campoKey),
+                        'valor' => $valor
+                    ];
+                }
             }
         }
 
@@ -74,13 +101,28 @@ class FormResponse extends Model
      */
     private function formatearValor($campo, $valor)
     {
-        if ($campo->tipo === 'checkbox' && is_array($valor)) {
-            return implode(', ', $valor);
+        // Manejar casillas de verificación (checkbox)
+        if ($campo->tipo === 'checkbox') {
+            if (is_array($valor)) {
+                // Si es un array de valores seleccionados
+                $opciones = [];
+                foreach ($valor as $key => $val) {
+                    if ($val === '1' || $val === 1 || $val === true) {
+                        $opcion = $campo->opciones->where('valor', $key)->first();
+                        $opciones[] = $opcion ? $opcion->etiqueta : ucfirst($key);
+                    }
+                }
+                return !empty($opciones) ? implode(', ', $opciones) : 'No seleccionado';
+            } else {
+                // Si es un único valor booleano
+                return ($valor === '1' || $valor === 1 || $valor === true || $valor === 'true') ? 'Sí' : 'No';
+            }
         }
 
+        // Manejar selects y radios
         if (in_array($campo->tipo, ['select', 'radio']) && $campo->opciones->count() > 0) {
-            $opcion = $campo->opciones->find($valor);
-            return $opcion ? $opcion->texto : $valor;
+            $opcion = $campo->opciones->where('valor', $valor)->first();
+            return $opcion ? $opcion->etiqueta : $valor;
         }
 
         return $valor;

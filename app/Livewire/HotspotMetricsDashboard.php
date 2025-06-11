@@ -39,7 +39,7 @@ class HotspotMetricsDashboard extends Component
     public function mount()
     {
         // Establecer fechas por defecto (últimos 30 días)
-        $this->fecha_fin = now()->format('Y-m-d');
+        $this->fecha_fin = now()->addDay()->format('Y-m-d');
         $this->fecha_inicio = now()->subDays(30)->format('Y-m-d');
 
         $this->loadAnalytics();

@@ -171,11 +171,33 @@ class ZonaLoginController extends Controller
 
         $agent = new \Jenssegers\Agent\Agent();
 
+        // Obtener el user agent
+        $ua = request()->header('User-Agent');
+
+        // Procesar la información del dispositivo
+        $dispositivo = $agent->device() ?: 'Desconocido';
+        if ($dispositivo === 'Desconocido' && $ua) {
+            $dispositivo = $this->extraerInformacionDispositivo($ua);
+        }
+
+        // Procesar información del navegador
+        $navegador = $agent->browser() . ' ' . $agent->version($agent->browser());
+        if (!$agent->browser() && $ua) {
+            $navegador = $this->extraerInformacionNavegador($ua);
+        }
+
+        // Procesar información del sistema operativo
+        $sistemaOperativo = $agent->platform() . ' ' . $agent->version($agent->platform());
+        if (!$agent->platform() && $ua) {
+            $sistemaOperativo = $this->extraerSistemaOperativo($ua);
+        }
+
         $metricaData = [
             'zona_id' => $zonaId,
             'mac_address' => $macAddress,
-            'dispositivo' => $agent->device() ?: 'Desconocido',
-            'navegador' => $agent->browser() . ' ' . $agent->version($agent->browser()),
+            'dispositivo' => $dispositivo,
+            'navegador' => $navegador,
+            'sistema_operativo' => $sistemaOperativo,
             'tipo_visual' => $metricaInfo['tipo_visual'] ?? 'portal_cautivo',
             'duracion_visual' => 0, // Se actualizará desde el frontend
             'clic_boton' => false,  // Se actualizará cuando haga clic
@@ -318,11 +340,33 @@ class ZonaLoginController extends Controller
         try {
             $agent = new Agent();
 
+            // Obtener el user agent
+            $ua = request()->header('User-Agent');
+
+            // Procesar la información del dispositivo
+            $dispositivo = $agent->device() ?: 'Desconocido';
+            if ($dispositivo === 'Desconocido' && $ua) {
+                $dispositivo = $this->extraerInformacionDispositivo($ua);
+            }
+
+            // Procesar información del navegador
+            $navegador = $agent->browser() . ' ' . $agent->version($agent->browser());
+            if (!$agent->browser() && $ua) {
+                $navegador = $this->extraerInformacionNavegador($ua);
+            }
+
+            // Procesar información del sistema operativo
+            $sistemaOperativo = $agent->platform() . ' ' . $agent->version($agent->platform());
+            if (!$agent->platform() && $ua) {
+                $sistemaOperativo = $this->extraerSistemaOperativo($ua);
+            }
+
             $data = [
                 'zona_id' => $zona->id,
                 'mac_address' => $mikrotikData['mac'] ?? 'unknown',
-                'dispositivo' => $agent->device() ?: 'Desconocido',
-                'navegador' => $agent->browser() . ' ' . $agent->version($agent->browser()),
+                'dispositivo' => $dispositivo,
+                'navegador' => $navegador,
+                'sistema_operativo' => $sistemaOperativo,
                 'tipo_visual' => 'formulario', // Por defecto
                 'duracion_visual' => 0,
                 'clic_boton' => false,
