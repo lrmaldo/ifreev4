@@ -998,13 +998,147 @@
             @endif
 
             // Registrar métrica de entrada
+            // Intentar extraer información más precisa del dispositivo
+            const extraerInformacionDispositivo = () => {
+                const ua = navigator.userAgent;
+                let dispositivo = 'Desconocido';
+
+                // Extraer modelo de dispositivo móvil Android
+                const regexModelo = /Android[\s\d\.]+;\s([^;)]+)/i;
+                const modeloMatch = ua.match(regexModelo);
+
+                if (modeloMatch && modeloMatch[1]) {
+                    dispositivo = modeloMatch[1].trim();
+
+                    // Detectar y formatear dispositivos Xiaomi/POCO
+                    if (/M2\d{3}|22\d{6}|21\d{6}/.test(dispositivo)) {
+                        // Es un código de modelo Xiaomi/POCO
+                        if (ua.toLowerCase().includes('poco')) {
+                            dispositivo = `POCO ${dispositivo}`;
+                        } else if (ua.toLowerCase().includes('redmi')) {
+                            dispositivo = `Redmi ${dispositivo}`;
+                        } else {
+                            dispositivo = `Xiaomi ${dispositivo}`;
+                        }
+                    }
+                }
+                // Si es iPhone/iPad
+                else if (ua.includes('iPhone') || ua.includes('iPad')) {
+                    dispositivo = ua.includes('iPhone') ? 'iPhone' : 'iPad';
+                }
+                // Si es un dispositivo Windows
+                else if (ua.includes('Windows')) {
+                    dispositivo = 'PC Windows';
+                }
+                // Si es un dispositivo Mac
+                else if (ua.includes('Macintosh')) {
+                    dispositivo = 'Mac';
+                }
+
+                return dispositivo;
+            };
+
+            // Extraer información del navegador
+            const extraerInformacionNavegador = () => {
+                const ua = navigator.userAgent;
+                let navegador = 'Desconocido';
+                let version = '';
+
+                // Extraer versiones de navegadores usando expresiones regulares
+                if (ua.includes('Chrome') && !ua.includes('Edg') && !ua.includes('OPR')) {
+                    navegador = 'Chrome';
+                    const match = ua.match(/Chrome\/(\d+(\.\d+)?)/);
+                    if (match) version = match[1];
+                } else if (ua.includes('Firefox')) {
+                    navegador = 'Firefox';
+                    const match = ua.match(/Firefox\/(\d+(\.\d+)?)/);
+                    if (match) version = match[1];
+                } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+                    navegador = 'Safari';
+                    const match = ua.match(/Version\/(\d+(\.\d+)?)/);
+                    if (match) version = match[1];
+                } else if (ua.includes('Edg')) {
+                    navegador = 'Edge';
+                    const match = ua.match(/Edg\/(\d+(\.\d+)?)/);
+                    if (match) version = match[1];
+                } else if (ua.includes('OPR') || ua.includes('Opera')) {
+                    navegador = 'Opera';
+                    const match = ua.match(/(OPR|Opera)\/(\d+(\.\d+)?)/);
+                    if (match) version = match[2];
+                } else if (ua.includes('MIUI')) {
+                    navegador = 'Navegador MIUI';
+                    const match = ua.match(/MiuiBrowser\/(\d+(\.\d+)?)/);
+                    if (match) version = match[1];
+                } else if (ua.includes('SamsungBrowser')) {
+                    navegador = 'Samsung Internet';
+                    const match = ua.match(/SamsungBrowser\/(\d+(\.\d+)?)/);
+                    if (match) version = match[1];
+                }
+
+                // Si encontramos versión, la añadimos al nombre del navegador
+                if (version) {
+                    navegador += ' ' + version;
+                }
+
+                return navegador;
+            };
+
+            // Extraer sistema operativo
+            const extraerSistemaOperativo = () => {
+                const ua = navigator.userAgent;
+                let so = navigator.platform || 'Desconocido';
+
+                if (ua.includes('Android')) {
+                    const match = ua.match(/Android\s([0-9\.]+)/);
+                    so = 'Android ' + (match ? match[1] : '');
+                } else if (ua.includes('iPhone') || ua.includes('iPad') || ua.includes('iPod')) {
+                    const match = ua.match(/OS\s([0-9_]+)/);
+                    so = 'iOS ' + (match ? match[1].replace(/_/g, '.') : '');
+                } else if (ua.includes('Windows')) {
+                    const match = ua.match(/Windows NT\s([0-9\.]+)/);
+                    if (match) {
+                        // Mapeo de versiones de Windows NT a nombres comerciales
+                        const windowsVersions = {
+                            '10.0': 'Windows 10/11',
+                            '6.3': 'Windows 8.1',
+                            '6.2': 'Windows 8',
+                            '6.1': 'Windows 7',
+                            '6.0': 'Windows Vista',
+                            '5.2': 'Windows XP x64',
+                            '5.1': 'Windows XP',
+                            '5.0': 'Windows 2000'
+                        };
+                        so = windowsVersions[match[1]] || 'Windows ' + match[1];
+                    } else {
+                        so = 'Windows';
+                    }
+                } else if (ua.includes('Mac OS X') || ua.includes('Macintosh')) {
+                    const match = ua.match(/Mac OS X\s?([0-9_\.]+)?/);
+                    so = 'macOS ' + (match && match[1] ? match[1].replace(/_/g, '.') : '');
+                } else if (ua.includes('Linux')) {
+                    if (ua.includes('Ubuntu')) {
+                        so = 'Ubuntu Linux';
+                    } else if (ua.includes('Fedora')) {
+                        so = 'Fedora Linux';
+                    } else if (ua.includes('Debian')) {
+                        so = 'Debian Linux';
+                    } else {
+                        so = 'Linux';
+                    }
+                }
+
+                return so;
+            };
+
             const metricaData = {
                 zona_id: {{ $zona->id }},
                 mac_address: '{{ $mikrotikData["mac"] ?? "" }}',
                 tipo_visual: '{{ $videoUrl ? "video" : (count($imagenes) > 0 ? "carrusel" : "formulario") }}',
-                dispositivo: navigator.userAgent,
-                navegador: navigator.userAgent,
-                sistema_operativo: navigator.platform || 'Desconocido'
+                dispositivo: extraerInformacionDispositivo(),
+                navegador: extraerInformacionNavegador(),
+                sistema_operativo: extraerSistemaOperativo(),
+                // Guardamos el user agent completo para análisis en caso de ser necesario
+                user_agent: navigator.userAgent
             };
 
             fetch('/hotspot-metrics/track', {
