@@ -128,6 +128,8 @@ Route::middleware(['auth'])->group(function () {
                 ->name('admin.hotspot-metrics.index');
             Route::get('/hotspot-metrics/analytics', [\App\Http\Controllers\HotspotMetricController::class, 'analytics'])
                 ->name('admin.hotspot-metrics.analytics');
+            Route::get('/hotspot-metrics/{id}/detalles', [\App\Http\Controllers\HotspotMetricController::class, 'detalles'])
+                ->name('admin.hotspot-metrics.detalles');
         });
         Route::get('/hotspot-metrics/export', [\App\Http\Controllers\HotspotMetricController::class, 'export'])
             ->middleware(['permission:gestionar metricas hotspot'])
@@ -175,6 +177,8 @@ Route::middleware(['auth'])->group(function () {
                 ->name('hotspot-metrics.index');
             Route::get('/hotspot-metrics/analytics', [\App\Http\Controllers\HotspotMetricController::class, 'analytics'])
                 ->name('hotspot-metrics.analytics');
+            Route::get('/hotspot-metrics/{id}/detalles', [\App\Http\Controllers\HotspotMetricController::class, 'detalles'])
+                ->name('hotspot-metrics.detalles');
         });
         Route::get('/hotspot-metrics/export', [\App\Http\Controllers\HotspotMetricController::class, 'export'])
             ->middleware(['permission:gestionar metricas hotspot'])

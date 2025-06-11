@@ -344,8 +344,20 @@ class ZonaLoginController extends Controller
                 'mac_address' => 'required|string',
                 'duracion_visual' => 'nullable|integer',
                 'clic_boton' => 'nullable|boolean',
-                'tipo_visual' => 'nullable|string'
+                'tipo_visual' => 'nullable|string',
+                'detalle' => 'nullable|string'
             ]);
+
+            // Registrar detalles adicionales en log para análisis
+            if ($request->has('detalle')) {
+                \Log::info('Detalle métrica', [
+                    'zona_id' => $request->zona_id,
+                    'mac_address' => $request->mac_address,
+                    'detalle' => $request->detalle,
+                    'tipo_visual' => $request->tipo_visual,
+                    'timestamp' => now()->format('Y-m-d H:i:s')
+                ]);
+            }
 
             $metrica = \App\Models\HotspotMetric::where('zona_id', $request->zona_id)
                 ->where('mac_address', $request->mac_address)
@@ -361,6 +373,17 @@ class ZonaLoginController extends Controller
 
                 if ($request->has('clic_boton')) {
                     $datosActualizar['clic_boton'] = $request->clic_boton;
+
+                    // También guardamos esta métrica desglosada para análisis detallados
+                    if ($request->clic_boton) {
+                        \App\Models\MetricaDetalle::create([
+                            'metrica_id' => $metrica->id,
+                            'tipo_evento' => 'clic',
+                            'contenido' => $request->tipo_visual,
+                            'detalle' => $request->detalle ?? '',
+                            'fecha_hora' => now()
+                        ]);
+                    }
                 }
 
                 if ($request->has('tipo_visual')) {

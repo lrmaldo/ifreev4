@@ -836,8 +836,9 @@
 
             // Función global para validación y autenticación de login de Mikrotik
             window.doLogin = function() {
-                // Registrar clic en botón de login
-                actualizarMetricaClic('login');
+                // Registrar clic en botón de login con información del tipo de autenticación
+                const tipoAuth = '{{ $zona->tipo_autenticacion_mikrotik }}';
+                actualizarMetricaClic('login', 'tipo_auth_' + tipoAuth);
 
                 // Validar campos según el tipo de autenticación
                 @if($zona->tipo_autenticacion_mikrotik == 'pin')
@@ -886,8 +887,9 @@
 
             // Función global auxiliar para autenticación de trial/conexión gratuita
             window.doTrial = function() {
-                // Registrar clic en botón de trial
-                actualizarMetricaClic('trial');
+                // Registrar clic en botón de trial con información sobre dispositivo
+                const dispositivo = navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop';
+                actualizarMetricaClic('trial', 'device_' + dispositivo);
 
                 // Usar valores proporcionados directamente por Mikrotik
                 const macEsc = '{{ $mikrotikData["mac-esc"] ?? "" }}';
@@ -936,15 +938,28 @@
                         mac_address: '{{ $mikrotikData["mac"] ?? "" }}',
                         ...datos
                     })
-                }).catch(error => console.log('Error actualizando métrica:', error));
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Métrica actualizada:', data.message);
+                    } else {
+                        console.error('Error en métrica:', data.message);
+                    }
+                })
+                .catch(error => console.log('Error actualizando métrica:', error));
             }
 
-            // Función para registrar clics en botones
-            function actualizarMetricaClic(tipoBoton) {
+            // Función para registrar clics en botones con información detallada
+            function actualizarMetricaClic(tipoBoton, botonInfo = '') {
+                const tiempoActual = Math.floor((Date.now() - tiempoInicio) / 1000);
                 actualizarMetrica({
                     clic_boton: true,
-                    tipo_visual: tipoBoton
+                    tipo_visual: tipoBoton,
+                    duracion_visual: tiempoActual,
+                    detalle: botonInfo || tipoBoton
                 });
+                console.log(`Registro de clic en botón: ${tipoBoton} ${botonInfo ? '(' + botonInfo + ')' : ''}`);
             }
 
             // Actualizar duración visual periódicamente
@@ -953,7 +968,20 @@
                 actualizarMetrica({
                     duracion_visual: tiempoActual
                 });
+
+                // Actualizar contador visible en la página si existe
+                const contadorEstadisticas = document.getElementById('tiempo-sesion');
+                if (contadorEstadisticas) {
+                    contadorEstadisticas.textContent = formatTime(tiempoActual);
+                }
             }, 10000); // Cada 10 segundos
+
+            // Función para formatear tiempo en formato mm:ss
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
 
             // Iniciar contador si no hay formulario
             @if(!$mostrarFormulario)
@@ -974,7 +1002,42 @@
                     'X-CSRF-TOKEN': csrfToken
                 },
                 body: JSON.stringify(metricaData)
-            }).catch(error => console.log('Error registrando métrica:', error));
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Mostrar componente de estadísticas en tiempo real si se encuentra el contenedor
+                if (data.success && data.metric_id) {
+                    const statsContainer = document.getElementById('stats-container');
+                    if (statsContainer) {
+                        statsContainer.innerHTML = `
+                            <div class="bg-white rounded-lg shadow-md p-3 mt-4">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Estadísticas de sesión</h4>
+                                <div class="grid grid-cols-2 gap-2 text-sm">
+                                    <div>
+                                        <span class="text-gray-500">Tiempo de sesión:</span>
+                                        <span id="tiempo-sesion" class="font-medium">00:00</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">Visitas:</span>
+                                        <span class="font-medium">${data.veces_entradas || 1}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        statsContainer.classList.remove('hidden');
+                    }
+                }
+            })
+            .catch(error => console.log('Error registrando métrica:', error));
+
+            // Crear contenedor para estadísticas si no existe
+            if (!document.getElementById('stats-container')) {
+                const mainContent = document.querySelector('.container') || document.body;
+                const statsDiv = document.createElement('div');
+                statsDiv.id = 'stats-container';
+                statsDiv.className = 'px-4 py-2 hidden';
+                mainContent.appendChild(statsDiv);
+            }
         });
     </script>
 

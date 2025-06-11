@@ -46,6 +46,14 @@ class HotspotMetric extends Model
     }
 
     /**
+     * Relación con los detalles de la métrica
+     */
+    public function detalles()
+    {
+        return $this->hasMany(MetricaDetalle::class, 'metrica_id');
+    }
+
+    /**
      * Verifica si el usuario llenó el formulario
      */
     public function getRespondioFormularioAttribute(): bool

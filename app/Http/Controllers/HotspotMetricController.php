@@ -173,6 +173,39 @@ class HotspotMetricController extends Controller
     }
 
     /**
+     * Obtener detalles de una métrica específica
+     */
+    public function detalles(Request $request, $id)
+    {
+        $metrica = HotspotMetric::with(['zona', 'formulario'])->findOrFail($id);
+
+        // Cargamos los detalles relacionados
+        $detalles = MetricaDetalle::where('metrica_id', $id)
+            ->orderBy('fecha_hora', 'asc')
+            ->get();
+
+        // Si se solicita formato JSON
+        if ($request->wantsJson()) {
+            return response()->json([
+                'metrica' => $metrica,
+                'detalles' => $detalles,
+                'eventos_por_tipo' => $detalles->groupBy('tipo_evento'),
+                'timeline' => $detalles->map(function ($detalle) {
+                    return [
+                        'tiempo' => $detalle->fecha_hora->format('H:i:s'),
+                        'tipo' => $detalle->tipo_evento,
+                        'contenido' => $detalle->contenido,
+                        'detalle' => $detalle->detalle
+                    ];
+                })
+            ]);
+        }
+
+        // Vista HTML
+        return view('hotspot-metrics.detalles', compact('metrica', 'detalles'));
+    }
+
+    /**
      * Registrar métrica desde JavaScript del portal
      */
     public function track(Request $request)
