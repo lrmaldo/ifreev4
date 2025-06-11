@@ -49,6 +49,6 @@ class ConfiguracionCampanas extends Component
     {
         return view('livewire.admin.zonas.configuracion-campanas', [
             'zona' => $this->zona
-        ])->layout('layouts.app');
+        ]);
     }
 }
