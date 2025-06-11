@@ -665,13 +665,25 @@
                                 {{ $zona->getTipoAutenticacionMikrotikLabelAttribute() }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $zona->seleccion_campanas === 'aleatorio' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800' }}">
-                                    {{ $zona->seleccion_campanas === 'aleatorio' ? 'Aleatorio' : 'Por prioridad' }}
-                                </span>
-                                <br>
-                                <span class="text-xs text-gray-500 mt-1">
-                                    Tiempo: {{ $zona->tiempo_visualizacion ?? 15 }}s
-                                </span>
+                                <div class="flex flex-col space-y-1">
+                                    <div class="flex items-center">
+                                        <span class="mr-1 text-xs font-semibold">Campañas:</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $zona->seleccion_campanas === 'aleatorio' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800' }}">
+                                            {{ $zona->seleccion_campanas === 'aleatorio' ? 'Alternancia auto' : 'Por prioridad' }}
+                                        </span>
+                                        <a href="{{ route('admin.zonas.configuracion-campanas', ['zonaId' => $zona->id]) }}"
+                                           class="ml-1 text-xs text-indigo-600 hover:text-indigo-900 flex items-center"
+                                           title="Configurar selección de campañas">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                            </svg>
+                                            <span class="ml-1 hidden xl:inline text-xs">Editar</span>
+                                        </a>
+                                    </div>
+                                    <span class="text-xs text-gray-500">
+                                        Tiempo: {{ $zona->tiempo_visualizacion ?? 15 }}s
+                                    </span>
+                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
                                 {{ $zona->user->name }}
@@ -701,8 +713,13 @@
                                             Editar
                                         </flux:menu.item>
 
-                                        <flux:menu.item icon="presentation-chart-bar" :href="route('admin.zonas.configuracion-campanas', ['zonaId' => $zona->id])">
-                                            Campañas
+                                        <flux:menu.item icon="presentation-chart-bar" :href="route('admin.zonas.configuracion-campanas', ['zonaId' => $zona->id])" class="bg-yellow-50 hover:bg-yellow-100">
+                                            <span class="flex items-center">
+                                                Configurar Campañas
+                                                <span class="ml-1.5 py-0.5 px-1.5 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
+                                                    Importante
+                                                </span>
+                                            </span>
                                         </flux:menu.item>
 
                                         @if($zona->tipo_registro != 'sin_registro')

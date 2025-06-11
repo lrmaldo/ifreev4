@@ -129,42 +129,130 @@ class ZonaLoginController extends Controller
             $tipoPreferido = $zona->seleccion_campanas ?? 'aleatorio';
             $ultimoTipoMostrado = session('ultimo_tipo_mostrado_' . $zona->id, '');
 
+            // Registrar en log el método de selección para depuración
+            \Log::info("Método de selección de campañas: {$tipoPreferido} para zona: {$zona->id}. Último tipo mostrado: {$ultimoTipoMostrado}");
+
             // Decisión de mostrar video o imagen
             $mostrarVideo = false;
 
-            if ($tipoPreferido === 'video' && !$videos->isEmpty()) {
-                // Si la preferencia es video y hay videos disponibles, mostrar video
-                $mostrarVideo = true;
-            } elseif ($tipoPreferido === 'imagen' && !$imagenesCollection->isEmpty()) {
-                // Si la preferencia es imagen y hay imágenes disponibles, mostrar imagen
-                $mostrarVideo = false;
-            } elseif ($tipoPreferido === 'aleatorio' || $tipoPreferido === '') {
-                // Si es aleatorio o no está definido
+            // Algoritmo mejorado para mejor alternancia entre tipos de contenido
+            if ($tipoPreferido === 'aleatorio') {
+                // En modo aleatorio, garantizamos alternancia estricta
                 if (!$videos->isEmpty() && !$imagenesCollection->isEmpty()) {
-                    // Si hay tanto videos como imágenes, alternar basado en la última visualización
-                    $mostrarVideo = ($ultimoTipoMostrado !== 'video');
+                    // Si hay ambos tipos de contenido disponibles, alternamos estrictamente
+                    if ($ultimoTipoMostrado === 'video') {
+                        $mostrarVideo = false;
+                        \Log::info("Alternancia estricta: último fue video, ahora mostramos imagen");
+                    } else if ($ultimoTipoMostrado === 'imagen') {
+                        $mostrarVideo = true;
+                        \Log::info("Alternancia estricta: último fue imagen, ahora mostramos video");
+                    } else {
+                        // Si es primera visualización, comenzamos con video (si hay disponible)
+                        $mostrarVideo = true;
+                        \Log::info("Primera visualización: comenzamos con video");
+                    }
                 } else {
-                    // Si solo hay un tipo disponible, usar lo que haya
+                    // Si solo hay un tipo disponible, usamos lo que haya
                     $mostrarVideo = !$videos->isEmpty();
+                    $tipoMostrado = $mostrarVideo ? "videos" : "imágenes";
+                    \Log::info("Solo hay un tipo disponible: {$tipoMostrado}");
                 }
+            } else if ($tipoPreferido === 'prioridad') {
+                // En modo prioridad, buscamos la campaña con mayor prioridad
+                // pero respetando alternancia cuando sea posible
+
+                // Si hay ambos tipos de contenido, verificamos prioridades
+                if (!$videos->isEmpty() && !$imagenesCollection->isEmpty()) {
+                    // Obtenemos la prioridad más alta (número más bajo) para cada tipo
+                    $mejorVideoP = $videos->min('prioridad') ?? 999;
+                    $mejorImagenP = $imagenesCollection->min('prioridad') ?? 999;
+
+                    // Si hay empate en prioridades, alternamos basado en última visualización
+                    if ($mejorVideoP == $mejorImagenP) {
+                        if ($ultimoTipoMostrado === 'video') {
+                            $mostrarVideo = false;
+                            \Log::info("Prioridades iguales ({$mejorVideoP}), alternando: último fue video, ahora imagen");
+                        } else {
+                            $mostrarVideo = true;
+                            \Log::info("Prioridades iguales ({$mejorVideoP}), alternando: último fue imagen o ninguno, ahora video");
+                        }
+                    } else {
+                        // Elegimos la mejor prioridad
+                        $mostrarVideo = ($mejorVideoP < $mejorImagenP);
+                        $mejorPrioridad = $mostrarVideo ? $mejorVideoP : $mejorImagenP;
+                        $tipo = $mostrarVideo ? "video" : "imagen";
+                        \Log::info("Seleccionando por prioridad: {$tipo} con prioridad {$mejorPrioridad}");
+                    }
+                } else {
+                    // Si solo hay un tipo disponible, usamos lo que haya
+                    $mostrarVideo = !$videos->isEmpty();
+                    \Log::info("Solo hay un tipo disponible en modo prioridad: " . ($mostrarVideo ? "videos" : "imágenes"));
+                }
+            } else if ($tipoPreferido === 'video' && !$videos->isEmpty()) {
+                // Si la preferencia explícita es video y hay videos, mostrar video
+                $mostrarVideo = true;
+                \Log::info("Seleccionando video por preferencia explícita");
+            } else if ($tipoPreferido === 'imagen' && !$imagenesCollection->isEmpty()) {
+                // Si la preferencia explícita es imagen y hay imágenes, mostrar imagen
+                $mostrarVideo = false;
+                \Log::info("Seleccionando imagen por preferencia explícita");
             } else {
-                // En cualquier otro caso, elegir lo que esté disponible
-                $mostrarVideo = !$videos->isEmpty() && ($ultimoTipoMostrado !== 'video' || $imagenesCollection->isEmpty());
+                // Cualquier otro caso, intentar alternar lo mejor posible
+                if (!$videos->isEmpty() && !$imagenesCollection->isEmpty()) {
+                    if ($ultimoTipoMostrado === 'video') {
+                        $mostrarVideo = false;
+                        \Log::info("Caso desconocido con ambos tipos, alternando: último fue video, ahora imagen");
+                    } else {
+                        $mostrarVideo = true;
+                        \Log::info("Caso desconocido con ambos tipos, alternando: último fue imagen o ninguno, ahora video");
+                    }
+                } else {
+                    // Si solo hay un tipo disponible, usamos lo que haya
+                    $mostrarVideo = !$videos->isEmpty();
+                    \Log::info("Caso desconocido, solo hay un tipo disponible: " . ($mostrarVideo ? "videos" : "imágenes"));
+                }
             }
 
             // Seleccionar campaña según la decisión
             if ($mostrarVideo && !$videos->isEmpty()) {
-                $campanaSeleccionada = $videos->random();
+                // Si toca video y hay videos disponibles
+                if ($tipoPreferido === 'prioridad') {
+                    // En modo prioridad, elegimos el video con mejor prioridad (número más bajo)
+                    $mejorPrioridad = $videos->min('prioridad');
+                    $videosConMejorPrioridad = $videos->where('prioridad', $mejorPrioridad);
+                    $campanaSeleccionada = $videosConMejorPrioridad->random();
+                } else {
+                    // En modo aleatorio o cualquier otro, elegimos un video al azar
+                    $campanaSeleccionada = $videos->random();
+                }
+
                 $videoUrl = \Storage::url($campanaSeleccionada->archivo_path);
                 session(['ultimo_tipo_mostrado_' . $zona->id => 'video']);
+                \Log::info("Seleccionado video: ID {$campanaSeleccionada->id}, '{$campanaSeleccionada->nombre}'");
             } else if (!$imagenesCollection->isEmpty()) {
                 // Si no hay videos o toca mostrar imágenes
                 session(['ultimo_tipo_mostrado_' . $zona->id => 'imagen']);
-                // Obtener imágenes de campañas
-                foreach ($imagenesCollection as $campana) {
-                    $imagenes[] = \Storage::url($campana->archivo_path);
+
+                // Para imágenes, procedemos diferente según el método de selección
+                if ($tipoPreferido === 'prioridad') {
+                    // En modo prioridad, ordenamos por prioridad y seleccionamos las mejores
+                    $mejorPrioridad = $imagenesCollection->min('prioridad');
+                    $imagenesConMejorPrioridad = $imagenesCollection->where('prioridad', $mejorPrioridad);
+
+                    // Obtener todas las imágenes con mejor prioridad para el carrusel
+                    foreach ($imagenesConMejorPrioridad as $campana) {
+                        $imagenes[] = \Storage::url($campana->archivo_path);
+                    }
+                    $campanaSeleccionada = $imagenesConMejorPrioridad->first();
+                } else {
+                    // En modo aleatorio, mostramos todas las imágenes
+                    foreach ($imagenesCollection as $campana) {
+                        $imagenes[] = \Storage::url($campana->archivo_path);
+                    }
+                    $campanaSeleccionada = $imagenesCollection->first();
                 }
-                $campanaSeleccionada = $imagenesCollection->first();
+
+                \Log::info("Seleccionadas " . count($imagenes) . " imágenes, primera: ID {$campanaSeleccionada->id}, '{$campanaSeleccionada->nombre}'");
             }
         }
 

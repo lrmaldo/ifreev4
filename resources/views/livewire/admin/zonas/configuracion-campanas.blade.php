@@ -27,6 +27,23 @@
             </div>
         @endif
 
+        <!-- Banner informativo destacado -->
+        <div class="bg-amber-50 border-l-4 border-amber-400 text-amber-700 p-4 mx-6 mt-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm">
+                        <strong>Configuración importante:</strong> Aquí puedes definir cómo se seleccionarán las campañas (videos e imágenes) cuando los usuarios accedan a esta zona WiFi.
+                        La configuración actual es: <strong>{{ ucfirst($zona->seleccion_campanas ?: 'Aleatorio') }}</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <div class="px-4 py-5 sm:px-6">
             <form wire:submit.prevent="save">
                 <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
@@ -41,13 +58,13 @@
                                 id="seleccion_campanas"
                                 class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                             >
-                                <option value="aleatorio">Aleatorio</option>
+                                <option value="aleatorio">Alternancia automática (recomendado)</option>
                                 <option value="prioridad">Por prioridad</option>
                             </select>
                         </div>
                         <p class="mt-2 text-sm text-gray-500">
                             @if ($seleccion_campanas === 'aleatorio')
-                                Las campañas se seleccionarán aleatoriamente de entre todas las activas.
+                                El sistema alternará automáticamente entre videos e imágenes para una mejor experiencia.
                             @else
                                 Se mostrará la campaña activa con el número de prioridad más bajo (mayor prioridad).
                             @endif
@@ -83,22 +100,22 @@
 
                         <div class="space-y-2 text-sm text-gray-700">
                             <p class="flex items-center">
-                                <svg class="mr-2 h-5 w-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="mr-2 h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <strong>Método Aleatorio:</strong> Cada vez que un usuario acceda a la zona, se mostrará una campaña aleatoria de entre las activas.
+                                <strong>Método Alternancia automática:</strong> El sistema alternará automáticamente entre videos e imágenes. Si un usuario ve un video, el siguiente verá una imagen, y viceversa. Esto garantiza una visualización equilibrada de todo el contenido y una mejor experiencia para los usuarios.
                             </p>
                             <p class="flex items-center">
                                 <svg class="mr-2 h-5 w-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <strong>Método por Prioridad:</strong> Se mostrará la campaña con el número de prioridad más bajo (mayor prioridad).
+                                <strong>Método por Prioridad:</strong> Se mostrará la campaña con el número de prioridad más bajo (mayor prioridad). Si hay varios con la misma prioridad, el sistema intentará alternar entre videos e imágenes para una mejor experiencia del usuario.
                             </p>
                             <p class="flex items-center">
-                                <svg class="mr-2 h-5 w-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="mr-2 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <strong>Tiempo de visualización:</strong> Define cuántos segundos se mostrará el carrusel antes de permitir el acceso. Para videos, se usa el tiempo real del video.
+                                <strong>Tiempo de visualización:</strong> Define cuántos segundos debe mostrarse el contenido antes de permitir el acceso. Para videos, se usará siempre el tiempo real del video completo.
                             </p>
                         </div>
                     </div>
