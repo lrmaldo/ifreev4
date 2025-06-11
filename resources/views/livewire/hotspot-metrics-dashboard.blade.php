@@ -294,10 +294,24 @@
                                 {{ $metrica->mac_address }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $metrica->dispositivo }}
+                                @php
+                                    $dispositivo = $metrica->dispositivo;
+                                    // Limitar la longitud a 25 caracteres para mejor visualización en la tabla
+                                    if (strlen($dispositivo) > 25) {
+                                        $dispositivo = substr($dispositivo, 0, 22) . '...';
+                                    }
+                                @endphp
+                                <span title="{{ $metrica->dispositivo }}">{{ $dispositivo }}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $metrica->sistema_operativo ?? 'Desconocido' }}
+                                @php
+                                    $sistemaOperativo = $metrica->sistema_operativo ?? 'Desconocido';
+                                    // Limitar la longitud a 20 caracteres
+                                    if (strlen($sistemaOperativo) > 20) {
+                                        $sistemaOperativo = substr($sistemaOperativo, 0, 17) . '...';
+                                    }
+                                @endphp
+                                <span title="{{ $metrica->sistema_operativo ?? 'Desconocido' }}">{{ $sistemaOperativo }}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full

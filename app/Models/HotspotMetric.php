@@ -30,6 +30,172 @@ class HotspotMetric extends Model
     ];
 
     /**
+     * Accesorio para formatear el campo dispositivo cuando parece un user agent
+     */
+    protected function getDispositivoAttribute($value)
+    {
+        // Si el valor ya está formateado correctamente, devolverlo tal cual
+        if (!str_contains($value, 'Mozilla/5.0')) {
+            return $value;
+        }
+
+        // Es probablemente un user agent - intentamos extraer información del dispositivo
+        $ua = $value;
+        $dispositivo = 'Desconocido';
+
+        // Extraer modelo de dispositivo móvil Android
+        $regexModelo = '/Android[\s\d\.]+;\s([^;)]+)/i';
+        preg_match($regexModelo, $ua, $modeloMatch);
+
+        if (!empty($modeloMatch[1])) {
+            $modelo = trim($modeloMatch[1]);
+            $dispositivo = $modelo;
+
+            // Detectar y formatear dispositivos Xiaomi/POCO
+            if (preg_match('/(M2\d{3}|22\d{6}|21\d{6}|SM-[A-Za-z0-9]+)/', $modelo)) {
+                if (stripos($ua, 'poco') !== false) {
+                    $dispositivo = "POCO $modelo";
+                } elseif (stripos($ua, 'redmi') !== false) {
+                    $dispositivo = "Redmi $modelo";
+                } elseif (stripos($ua, 'samsung') !== false || str_starts_with($modelo, 'SM-')) {
+                    $dispositivo = "Samsung $modelo";
+                } elseif (stripos($ua, 'xiaomi') !== false) {
+                    $dispositivo = "Xiaomi $modelo";
+                }
+            }
+        }
+        // Si es iPhone/iPad
+        elseif (str_contains($ua, 'iPhone')) {
+            $dispositivo = 'iPhone';
+        }
+        elseif (str_contains($ua, 'iPad')) {
+            $dispositivo = 'iPad';
+        }
+        // Si es un dispositivo Windows
+        elseif (str_contains($ua, 'Windows')) {
+            $dispositivo = 'PC Windows';
+        }
+        // Si es un dispositivo Mac
+        elseif (str_contains($ua, 'Macintosh')) {
+            $dispositivo = 'Mac';
+        }
+
+        return $dispositivo;
+    }
+
+    /**
+     * Accesorio para formatear el campo navegador cuando parece un user agent
+     */
+    protected function getNavegadorAttribute($value)
+    {
+        // Si el valor ya está formateado correctamente, devolverlo tal cual
+        if (!str_contains($value, 'Mozilla/5.0')) {
+            return $value;
+        }
+
+        // Es probablemente un user agent - intentamos extraer información del navegador
+        $ua = $value;
+        $navegador = 'Desconocido';
+        $version = '';
+
+        if (str_contains($ua, 'Chrome') && !str_contains($ua, 'Edg') && !str_contains($ua, 'OPR')) {
+            $navegador = 'Chrome';
+            preg_match('/Chrome\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[1])) $version = $match[1];
+        } elseif (str_contains($ua, 'Firefox')) {
+            $navegador = 'Firefox';
+            preg_match('/Firefox\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[1])) $version = $match[1];
+        } elseif (str_contains($ua, 'Safari') && !str_contains($ua, 'Chrome')) {
+            $navegador = 'Safari';
+            preg_match('/Version\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[1])) $version = $match[1];
+        } elseif (str_contains($ua, 'Edg')) {
+            $navegador = 'Edge';
+            preg_match('/Edg\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[1])) $version = $match[1];
+        } elseif (str_contains($ua, 'OPR') || str_contains($ua, 'Opera')) {
+            $navegador = 'Opera';
+            preg_match('/(OPR|Opera)\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[2])) $version = $match[2];
+        } elseif (str_contains($ua, 'MIUI')) {
+            $navegador = 'Navegador MIUI';
+            preg_match('/MiuiBrowser\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[1])) $version = $match[1];
+        } elseif (str_contains($ua, 'SamsungBrowser')) {
+            $navegador = 'Samsung Internet';
+            preg_match('/SamsungBrowser\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[1])) $version = $match[1];
+        }
+
+        if (!empty($version)) {
+            $navegador .= ' ' . $version;
+        }
+
+        return $navegador;
+    }
+
+    /**
+     * Accesorio para formatear el campo sistema_operativo cuando contiene datos incompletos
+     */
+    protected function getSistemaOperativoAttribute($value)
+    {
+        // Si el valor es null, Win32 o Desconocido, intentamos extraer información de dispositivo o navegador
+        if ($value === null || $value === 'Desconocido' || $value === 'Win32') {
+            $ua = $this->attributes['dispositivo'] ?? '';
+
+            // Si dispositivo no contiene user agent, intentar con navegador
+            if (!str_contains($ua, 'Mozilla/5.0')) {
+                $ua = $this->attributes['navegador'] ?? '';
+            }
+
+            // Si tenemos un user agent, extraer el sistema operativo
+            if (str_contains($ua, 'Android')) {
+                preg_match('/Android\s([0-9\.]+)/', $ua, $match);
+                return 'Android ' . (!empty($match[1]) ? $match[1] : '');
+            } elseif (str_contains($ua, 'iPhone') || str_contains($ua, 'iPad') || str_contains($ua, 'iPod')) {
+                preg_match('/OS\s([0-9_]+)/', $ua, $match);
+                $version = !empty($match[1]) ? str_replace('_', '.', $match[1]) : '';
+                return 'iOS ' . $version;
+            } elseif (str_contains($ua, 'Windows')) {
+                preg_match('/Windows NT\s([0-9\.]+)/', $ua, $match);
+                if (!empty($match[1])) {
+                    // Mapeo de versiones de Windows NT a nombres comerciales
+                    $windowsVersions = [
+                        '10.0' => 'Windows 10/11',
+                        '6.3' => 'Windows 8.1',
+                        '6.2' => 'Windows 8',
+                        '6.1' => 'Windows 7',
+                        '6.0' => 'Windows Vista',
+                        '5.2' => 'Windows XP x64',
+                        '5.1' => 'Windows XP',
+                        '5.0' => 'Windows 2000'
+                    ];
+                    return isset($windowsVersions[$match[1]]) ? $windowsVersions[$match[1]] : 'Windows ' . $match[1];
+                }
+                return 'Windows';
+            } elseif (str_contains($ua, 'Mac OS X') || str_contains($ua, 'Macintosh')) {
+                preg_match('/Mac OS X\s?([0-9_\.]+)?/', $ua, $match);
+                $version = !empty($match[1]) ? str_replace('_', '.', $match[1]) : '';
+                return 'macOS ' . $version;
+            } elseif (str_contains($ua, 'Linux')) {
+                if (str_contains($ua, 'Ubuntu')) {
+                    return 'Ubuntu Linux';
+                } else if (str_contains($ua, 'Fedora')) {
+                    return 'Fedora Linux';
+                } else if (str_contains($ua, 'Debian')) {
+                    return 'Debian Linux';
+                }
+                return 'Linux';
+            }
+
+            return 'Desconocido';
+        }
+
+        return $value;
+    }
+
+    /**
      * Relación con la zona
      */
     public function zona(): BelongsTo
