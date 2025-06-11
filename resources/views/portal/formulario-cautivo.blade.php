@@ -323,6 +323,104 @@
             object-fit: contain;
         }
 
+        /* Reproductor de video personalizado */
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border-radius: var(--radius-md);
+        }
+
+        .video-player {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Ocultar controles nativos del video */
+        .video-player::-webkit-media-controls {
+            display: none !important;
+        }
+
+        .video-player::-webkit-media-controls-enclosure {
+            display: none !important;
+        }
+
+        .video-player::-webkit-media-controls-panel {
+            display: none !important;
+        }
+
+        .video-player::-webkit-media-controls-play-button {
+            display: none !important;
+        }
+
+        .video-player::-webkit-media-controls-timeline {
+            display: none !important;
+        }
+
+        /* Controles personalizados */
+        .video-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .video-container:hover .video-controls {
+            opacity: 1;
+        }
+
+        .mute-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            padding: 6px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mute-btn:hover {
+            background-color: var(--color-primary);
+        }
+
+        .mute-btn svg {
+            transition: all 0.2s ease;
+        }
+
+        .mute-btn:hover svg {
+            transform: scale(1.1);
+        }
+
+        .progress-container {
+            flex-grow: 1;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            position: relative;
+            cursor: default;
+            pointer-events: none;
+            margin-left: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--color-primary);
+            border-radius: 2px;
+            width: 0;
+        }
+
         /* Estilos para slides activos/inactivos en modo fade */
         .swiper-container-fade .swiper-slide {
             opacity: 0 !important;
@@ -357,22 +455,81 @@
         }
 
         .btn-connection {
-            background: linear-gradient(135deg, var(--color-success), #059669);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
             color: white;
-            padding: 0.75rem 1.5rem;
+            padding: 0.85rem 1.5rem;
             border-radius: var(--radius-md);
             font-weight: 600;
+            font-size: 1.05rem;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
+            width: 100%;
             transition: all var(--animation-speed) ease;
             border: none;
             cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
         }
 
         .btn-connection:hover {
             transform: scale(1.05);
             box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, var(--color-secondary-dark), var(--color-primary));
+        }
+
+        /* Efecto de animación pulsante para el botón de conexión cuando termine el video */
+        @keyframes animatePulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 94, 44, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 94, 44, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 94, 44, 0);
+            }
+        }
+
+        /* Efecto de onda al hacer click */
+        .btn-connection::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+
+        .btn-connection:focus:not(:active)::after {
+            animation: ripple 0.8s ease-out;
+        }
+
+        /* Animación cuando termina el video */
+        .animate-pulse {
+            animation: animatePulse 1.5s infinite;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            20% {
+                transform: scale(25, 25);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(50, 50);
+                opacity: 0;
+            }
         }
 
         /* Estados del portal */
@@ -554,10 +711,24 @@
                 @if($videoUrl)
                     <!-- Video -->
                     <div class="content-carousel">
-                        <video id="campaign-video" controls autoplay muted class="w-full h-full rounded-md">
-                            <source src="{{ $videoUrl }}" type="video/mp4">
-                            Tu navegador no soporta reproducción de video.
-                        </video>
+                        <div class="video-container">
+                            <video id="campaign-video" autoplay muted playsinline class="video-player" src="{{ $videoUrl }}" controlsList="nodownload noplaybackrate">
+                                Tu navegador no soporta reproducción de video.
+                            </video>
+                            <div class="video-controls">
+                                <button id="mute-btn" class="mute-btn" title="Activar/Desactivar audio">
+                                    <svg id="volume-on-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ff5e2c" style="display: none;">
+                                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                                    </svg>
+                                    <svg id="volume-off-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ff5e2c">
+                                        <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                                    </svg>
+                                </button>
+                                <div class="progress-container">
+                                    <div id="progress-bar" class="progress-bar"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 @elseif(count($imagenes) > 0)
                     <!-- Carrusel de imágenes -->
@@ -576,15 +747,19 @@
                     </div>
                 @endif
 
-                <!-- Contador regresivo -->
+                <!-- Contador regresivo (solo para carrusel) -->
+                @if(!$videoUrl)
                 <div class="countdown-container">
                     <div class="countdown" id="countdown">{{ $tiempoVisualizacion }}</div>
                     <div class="ml-2 text-sm">segundos para tu acceso</div>
                 </div>
+                @endif
 
                 <!-- Mensaje de estado -->
                 <div class="text-center mt-4 text-sm text-gray-500" id="status-message">
-                    @if($zona->tipo_autenticacion_mikrotik == 'sin_autenticacion')
+                    @if($videoUrl)
+                        <p>Mira el video completo para conectarte <span id="video-progress"></span></p>
+                    @elseif($zona->tipo_autenticacion_mikrotik == 'sin_autenticacion')
                         <p>Serás conectado automáticamente cuando termine la cuenta regresiva</p>
                     @elseif($zona->tipo_autenticacion_mikrotik == 'pin')
                         <p>Cuando termine la cuenta regresiva, ingresa el PIN o conéctate gratis</p>
@@ -598,6 +773,8 @@
                     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 mb-4 rounded text-sm">
                         @if($zona->tipo_autenticacion_mikrotik == 'sin_autenticacion')
                             <p>Tu conexión está lista:</p>
+                        @elseif($videoUrl)
+                            <p>¡Video completado! Ya puedes conectarte:</p>
                         @else
                             <p>¿No tienes credenciales? Prueba nuestra conexión gratuita:</p>
                         @endif
@@ -713,6 +890,161 @@
 
             // Configurar CSRF token para peticiones AJAX
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            // Inicializar reproductor de video personalizado si existe
+            @if($videoUrl)
+            const video = document.getElementById('campaign-video');
+            const progressBar = document.getElementById('progress-bar');
+            const muteBtn = document.getElementById('mute-btn');
+            const volumeOnIcon = document.getElementById('volume-on-icon');
+            const volumeOffIcon = document.getElementById('volume-off-icon');
+
+            // Configurar el estado inicial de los iconos de volumen
+            volumeOnIcon.style.display = 'none';
+            volumeOffIcon.style.display = 'block';
+
+            // Configuración inicial del video
+            video.addEventListener('loadedmetadata', function() {
+                logDebug('Video cargado: duración ' + video.duration + ' segundos');
+
+                // Registrar métrica de video iniciado
+                actualizarMetrica({
+                    tipo_visual: 'video',
+                    detalle: 'video_iniciado',
+                    duracion_visual: 0
+                });
+
+                // Asegurarse de que el video comience a reproducirse
+                video.play().catch(error => {
+                    logDebug('Error al reproducir video automáticamente: ' + error.message);
+                    // Muchos navegadores requieren interacción del usuario para reproducir video con audio
+
+                    // Mostrar mensaje pidiendo interacción
+                    const statusMsg = document.getElementById('status-message');
+                    if (statusMsg) {
+                        statusMsg.innerHTML = '<p>Toca la pantalla para iniciar el video</p>';
+
+                        // Añadir evento click al video para iniciarlo
+                        video.addEventListener('click', function videoClickHandler() {
+                            video.play().catch(e => logDebug('Error al reproducir: ' + e));
+                            statusMsg.innerHTML = '<p>Mira el video completo para conectarte <span id="video-progress"></span></p>';
+
+                            // Remover este evento después del primer clic
+                            video.removeEventListener('click', videoClickHandler);
+                        });
+                    }
+
+                    // Registrar error de reproducción
+                    actualizarMetrica({
+                        tipo_visual: 'video',
+                        detalle: 'error_reproduccion_automatica',
+                        error: error.message
+                    });
+                });
+            });
+
+            // Detectar errores de video
+            video.addEventListener('error', function() {
+                logDebug('Error en la reproducción de video: ' + (video.error ? video.error.message : 'desconocido'));
+
+                // Registrar error
+                actualizarMetrica({
+                    tipo_visual: 'video',
+                    detalle: 'error_video',
+                    error: video.error ? video.error.code : 'error_desconocido'
+                });
+
+                // Mostrar mensaje de error y opciones de conexión
+                const statusMsg = document.getElementById('status-message');
+                if (statusMsg) {
+                    statusMsg.innerHTML = '<p class="text-red-500">Error al reproducir el video</p>';
+                    // Mostrar opciones de conexión sin esperar
+                    mostrarOpcionesConexion();
+                }
+            });
+
+            // Prevenir que se pueda saltar adelante en el video
+            video.addEventListener('seeking', function() {
+                if (video.currentTime > video.lastPlayedTime) {
+                    video.currentTime = video.lastPlayedTime || 0;
+                }
+            });
+
+            // Registrar la última posición reproducida
+            video.addEventListener('timeupdate', function() {
+                // Actualizar barra de progreso
+                const percentage = (video.currentTime / video.duration) * 100;
+                progressBar.style.width = percentage + '%';
+
+                // Guardar última posición reproducida legítimamente
+                video.lastPlayedTime = video.currentTime;
+
+                // Actualizar indicador de progreso (opcional)
+                const videoProgress = document.getElementById('video-progress');
+                if (videoProgress) {
+                    // Mostrar solo cuando el video lleva más de 3 segundos
+                    if (video.currentTime > 3) {
+                        const remainingTime = Math.ceil(video.duration - video.currentTime);
+                        videoProgress.textContent = `(${remainingTime}s)`;
+                    }
+                }
+
+                // Registrar métricas de progreso cada 10 segundos
+                if (Math.floor(video.currentTime) % 10 === 0 && video.lastLoggedTime !== Math.floor(video.currentTime)) {
+                    video.lastLoggedTime = Math.floor(video.currentTime);
+                    actualizarMetrica({
+                        tipo_visual: 'video',
+                        duracion_visual: video.currentTime,
+                        detalle: 'video_progreso_' + Math.round(video.currentTime)
+                    });
+                }
+            });
+
+            // Al terminar el video, mostrar botón de conexión
+            video.addEventListener('ended', function() {
+                logDebug('Video completado');
+                mostrarOpcionesConexion();
+
+                // Hacer que el botón de conexión destaque más
+                const gratuito = document.getElementById('gratis');
+                if (gratuito) {
+                    gratuito.classList.add('animate-pulse');
+                    gratuito.style.boxShadow = '0 0 10px var(--color-primary)';
+                }
+
+                // Registrar métrica de finalización
+                actualizarMetrica({
+                    tipo_visual: 'video',
+                    duracion_visual: video.duration,
+                    detalle: 'video_completado'
+                });
+            });
+
+            // Control de volumen
+            muteBtn.addEventListener('click', function() {
+                if (video.muted) {
+                    video.muted = false;
+                    volumeOffIcon.style.display = 'none';
+                    volumeOnIcon.style.display = 'block';
+
+                    // Registrar métrica de activación de audio
+                    actualizarMetrica({
+                        tipo_visual: 'video',
+                        detalle: 'audio_activado'
+                    });
+                } else {
+                    video.muted = true;
+                    volumeOnIcon.style.display = 'none';
+                    volumeOffIcon.style.display = 'block';
+
+                    // Registrar métrica de silencio
+                    actualizarMetrica({
+                        tipo_visual: 'video',
+                        detalle: 'audio_silenciado'
+                    });
+                }
+            });
+            @endif
 
             // Inicializar Swiper si hay imágenes
             @if(count($imagenes) > 0)
@@ -882,17 +1214,22 @@
                 });
             }
 
-            // Función para iniciar cuenta regresiva
+            // Función para iniciar cuenta regresiva (solo para carrusel de imágenes)
             function iniciarContador() {
-                countdownInterval = setInterval(function() {
-                    tiempoRestante--;
-                    countdown.textContent = tiempoRestante;
+                @if(!$videoUrl)
+                const countdown = document.getElementById('countdown');
+                if (countdown) {
+                    countdownInterval = setInterval(function() {
+                        tiempoRestante--;
+                        countdown.textContent = tiempoRestante;
 
-                    if (tiempoRestante <= 0) {
-                        clearInterval(countdownInterval);
-                        mostrarOpcionesConexion();
-                    }
-                }, 1000);
+                        if (tiempoRestante <= 0) {
+                            clearInterval(countdownInterval);
+                            mostrarOpcionesConexion();
+                        }
+                    }, 1000);
+                }
+                @endif
             }
 
             // Mostrar opciones de conexión
@@ -906,6 +1243,67 @@
                 @elseif($zona->tipo_autenticacion_mikrotik == 'usuario_password')
                     document.getElementById('user-form').classList.remove('hidden');
                 @endif
+
+                // Animar el botón de conexión
+                const gratuito = document.getElementById('gratis');
+                if (gratuito) {
+                    gratuito.classList.add('animate-pulse');
+
+                    // Si es video, hacer más prominente la animación
+                    @if($videoUrl)
+                    gratuito.style.boxShadow = '0 0 10px var(--color-primary)';
+                    gratuito.style.transform = 'scale(1.05)';
+                    setTimeout(() => {
+                        gratuito.style.transform = 'scale(1)';
+                    }, 300);
+                    @endif
+                }
+
+                // Registrar métrica de visualización completa
+                registrarMetrica({
+                    tipo_visual: @if($videoUrl) 'video' @else 'carrusel' @endif,
+                    duracion_visual: (Date.now() - tiempoInicio) / 1000,
+                    detalle: 'visualizacion_completa'
+                });
+            }
+
+            // Función para registrar métricas
+            function registrarMetrica(data) {
+                const baseData = {
+                    zona_id: {{ $zona->id }},
+                    mac_address: '{{ $mikrotikData['mac'] ?? 'unknown' }}',
+                    dispositivo: extraerInformacionDispositivo(),
+                    navegador: extraerInformacionNavegador()
+                };
+
+                const metricaData = {...baseData, ...data};
+
+                logDebug('Registrando métrica:', metricaData);
+
+                fetch('/actualizar-metrica', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify(metricaData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    logDebug('Respuesta de métrica:', data);
+                })
+                .catch(error => {
+                    console.error('Error registrando métrica:', error);
+                });
+            }
+
+            // Función para registrar clics en botones
+            function actualizarMetricaClic(tipo, detalle) {
+                registrarMetrica({
+                    tipo_visual: tipo,
+                    clic_boton: true,
+                    detalle: detalle
+                });
             }
 
             // Función global para validación y autenticación de login de Mikrotik
@@ -1066,8 +1464,21 @@
                 return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             }
 
-            // Iniciar contador si no hay formulario
-            @if(!$mostrarFormulario)
+            // Ocultar el botón de conexión inicialmente si hay video
+            @if($videoUrl)
+            const botonGratis = document.getElementById('connection-container');
+            if (botonGratis) {
+                botonGratis.classList.add('hidden');
+                // Añadir indicador para saber que el video requiere visualización completa
+                const statusMsg = document.getElementById('status-message');
+                if (statusMsg) {
+                    statusMsg.innerHTML = '<p>Mira el video completo para conectarte <span id="video-progress"></span></p>';
+                }
+            }
+            @endif
+
+            // Iniciar contador si no hay formulario y no es video
+            @if(!$mostrarFormulario && !$videoUrl)
                 iniciarContador();
             @endif
 
@@ -1257,6 +1668,57 @@
                 statsDiv.id = 'stats-container';
                 statsDiv.className = 'px-4 py-2 hidden';
                 mainContent.appendChild(statsDiv);
+            }
+
+            // Función global para acceso gratuito
+            window.doTrial = function() {
+                // Registrar clic en botón de acceso gratuito
+                actualizarMetricaClic('trial', 'boton_gratis');
+
+                @if($videoUrl)
+                // Si hay video, registrar que se hizo clic después de completarlo
+                const video = document.getElementById('campaign-video');
+                if (video && !video.ended) {
+                    // Si el video no ha terminado, no permitir la conexión
+                    actualizarMetrica({
+                        tipo_visual: 'video',
+                        detalle: 'intento_saltar_video',
+                        duracion_visual: video.currentTime
+                    });
+
+                    // Mostrar mensaje de alerta
+                    alert('Por favor, mira el video completo antes de conectarte');
+
+                    // No continuar con la conexión
+                    return;
+                } else {
+                    // Video completado correctamente
+                    actualizarMetrica({
+                        tipo_visual: 'video',
+                        detalle: 'conexion_post_video',
+                        duracion_visual: video.duration
+                    });
+                }
+                @endif
+
+                // Configurar datos de acceso gratis para Mikrotik
+                const loginForm = document.sendin;
+                if (loginForm) {
+                    loginForm.username.value = '@trial';
+                    loginForm.password.value = '';
+
+                    // Envío del formulario tras breve espera
+                    setTimeout(() => {
+                        loginForm.submit();
+                    }, 300);
+                } else {
+                    console.error('Error: No se encontró el formulario de envío para autenticación');
+                    // Intento de redirección directa como fallback
+                    const redirectUrl = '{{ $mikrotikData['link-orig'] ?? '' }}';
+                    if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                    }
+                }
             }
         });
     </script>
