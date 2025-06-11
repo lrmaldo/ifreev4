@@ -894,12 +894,18 @@
                 // Registrar clic en botón de trial
                 actualizarMetricaClic('trial');
 
-                // Enviar formulario para conexión de prueba
-                const trialLink = '{{ $mikrotikData["link-login-only"] ?? "" }}' +
-                                '?dst=' + encodeURIComponent('{{ $mikrotikData["link-orig-esc"] ?? "" }}') +
-                                '&username=' + encodeURIComponent('T-{{ $mikrotikData["mac-esc"] ?? "" }}');
+                // Usar valores proporcionados por Mikrotik
+                const mac = '{{ $mikrotikData["mac"] ?? "" }}';
+                const macEsc = encodeURIComponent(mac);
+                const linkOrig = '{{ $mikrotikData["link-orig"] ?? "" }}';
+                const linkOrigEsc = encodeURIComponent(linkOrig);
+                const linkLoginOnly = '{{ $mikrotikData["link-login-only"] ?? "" }}';
 
-                window.location.href = trialLink;
+                // Crear la URL exacta para conexión trial
+                const trialUrl = linkLoginOnly + '?dst=' + linkOrigEsc + '&username=T-' + macEsc;
+
+                console.log("Conectando con trial:", trialUrl);
+                window.location = trialUrl;
                 return false;
             };
 

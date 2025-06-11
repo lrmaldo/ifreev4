@@ -32,11 +32,17 @@ class ZonaLoginController extends Controller
             abort(404, 'Zona no encontrada');
         }
 
-        // Capturar todos los parámetros enviados por Mikrotik
-        $mikrotikData = $request->only([
-            'mac', 'ip', 'username', 'link-login', 'link-orig', 'error',
-            'chap-id', 'chap-challenge', 'link-login-only', 'link-orig-esc', 'mac-esc'
-        ]);
+        // Comprobar en el controlador que estos valores estén presentes
+        $mikrotikData = [
+            'link-login-only' => $request->get('link-login-only', ''),
+            'link-orig' => $request->get('link-orig', ''),
+            'link-orig-esc' => $request->get('link-orig-esc', ''),
+            'mac' => $request->get('mac', ''),
+            'mac-esc' => $request->get('mac-esc', ''),
+            'chap-id' => $request->get('chap-id', ''),
+            'chap-challenge' => $request->get('chap-challenge', ''),
+            'error' => $request->get('error', '')
+        ];
 
         // Registrar métrica de entrada al portal
         $this->registrarMetricaEntrada($zona, $mikrotikData);
