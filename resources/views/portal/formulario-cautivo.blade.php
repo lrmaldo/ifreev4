@@ -953,13 +953,22 @@
             // Función para registrar clics en botones con información detallada
             function actualizarMetricaClic(tipoBoton, botonInfo = '') {
                 const tiempoActual = Math.floor((Date.now() - tiempoInicio) / 1000);
+
+                // Mapeamos el tipo de botón a valores permitidos en la base de datos
+                let tipoVisual = tipoBoton;
+                if (tipoBoton === 'trial' || tipoBoton === 'login') {
+                    tipoVisual = 'login';
+                } else if (!['formulario', 'carrusel', 'video', 'portal_cautivo', 'portal_entrada', 'login'].includes(tipoBoton)) {
+                    tipoVisual = 'formulario';  // Valor por defecto para tipos no reconocidos
+                }
+
                 actualizarMetrica({
                     clic_boton: true,
-                    tipo_visual: tipoBoton,
+                    tipo_visual: tipoVisual,
                     duracion_visual: tiempoActual,
-                    detalle: botonInfo || tipoBoton
+                    detalle: botonInfo || tipoBoton // Conservamos el tipo original en el detalle para análisis
                 });
-                console.log(`Registro de clic en botón: ${tipoBoton} ${botonInfo ? '(' + botonInfo + ')' : ''}`);
+                console.log(`Registro de clic en botón: ${tipoBoton} (guardado como ${tipoVisual}) ${botonInfo ? '(' + botonInfo + ')' : ''}`);
             }
 
             // Actualizar duración visual periódicamente

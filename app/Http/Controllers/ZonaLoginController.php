@@ -360,6 +360,19 @@ class ZonaLoginController extends Controller
                 ]);
             }
 
+            // Mapear valores de tipo_visual a los permitidos por el esquema
+            $tipoVisual = $request->tipo_visual;
+            if ($tipoVisual && !in_array($tipoVisual, ['formulario', 'carrusel', 'video', 'portal_cautivo', 'portal_entrada', 'login'])) {
+                // Si es un botón de trial o login, lo mapeamos a 'login'
+                if (in_array($tipoVisual, ['trial', 'login'])) {
+                    $tipoVisual = 'login';
+                } else {
+                    // Cualquier otro valor no reconocido lo mapeamos a 'formulario'
+                    $tipoVisual = 'formulario';
+                }
+            }
+
+            // Buscar o crear la métrica
             $metrica = \App\Models\HotspotMetric::where('zona_id', $request->zona_id)
                 ->where('mac_address', $request->mac_address)
                 ->orderBy('updated_at', 'desc')
@@ -380,7 +393,7 @@ class ZonaLoginController extends Controller
                         \App\Models\MetricaDetalle::create([
                             'metrica_id' => $metrica->id,
                             'tipo_evento' => 'clic',
-                            'contenido' => $request->tipo_visual,
+                            'contenido' => $tipoVisual,
                             'detalle' => $request->detalle ?? '',
                             'fecha_hora' => now()
                         ]);
@@ -388,23 +401,41 @@ class ZonaLoginController extends Controller
                 }
 
                 if ($request->has('tipo_visual')) {
-                    $datosActualizar['tipo_visual'] = $request->tipo_visual;
+                    $datosActualizar['tipo_visual'] = $tipoVisual;
                 }
 
                 if (!empty($datosActualizar)) {
                     $metrica->update($datosActualizar);
                 }
+            } else {
+                // Si no existe, crear una nueva métrica
+                $metrica = \App\Models\HotspotMetric::create([
+                    'zona_id' => $request->zona_id,
+                    'mac_address' => $request->mac_address,
+                    'dispositivo' => $request->dispositivo ?? 'Desconocido',
+                    'navegador' => $request->navegador ?? 'Desconocido',
+                    'tipo_visual' => $tipoVisual ?? 'formulario',
+                    'duracion_visual' => $request->duracion_visual ?? 0,
+                    'clic_boton' => $request->clic_boton ?? false,
+                    'veces_entradas' => 1
+                ]);
+
+                // Registrar un detalle para la nueva métrica
+                if ($request->clic_boton) {
+                    \App\Models\MetricaDetalle::create([
+                        'metrica_id' => $metrica->id,
+                        'tipo_evento' => 'clic',
+                        'contenido' => $tipoVisual,
+                        'detalle' => $request->detalle ?? '',
+                        'fecha_hora' => now()
+                    ]);
+                }
+            }
 
                 return response()->json([
                     'success' => true,
                     'message' => 'Métrica actualizada correctamente'
                 ]);
-            }
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Métrica no encontrada'
-            ], 404);
 
         } catch (\Exception $e) {
             \Log::error('Error actualizando métrica: ' . $e->getMessage());

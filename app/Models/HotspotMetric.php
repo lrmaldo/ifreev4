@@ -101,10 +101,37 @@ class HotspotMetric extends Model
     }
 
     /**
+     * Validar y mapear el tipo visual a uno permitido
+     */
+    public static function validarTipoVisual($tipoVisual)
+    {
+        $valoresPermitidos = ['formulario', 'carrusel', 'video', 'portal_cautivo', 'portal_entrada', 'login'];
+
+        if (!in_array($tipoVisual, $valoresPermitidos)) {
+            // Si es un botón de trial o login, lo mapeamos a 'login'
+            if (in_array($tipoVisual, ['trial', 'login'])) {
+                return 'login';
+            } else {
+                // Cualquier otro valor no reconocido lo mapeamos a 'formulario'
+                return 'formulario';
+            }
+        }
+
+        return $tipoVisual;
+    }
+
+    /**
      * Registra o actualiza una métrica de hotspot
      */
     public static function registrarMetrica($data)
     {
+        // Aseguramos que tipo_visual sea un valor válido
+        if (isset($data['tipo_visual'])) {
+            $data['tipo_visual'] = self::validarTipoVisual($data['tipo_visual']);
+        } else {
+            $data['tipo_visual'] = 'formulario'; // Valor por defecto
+        }
+
         $existingMetric = static::where('mac_address', $data['mac_address'])
             ->where('zona_id', $data['zona_id'])
             ->first();
