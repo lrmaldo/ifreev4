@@ -293,6 +293,22 @@
         .swiper-container {
             width: 100%;
             height: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .swiper-wrapper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .swiper-slide {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .swiper-slide img {
@@ -305,6 +321,16 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
+        }
+
+        /* Estilos para slides activos/inactivos en modo fade */
+        .swiper-container-fade .swiper-slide {
+            opacity: 0 !important;
+            transition: opacity 0.5s ease;
+        }
+
+        .swiper-container-fade .swiper-slide-active {
+            opacity: 1 !important;
         }
 
         /* Contador */
@@ -652,6 +678,18 @@
     <script src="{{ asset('js/md5.js') }}"></script>
     <script src="{{ asset('js/swiper-local.js') }}"></script>
     <script>
+        // Función de log personalizada para depuración
+        function logDebug(message, type = 'info') {
+            const prefix = '[Portal Cautivo] ';
+            if (type === 'error') {
+                console.error(prefix + message);
+            } else if (type === 'warn') {
+                console.warn(prefix + message);
+            } else {
+                console.log(prefix + message);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // Configuración inicial
             const stepForm = document.getElementById('step-form');
@@ -660,6 +698,14 @@
             const countdown = document.getElementById('countdown');
             const connectionContainer = document.getElementById('connection-container');
             const statusMessage = document.getElementById('status-message');
+
+            // Log información inicial
+            logDebug('Portal cautivo inicializado');
+            logDebug('Imágenes disponibles: {{ count($imagenes) }}');
+
+            @foreach($imagenes as $index => $imagen)
+                logDebug('Imagen {{ $index + 1 }}: {{ $imagen }}');
+            @endforeach
 
             let tiempoRestante = {{ $tiempoVisualizacion }};
             let countdownInterval;
@@ -683,6 +729,19 @@
                     crossFade: true
                 }
             });
+
+            // Verificación adicional para debugging
+            console.log('Imágenes en carrusel:', {{ count($imagenes) }});
+            console.log('Slides en carrusel:', document.querySelectorAll('.swiper-slide').length);
+
+            // Forzar actualización del carrusel para asegurar que todas las diapositivas son visibles
+            setTimeout(() => {
+                swiper.update();
+                if ({{ count($imagenes) > 1 ? 'true' : 'false' }}) {
+                    swiper.autoplay.start();
+                    console.log('Autoplay iniciado para múltiples imágenes');
+                }
+            }, 100);
             @endif
 
             // Función para enviar el formulario
@@ -730,9 +789,24 @@
                         // Reiniciar Swiper si existe
                         @if(count($imagenes) > 0)
                         setTimeout(() => {
+                            console.log('Actualizando swiper después de enviar formulario');
                             swiper.update();
-                            swiper.autoplay.start();
-                        }, 100);
+
+                            // Forzar actualización de slides
+                            const slides = document.querySelectorAll('.swiper-slide');
+                            console.log('Slides disponibles:', slides.length);
+
+                            // Asegurar que la primera diapositiva esté visible
+                            if (slides.length > 0) {
+                                swiper.goToSlide(0);
+                            }
+
+                            // Iniciar autoplay solo si hay más de una imagen
+                            if ({{ count($imagenes) > 1 ? 'true' : 'false' }}) {
+                                swiper.autoplay.start();
+                                console.log('Autoplay iniciado');
+                            }
+                        }, 200);
                         @endif
                     } else {
                         alert(data.message || 'Error al enviar el formulario');
