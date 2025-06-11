@@ -116,26 +116,55 @@ class ZonaLoginController extends Controller
 
         // Determinar tipo de contenido (imagen, video)
         if (!$campanasActivas->isEmpty()) {
-            // Filtrar por tipo según configuración de la zona
-            $tipoPreferido = $zona->seleccion_campanas === 'video' ? 'video' : 'imagen';
-            $campanasPreferidas = $campanasActivas->where('tipo', $tipoPreferido);
+            // Separar videos e imágenes
+            $videos = $campanasActivas->where('tipo', 'video')->filter(function($campana) {
+                return !empty($campana->archivo_path);
+            });
 
-            if ($campanasPreferidas->isEmpty()) {
-                $campanasPreferidas = $campanasActivas;
+            $imagenesCollection = $campanasActivas->where('tipo', 'imagen')->filter(function($campana) {
+                return !empty($campana->archivo_path);
+            });
+
+            // Verificar la configuración de la zona y la sesión para alternar entre video e imagen
+            $tipoPreferido = $zona->seleccion_campanas ?? 'aleatorio';
+            $ultimoTipoMostrado = session('ultimo_tipo_mostrado_' . $zona->id, '');
+
+            // Decisión de mostrar video o imagen
+            $mostrarVideo = false;
+
+            if ($tipoPreferido === 'video' && !$videos->isEmpty()) {
+                // Si la preferencia es video y hay videos disponibles, mostrar video
+                $mostrarVideo = true;
+            } elseif ($tipoPreferido === 'imagen' && !$imagenesCollection->isEmpty()) {
+                // Si la preferencia es imagen y hay imágenes disponibles, mostrar imagen
+                $mostrarVideo = false;
+            } elseif ($tipoPreferido === 'aleatorio' || $tipoPreferido === '') {
+                // Si es aleatorio o no está definido
+                if (!$videos->isEmpty() && !$imagenesCollection->isEmpty()) {
+                    // Si hay tanto videos como imágenes, alternar basado en la última visualización
+                    $mostrarVideo = ($ultimoTipoMostrado !== 'video');
+                } else {
+                    // Si solo hay un tipo disponible, usar lo que haya
+                    $mostrarVideo = !$videos->isEmpty();
+                }
+            } else {
+                // En cualquier otro caso, elegir lo que esté disponible
+                $mostrarVideo = !$videos->isEmpty() && ($ultimoTipoMostrado !== 'video' || $imagenesCollection->isEmpty());
             }
 
-            // Seleccionar campaña
-            $campanaSeleccionada = $campanasPreferidas->random();
-
-            if ($campanaSeleccionada->tipo === 'video' && $campanaSeleccionada->archivo_path) {
+            // Seleccionar campaña según la decisión
+            if ($mostrarVideo && !$videos->isEmpty()) {
+                $campanaSeleccionada = $videos->random();
                 $videoUrl = \Storage::url($campanaSeleccionada->archivo_path);
-            } else {
+                session(['ultimo_tipo_mostrado_' . $zona->id => 'video']);
+            } else if (!$imagenesCollection->isEmpty()) {
+                // Si no hay videos o toca mostrar imágenes
+                session(['ultimo_tipo_mostrado_' . $zona->id => 'imagen']);
                 // Obtener imágenes de campañas
-                foreach ($campanasActivas->where('tipo', 'imagen') as $campana) {
-                    if ($campana->archivo_path) {
-                        $imagenes[] = \Storage::url($campana->archivo_path);
-                    }
+                foreach ($imagenesCollection as $campana) {
+                    $imagenes[] = \Storage::url($campana->archivo_path);
                 }
+                $campanaSeleccionada = $imagenesCollection->first();
             }
         }
 
