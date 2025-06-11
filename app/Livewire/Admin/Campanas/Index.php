@@ -148,43 +148,45 @@ class Index extends Component
     public function save()
     {
         try {
-            \Log::info('Iniciando guardado de campaña', [
+            \Log::info('Iniciando guardado de campaña en modo producción', [
                 'tipo' => $this->tipo,
                 'editando' => $this->editando,
                 'tiene_archivo' => !empty($this->archivo),
-                'archivo_actual' => $this->archivo_actual,
-                'archivo_info' => $this->archivo ? [
-                    'nombre' => $this->archivo->getClientOriginalName(),
-                    'tamaño' => $this->archivo->getSize(),
-                    'mime' => $this->archivo->getMimeType()
-                ] : null
+                'archivo_actual' => $this->archivo_actual
             ]);
 
-            $validated = $this->validate();
+            // Validar primero sin el archivo para depurar problemas
+            $rules = $this->rules();
+            if (isset($rules['archivo'])) {
+                $archivoRule = $rules['archivo'];
+                unset($rules['archivo']);
+            }
 
-            \Log::info('Validación completada', [
-                'campos_validados' => array_keys($validated)
-            ]);
+            // Validar todo excepto el archivo primero
+            $this->validate($rules);
+            \Log::info('Validación de datos básicos completada');
+
+            // Luego validar el archivo si es necesario
+            if (isset($archivoRule) && $this->archivo) {
+                $this->validate(['archivo' => $archivoRule]);
+                \Log::info('Validación de archivo completada');
+            }
 
             // Subir archivo
             $archivoPath = $this->archivo_actual;
 
             if ($this->archivo) {
                 try {
-                    // Log para debugging antes de procesar el archivo
                     \Log::info('Procesando archivo', [
-                        'tipo' => $this->tipo,
                         'nombre_original' => $this->archivo->getClientOriginalName(),
                         'tamaño' => $this->archivo->getSize(),
-                        'mime_type' => $this->archivo->getMimeType(),
-                        'hash' => $this->archivo->getFilename(),
-                        'is_valid' => $this->archivo->isValid(),
-                        'error_code' => $this->archivo->getError()
+                        'mime_type' => $this->archivo->getMimeType()
                     ]);
 
                     // Si hay un archivo nuevo, eliminar el anterior si estamos editando
                     if ($this->editando && $this->archivo_actual) {
                         Storage::disk('public')->delete($this->archivo_actual);
+                        \Log::info('Archivo anterior eliminado');
                     }
 
                     // Generar un nombre único para el archivo
@@ -198,31 +200,34 @@ class Index extends Component
                     $fullPath = 'public/' . $carpeta;
                     if (!Storage::exists($fullPath)) {
                         Storage::makeDirectory($fullPath);
+                        \Log::info("Directorio creado: $fullPath");
                     }
 
+                    // Verificar permisos antes de subir
+                    $storagePath = storage_path('app/' . $fullPath);
+                    \Log::info('Verificando permisos de directorio', [
+                        'path' => $storagePath,
+                        'existe' => file_exists($storagePath) ? 'Sí' : 'No',
+                        'es_escribible' => is_writable($storagePath) ? 'Sí' : 'No',
+                        'permisos' => file_exists($storagePath) ? substr(sprintf('%o', fileperms($storagePath)), -4) : 'N/A'
+                    ]);
+
+                    // Intentar guardar archivo con gestión de errores más detallada
                     $archivoPath = $this->archivo->storeAs($carpeta, $nombreArchivo, 'public');
 
                     if (!$archivoPath) {
                         throw new \Exception("Error al subir el archivo. No se pudo guardar en el almacenamiento.");
                     }
 
-                    // Log para debugging
                     \Log::info('Archivo subido correctamente', [
-                        'tipo' => $this->tipo,
-                        'nombre_original' => $this->archivo->getClientOriginalName(),
-                        'extension' => $extension,
-                        'tamaño' => $this->archivo->getSize(),
-                        'mime_type' => $this->archivo->getMimeType(),
                         'ruta' => $archivoPath
                     ]);
                 } catch (\Exception $e) {
                     \Log::error('Error en la subida del archivo', [
                         'error' => $e->getMessage(),
-                        'tipo_archivo' => $this->tipo,
-                        'mensaje' => $e->getMessage(),
                         'trace' => $e->getTraceAsString()
                     ]);
-                    throw new \Exception("Error al procesar el archivo: " . $e->getMessage());
+                    throw $e;
                 }
             } elseif (!$this->editando || !$this->archivo_actual) {
                 // Si no hay archivo y no estamos editando, o estamos editando pero no hay archivo actual
@@ -231,64 +236,52 @@ class Index extends Component
 
             // Crear o actualizar la campaña
             $data = [
-            'titulo' => $this->titulo,
-            'descripcion' => $this->descripcion,
-            'enlace' => $this->enlace,
-            'fecha_inicio' => $this->fecha_inicio,
-            'fecha_fin' => $this->fecha_fin,
-            'visible' => $this->visible,
-            'siempre_visible' => $this->siempre_visible,
-            'dias_visibles' => !empty($this->dias_visibles) ? $this->dias_visibles : null,
-            'tipo' => $this->tipo,
-            'archivo_path' => $archivoPath,
-            'cliente_id' => $this->cliente_id,
-            'prioridad' => $this->prioridad,
-        ];
-
-        if ($this->editando) {
-            $campana = Campana::find($this->campana_id);
-            $campana->update($data);
-            $this->sincronizarZonasInterno($campana);
-            session()->flash('message', 'Campaña actualizada con éxito.');
-        } else {
-            $campana = Campana::create($data);
-            $this->sincronizarZonasInterno($campana);
-            session()->flash('message', 'Campaña creada con éxito.');
-        }
-
-        $this->closeModal();
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // Log error de validación específico
-            \Log::error('Error de validación al guardar campaña', [
-                'error' => $e->getMessage(),
-                'errores' => $e->validator->errors()->toArray(),
+                'titulo' => $this->titulo,
+                'descripcion' => $this->descripcion,
+                'enlace' => $this->enlace,
+                'fecha_inicio' => $this->fecha_inicio,
+                'fecha_fin' => $this->fecha_fin,
+                'visible' => $this->visible,
+                'siempre_visible' => $this->siempre_visible,
+                'dias_visibles' => !empty($this->dias_visibles) ? $this->dias_visibles : null,
                 'tipo' => $this->tipo,
-                'tiene_archivo' => !empty($this->archivo),
-                'editando' => $this->editando
-            ]);
+                'archivo_path' => $archivoPath,
+                'cliente_id' => $this->cliente_id,
+                'prioridad' => $this->prioridad,
+            ];
 
-            // No necesitamos hacer flash aquí porque Livewire muestra los errores de validación automáticamente
+            if ($this->editando) {
+                $campana = Campana::find($this->campana_id);
+                if (!$campana) {
+                    throw new \Exception("No se encontró la campaña a editar");
+                }
+
+                $campana->update($data);
+                \Log::info('Campaña actualizada con éxito', ['id' => $campana->id]);
+
+                $this->sincronizarZonasInterno($campana);
+                session()->flash('message', 'Campaña actualizada con éxito.');
+            } else {
+                $campana = Campana::create($data);
+                \Log::info('Nueva campaña creada con éxito', ['id' => $campana->id]);
+
+                $this->sincronizarZonasInterno($campana);
+                session()->flash('message', 'Campaña creada con éxito.');
+            }
+
+            $this->closeModal();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Error de validación al guardar campaña', [
+                'errores' => $e->validator->errors()->toArray()
+            ]);
+            throw $e; // Mantener la excepción para que Livewire muestre los errores
 
         } catch (\Exception $e) {
-            // Log error general con más detalles
-            \Log::error('Error al guardar campaña', [
+            \Log::error('Error general al guardar campaña', [
                 'error' => $e->getMessage(),
-                'clase' => get_class($e),
-                'trace' => $e->getTraceAsString(),
-                'tipo' => $this->tipo,
-                'tiene_archivo' => !empty($this->archivo),
-                'editando' => $this->editando,
-                'archivo_actual' => $this->archivo_actual,
-                'archivo_info' => $this->archivo ? [
-                    'nombre' => $this->archivo->getClientOriginalName(),
-                    'tamaño' => $this->archivo->getSize(),
-                    'mime_type' => $this->archivo->getMimeType(),
-                    'error_code' => $this->archivo->getError(),
-                    'is_valid' => $this->archivo->isValid()
-                ] : 'No hay archivo'
+                'trace' => $e->getTraceAsString()
             ]);
 
-            // Mostrar mensaje de error al usuario
             session()->flash('error', 'Error al guardar: ' . $e->getMessage());
         }
     }
