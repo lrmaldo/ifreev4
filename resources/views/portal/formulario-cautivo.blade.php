@@ -1,18 +1,13 @@
-<!DOCT    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <!-- Fuentes locales (reemplazan Google Fonts para funcionar sin internet) -->
-    <link rel="stylesheet" href="{{ asset('css/fonts-local.css') }}">
-
-    <!-- Tailwind CSS del sistema -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <!-- Swiper CSS local -->
-    <link rel="stylesheet" href="{{ asset('css/swiper-local.css') }}">
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <title>Portal Cautivo - {{ $zona->nombre }}</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <!-- Fuentes locales (reemplazan Google Fonts para funcionar sin internet) -->
+    <link rel="stylesheet" href="{{ asset('css/fonts-local.css') }}">
 
     <!-- Google Fonts -->
     {{-- <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +18,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <!-- Swiper CSS local -->
-    <link rel="stylesheet" href="{{ asset('css/swiper-local.css') }}">>
+    <link rel="stylesheet" href="{{ asset('css/swiper-local.css') }}">
 
     <style>
         /* Variables CSS personalizables */
