@@ -1,4 +1,6 @@
-<x-layouts.app :title="'Configuración de Campañas - ' . $zona->nombre">
+<div>
+    <x-slot:title>Configuración de Campañas - {{ $zona->nombre }}</x-slot:title>
+
     <div class="bg-white shadow overflow-hidden sm:rounded-lg">
         <div class="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
             <div>
@@ -136,4 +138,4 @@
             </form>
         </div>
     </div>
-</x-layouts.app>
+</div>
