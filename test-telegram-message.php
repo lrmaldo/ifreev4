@@ -26,21 +26,85 @@ echo "ℹ️ Token: " . substr($bot->token, 0, 5) . "..." . substr($bot->token, 
 // Verificar conexión con Telegram
 echo "🔄 Verificando conexión con la API de Telegram...\n";
 try {
-    $botInfo = $bot->getMe();
-    echo "✅ Conexión exitosa! Bot ID: {$botInfo->id}, Username: @{$botInfo->username}\n\n";
+    // Usar el cliente Telegraph para obtener la información del bot
+    $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+    $telegraph->bot($bot);
+    $response = $telegraph->botInfo()->send();
+
+    if (isset($response['ok']) && $response['ok'] === true && isset($response['result'])) {
+        $botInfo = $response['result'];
+        echo "✅ Conexión exitosa! Bot ID: {$botInfo['id']}, Username: @{$botInfo['username']}\n\n";
+    } else {
+        echo "❌ Error: No se pudo obtener información del bot\n";
+        echo "Respuesta: " . json_encode($response, JSON_PRETTY_PRINT) . "\n";
+        exit(1);
+    }
 } catch (\Exception $e) {
     echo "❌ Error de conexión: " . $e->getMessage() . "\n";
+    echo "Trace: " . $e->getTraceAsString() . "\n";
     exit(1);
 }
 
-// Obtener chats disponibles
-$chats = \DefStudio\Telegraph\Models\TelegraphChat::all();
+// Obtener chats disponibles - intentamos tanto con TelegraphChat como con la tabla TelegramChat
+try {
+    $telegraphChats = \DefStudio\Telegraph\Models\TelegraphChat::all();
+    $telegramChats = \App\Models\TelegramChat::all();
 
-if ($chats->isEmpty()) {
-    echo "❌ No hay chats registrados para enviar mensajes.\n";
+    $chatsCount = $telegraphChats->count() + $telegramChats->count();
 
-    // Pedir un chat_id para enviar mensaje de prueba
-    echo "\n📝 Ingresa un chat_id para enviar un mensaje de prueba: ";
+    if ($chatsCount === 0) {
+        echo "❌ No hay chats registrados para enviar mensajes.\n";
+
+        // Pedir un chat_id para enviar mensaje de prueba
+        echo "\n📝 Ingresa un chat_id para enviar un mensaje de prueba: ";
+        $chatId = trim(fgets(STDIN));
+
+        if (empty($chatId)) {
+            echo "❌ No se ingresó un chat_id válido.\n";
+            exit(1);
+        }
+
+        echo "  → Se usará el chat ID: {$chatId} para la prueba.\n\n";
+        $chat = null; // No hay objeto chat, pero tenemos el chatId
+    } else {
+        echo "✅ Se encontraron {$chatsCount} chats registrados.\n";
+
+        // Mostrar los chats disponibles de TelegraphChat
+        $index = 1;
+        if ($telegraphChats->count() > 0) {
+            echo "\n  📋 Chats de TelegraphChat:\n";
+            foreach ($telegraphChats as $chat) {
+                echo "  {$index}. Chat ID: {$chat->chat_id}, Nombre: " .
+                     ($chat->name ?? 'Sin nombre') . "\n";
+                $index++;
+            }
+        }
+
+        // Mostrar los chats disponibles de TelegramChat
+        if ($telegramChats->count() > 0) {
+            echo "\n  📋 Chats de TelegramChat:\n";
+            foreach ($telegramChats as $chat) {
+                echo "  {$index}. Chat ID: {$chat->chat_id}, Nombre: {$chat->nombre}\n";
+                $index++;
+            }
+        }
+
+        // Seleccionamos un chat para la prueba (preferimos TelegramChat)
+        if ($telegramChats->count() > 0) {
+            $chat = $telegramChats->first();
+            echo "\n🔹 Usando el chat #{$chat->id} ({$chat->nombre}) para la prueba.\n\n";
+            $chatId = $chat->chat_id;
+        } else {
+            $chat = $telegraphChats->first();
+            echo "\n🔹 Usando el chat #{$chat->id} (" . ($chat->name ?? 'Sin nombre') . ") para la prueba.\n\n";
+            $chatId = $chat->chat_id;
+        }
+    }
+} catch (\Exception $e) {
+    echo "❌ Error al obtener chats: " . $e->getMessage() . "\n";
+
+    // Pedir un chat_id manualmente como fallback
+    echo "\n📝 Ingresa un chat_id para enviar mensaje de prueba: ";
     $chatId = trim(fgets(STDIN));
 
     if (empty($chatId)) {
@@ -48,22 +112,8 @@ if ($chats->isEmpty()) {
         exit(1);
     }
 
-    // Crear un chat temporal solo para la prueba
-    $chat = new \DefStudio\Telegraph\DTO\Chat();
-    $chat->id = $chatId;
-} else {
-    echo "✅ Se encontraron " . $chats->count() . " chats registrados.\n";
-
-    // Mostrar los chats disponibles
-    $index = 1;
-    foreach ($chats as $chat) {
-        echo "  {$index}. Chat ID: {$chat->chat_id}, Nombre: {$chat->nombre}\n";
-        $index++;
-    }
-
-    // Seleccionar el primer chat para la prueba
-    $chat = $chats->first();
-    echo "\n🔹 Usando el chat #{$chat->id} ({$chat->nombre}) para la prueba.\n\n";
+    echo "  → Se usará el chat ID: {$chatId} para la prueba.\n\n";
+    $chat = null; // No hay objeto chat, pero tenemos el chatId
 }
 
 // Enviar mensaje
@@ -72,8 +122,14 @@ echo "🚀 Enviando mensaje de prueba...\n";
 try {
     // Usar método 1: Con la instancia de Telegraph
     $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-    $telegraph->chat($chat->chat_id);
-    $response = $telegraph->message('🧪 Este es un mensaje de prueba enviado a las ' . date('H:i:s'))
+    $telegraph->bot($bot); // Primero establecer el bot
+
+    $chatId = isset($chat->chat_id) ? $chat->chat_id : $chatId;
+    echo "  → Enviando mensaje al chat ID: {$chatId}\n";
+
+    // Configurar el chat y enviar el mensaje
+    $response = $telegraph->chat($chatId)
+        ->message('🧪 Este es un mensaje de prueba enviado a las ' . date('H:i:s'))
         ->send();
 
     echo "✅ Mensaje enviado correctamente (Método 1)\n";
@@ -89,17 +145,29 @@ try {
     $telegramToken = $bot->token;
     $telegramApiUrl = 'https://api.telegram.org/bot' . $telegramToken . '/sendMessage';
 
+    $chatIdToUse = isset($chatId) ? $chatId : (isset($chat->chat_id) ? $chat->chat_id : null);
+
+    if (!$chatIdToUse) {
+        echo "❌ No se pudo determinar un chat_id para enviar el mensaje.\n";
+        exit(1);
+    }
+
     $payload = [
-        'chat_id' => $chat->chat_id,
+        'chat_id' => $chatIdToUse,
         'text' => '📲 Mensaje directo a la API a las ' . date('H:i:s'),
         'parse_mode' => 'HTML',
     ];
+
+    echo "  → Enviando mensaje al chat ID: {$chatIdToUse} (API Directa)\n";
 
     $ch = curl_init($telegramApiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    // Añadir opciones para diagnóstico
+    curl_setopt($ch, CURLOPT_VERBOSE, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Solo para pruebas, no usar en producción
 
     $response = curl_exec($ch);
     $error = curl_error($ch);
@@ -116,6 +184,7 @@ try {
     }
 } catch (\Exception $e) {
     echo "❌ Error al enviar mensaje (Método 2): " . $e->getMessage() . "\n";
+    echo "🔍 Traza: " . $e->getTraceAsString() . "\n";
 }
 
 echo "\n👉 Si no recibes los mensajes, verifica:\n";

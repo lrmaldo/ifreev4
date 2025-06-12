@@ -130,20 +130,34 @@ Este bot te notificará sobre eventos importantes del sistema de hotspots.
 /ayuda - Mostrar ayuda detallada
 
 🔧 Para empezar, usa /zonas para ver las zonas disponibles.
-HTML;
-
-            // Log para diagnóstico
+HTML;            // Log para diagnóstico
             \Illuminate\Support\Facades\Log::info('Enviando mensaje de start', [
                 'chat_id' => $this->chat->chat_id,
                 'mensaje' => $mensaje
             ]);
 
-            // Enviar respuesta usando el método html() directamente con todo el contenido
-            $response = $this->chat->html($mensaje)->send();
+            // Definimos la URL explícitamente para diagnóstico
+            $telegramUrl = config('telegraph.telegram_api_url', 'https://api.telegram.org/');
+            \Illuminate\Support\Facades\Log::debug('Configuración Telegram', [
+                'api_url' => $telegramUrl,
+                'bot_token' => substr($this->bot->token, 0, 5) . '...' . substr($this->bot->token, -5)
+            ]);
+
+            // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
+            $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+            $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto
+
+            // Enviar el mensaje utilizando el cliente Telegraph
+            $response = $telegraph->chat($this->chat->chat_id)
+                ->html($mensaje)
+                ->send();
 
             // Log de respuesta
             \Illuminate\Support\Facades\Log::info('Respuesta API Telegram', [
-                'response' => $response
+                'response' => $response,
+                'chat_id' => $this->chat->chat_id,
+                'bot_id' => $this->bot->id,
+                'bot_name' => $this->bot->name
             ]);
         } catch (\Exception $e) {
             // Capturar cualquier error durante el envío
@@ -165,7 +179,19 @@ HTML;
             $zonas = Zona::all();
 
             if ($zonas->isEmpty()) {
-                $this->chat->html("❌ No hay zonas configuradas en el sistema.")->send();
+                try {
+                    // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
+                    $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+                    $telegraph->bot($this->bot);
+
+                    $telegraph->chat($this->chat->chat_id)
+                        ->html("❌ No hay zonas configuradas en el sistema.")
+                        ->send();
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Error enviando mensaje de zonas vacías', [
+                        'error' => $e->getMessage()
+                    ]);
+                }
                 return;
             }
 
@@ -183,18 +209,25 @@ HTML;
             }
 
             $message .= "💡 <i>Para asociar este chat con una zona, usa:</i>\n";
-            $message .= "<code>/registrar [zona_id]</code>";
-
-            // Log para diagnóstico
+            $message .= "<code>/registrar [zona_id]</code>";            // Log para diagnóstico
             \Illuminate\Support\Facades\Log::info('Enviando mensaje de zonas', [
                 'chat_id' => $this->chat->chat_id,
                 'mensaje' => $message
             ]);
 
-            $response = $this->chat->html($message)->send();
+            // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
+            $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+            $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto
+
+            $response = $telegraph->chat($this->chat->chat_id)
+                ->html($message)
+                ->send();
 
             \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (zonas)', [
-                'response' => $response
+                'response' => $response,
+                'chat_id' => $this->chat->chat_id,
+                'bot_id' => $this->bot->id,
+                'bot_name' => $this->bot->name
             ]);
         } catch (\Exception $e) {
             // Capturar cualquier error durante el envío
@@ -251,7 +284,13 @@ HTML;
 
 Este chat ya está asociado con la zona <b>{$zona->nombre}</b>.
 HTML;
-                $this->chat->html($mensaje)->send();
+                // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
+                $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+                $telegraph->bot($this->bot);
+
+                $telegraph->chat($this->chat->chat_id)
+                    ->html($mensaje)
+                    ->send();
                 return;
             }
 
@@ -269,12 +308,18 @@ HTML;
                 'chat_id' => $this->chat->chat_id,
                 'zona_id' => $zonaId,
                 'zona_nombre' => $zona->nombre
-            ]);
+            ]);            // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
+            $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+            $telegraph->bot($this->bot);
 
-            $response = $this->chat->html($mensaje)->send();
+            $response = $telegraph->chat($this->chat->chat_id)
+                ->html($mensaje)
+                ->send();
 
             \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (registro)', [
-                'response' => $response
+                'response' => $response,
+                'chat_id' => $this->chat->chat_id,
+                'bot_id' => $this->bot->id
             ]);
 
             Log::info("Chat {$this->chat->chat_id} asociado con zona {$zona->nombre} (ID: {$zonaId})");
@@ -363,14 +408,19 @@ HTML;
             \Illuminate\Support\Facades\Log::info('Mensaje recibido no comando', [
                 'chat_id' => $this->chat->chat_id,
                 'text' => $textLower
-            ]);
+            ]);            if (str_contains($textLower, 'hola') || str_contains($textLower, 'ayuda') || str_contains($textLower, 'help')) {
+                // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
+                $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+                $telegraph->bot($this->bot);
 
-            if (str_contains($textLower, 'hola') || str_contains($textLower, 'ayuda') || str_contains($textLower, 'help')) {
-                $response = $this->chat->html("👋 ¡Hola! Usa /start para comenzar o /ayuda para ver los comandos disponibles.")
+                $response = $telegraph->chat($this->chat->chat_id)
+                    ->html("👋 ¡Hola! Usa /start para comenzar o /ayuda para ver los comandos disponibles.")
                     ->send();
 
                 \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (chat message)', [
-                    'response' => $response
+                    'response' => $response,
+                    'chat_id' => $this->chat->chat_id,
+                    'bot_id' => $this->bot->id
                 ]);
             }
         } catch (\Exception $e) {
@@ -412,17 +462,25 @@ HTML;
 
 Tu chat ha sido añadido a nuestro sistema.
 Usa /zonas para ver las zonas disponibles.
-HTML;
+HTML;                try {
+                    // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
+                    $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+                    $telegraph->bot($this->bot);
 
-                try {
-                    $response = $this->chat->html($mensaje)->send();
+                    $response = $telegraph->chat($this->chat->chat_id)
+                        ->html($mensaje)
+                        ->send();
 
                     \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (registro chat)', [
-                        'response' => $response
+                        'response' => $response,
+                        'chat_id' => $this->chat->chat_id,
+                        'bot_id' => $this->bot->id,
+                        'bot_name' => $this->bot->name
                     ]);
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error('Error enviando mensaje de registro', [
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
                     ]);
                 }
             }
