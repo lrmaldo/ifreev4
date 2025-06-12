@@ -10,6 +10,30 @@ $kernel->bootstrap();
 
 echo "🔧 Iniciando configuración de webhooks para bots de Telegram...\n\n";
 
+// Verificar la versión de Telegraph instalada
+try {
+    $telegraphClass = new \ReflectionClass(\DefStudio\Telegraph\Telegraph::class);
+    echo "ℹ️ Versión de Telegraph: ";
+
+    // Intentar obtener la versión desde un posible atributo o constante
+    if (defined('\DefStudio\Telegraph\Telegraph::VERSION')) {
+        echo \DefStudio\Telegraph\Telegraph::VERSION . "\n";
+    } else {
+        // Si no hay VERSION constante, verificamos métodos disponibles
+        $methods = $telegraphClass->getMethods(\ReflectionMethod::IS_PUBLIC);
+        $methodNames = array_map(function ($method) {
+            return $method->getName();
+        }, $methods);
+
+        echo "No detectada (métodos disponibles: " .
+            (in_array('registerWebhook', $methodNames) ? 'registerWebhook✓' : 'registerWebhook✗') . ", " .
+            (in_array('setWebhook', $methodNames) ? 'setWebhook✓' : 'setWebhook✗') . ", " .
+            (in_array('botInfo', $methodNames) ? 'botInfo✓' : 'botInfo✗') . ")\n";
+    }
+} catch (\ReflectionException $e) {
+    echo "⚠️ No se pudo detectar información de la versión de Telegraph\n";
+}
+
 // Obtener la URL base de la aplicación
 $baseUrl = config('app.url');
 echo "📌 URL base de la aplicación: {$baseUrl}\n";
@@ -49,10 +73,31 @@ try {
         try {
             // Verificar si el bot es válido
             $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-            $telegraph = $telegraph->bot($bot);
-
-            // Verificar información del bot
-            $botInfoResponse = $telegraph->botInfo()->send();
+            $telegraph = $telegraph->bot($bot);            // Verificar información del bot
+            try {
+                // Intentar usar botInfo() si existe
+                if (method_exists($telegraph, 'botInfo')) {
+                    $botInfoResponse = $telegraph->botInfo()->send();
+                }
+                // Si no existe, usar getMe() que es otra forma común
+                else if (method_exists($telegraph, 'getMe')) {
+                    $botInfoResponse = $telegraph->getMe()->send();
+                }
+                // Si ninguno existe, usar la API directa con getMe
+                else {
+                    echo "   ⚠️ No se encontró método para botInfo, usando API directa...\n";
+                    $botInfoResponse = $telegraph->get('getMe')->send();
+                }
+            } catch (\Exception $botInfoException) {
+                echo "   ⚠️ Error al obtener información del bot: " . $botInfoException->getMessage() . "\n";
+                // Fallback a llamada API directa
+                try {
+                    $botInfoResponse = $telegraph->get('getMe')->send();
+                } catch (\Exception $e) {
+                    echo "   ❌ Error al usar API directa para getMe: " . $e->getMessage() . "\n";
+                    $botInfoResponse = ['ok' => false, 'error' => $e->getMessage()];
+                }
+            }
 
             if (isset($botInfoResponse['ok']) && $botInfoResponse['ok'] === true) {
                 $botInfo = $botInfoResponse['result'];
@@ -64,8 +109,35 @@ try {
 
                 echo "   🔗 Configurando webhook URL: {$webhookUrl}\n";
 
-                // Configurar el webhook
-                $response = $telegraph->setWebhook($webhookUrl)->send();
+                // Configurar el webhook (usando registerWebhook en lugar de setWebhook)
+                try {
+                    // Primero intentamos con registerWebhook (método recomendado en versiones más recientes)
+                    if (method_exists($telegraph, 'registerWebhook')) {
+                        $response = $telegraph->registerWebhook($webhookUrl)->send();
+                    }
+                    // Si no existe registerWebhook, intentamos con setWebhook (versiones anteriores)
+                    else if (method_exists($telegraph, 'setWebhook')) {
+                        $response = $telegraph->setWebhook($webhookUrl)->send();
+                    }
+                    // Si ninguno de los métodos existe, usamos la API directa
+                    else {
+                        echo "   ⚠️ No se encontró método para configurar webhook, usando API directa...\n";
+                        $response = $telegraph->post('setWebhook', [
+                            'url' => $webhookUrl
+                        ])->send();
+                    }
+                } catch (\Exception $methodException) {
+                    echo "   ⚠️ Error con método específico, intentando con API directa: " . $methodException->getMessage() . "\n";
+                    // Fallback a llamada API directa
+                    try {
+                        $response = $telegraph->post('setWebhook', [
+                            'url' => $webhookUrl
+                        ])->send();
+                    } catch (\Exception $e) {
+                        echo "   ❌ Error al usar API directa: " . $e->getMessage() . "\n";
+                        $response = ['ok' => false, 'error' => $e->getMessage()];
+                    }
+                }
 
                 if (isset($response['ok']) && $response['ok'] === true) {
                     echo "   ✅ Webhook configurado con éxito\n";
@@ -80,7 +152,26 @@ try {
                 }
 
                 // Verificar la configuración actual
-                $webhookInfoResponse = $telegraph->getWebhookInfo()->send();
+                try {
+                    // Primero intentamos con getWebhookInfo si existe
+                    if (method_exists($telegraph, 'getWebhookInfo')) {
+                        $webhookInfoResponse = $telegraph->getWebhookInfo()->send();
+                    }
+                    // Si no existe, usamos la API directa
+                    else {
+                        echo "   ⚠️ No se encontró método getWebhookInfo, usando API directa...\n";
+                        $webhookInfoResponse = $telegraph->get('getWebhookInfo')->send();
+                    }
+                } catch (\Exception $webhookException) {
+                    echo "   ⚠️ Error al obtener información del webhook: " . $webhookException->getMessage() . "\n";
+                    // Fallback a llamada API directa
+                    try {
+                        $webhookInfoResponse = $telegraph->get('getWebhookInfo')->send();
+                    } catch (\Exception $e) {
+                        echo "   ❌ Error al usar API directa para getWebhookInfo: " . $e->getMessage() . "\n";
+                        $webhookInfoResponse = ['ok' => false, 'error' => $e->getMessage()];
+                    }
+                }
 
                 if (isset($webhookInfoResponse['ok']) && $webhookInfoResponse['ok'] === true) {
                     $webhookInfo = $webhookInfoResponse['result'];
