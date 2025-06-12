@@ -262,14 +262,13 @@ class TestTelegramWebhook extends Command
 
     /**
      * Reinicia el webhook eliminándolo y configurándolo nuevamente
-     */
-    private function resetWebhook($token)
+     */    private function resetWebhook($token)
     {
         $this->info('🔄 Reiniciando configuración del webhook...');
 
         // 1. Eliminar webhook actual
         try {
-            $response = Http::get("https://api.telegram.org/bot{$token}/deleteWebhook");
+            $response = Http::withoutVerifying()->get("https://api.telegram.org/bot{$token}/deleteWebhook");
             if ($response->successful()) {
                 $this->info("✅ Webhook anterior eliminado correctamente");
             } else {
@@ -285,7 +284,7 @@ class TestTelegramWebhook extends Command
         $this->line("🔗 Configurando nuevo webhook en: {$webhookUrl}");
 
         try {
-            $response = Http::get("https://api.telegram.org/bot{$token}/setWebhook", [
+            $response = Http::withoutVerifying()->get("https://api.telegram.org/bot{$token}/setWebhook", [
                 'url' => $webhookUrl,
                 'max_connections' => 40,
                 'drop_pending_updates' => true
@@ -315,13 +314,13 @@ class TestTelegramWebhook extends Command
             ];
 
             // Probar ambos formatos (por si uno falla)
-            $response = Http::post("https://api.telegram.org/bot{$token}/setMyCommands", [
+            $response = Http::withoutVerifying()->post("https://api.telegram.org/bot{$token}/setMyCommands", [
                 'commands' => $commands
             ]);
 
             if (!$response->successful()) {
                 // Intentar con formato alternativo
-                $response = Http::post("https://api.telegram.org/bot{$token}/setMyCommands", [
+                $response = Http::withoutVerifying()->post("https://api.telegram.org/bot{$token}/setMyCommands", [
                     'commands' => json_encode($commands)
                 ]);
             }
@@ -417,9 +416,13 @@ class TestTelegramWebhook extends Command
     private function getBotInfo($token)
     {
         try {
-            $response = Http::get("https://api.telegram.org/bot{$token}/getMe");
+            $response = Http::withoutVerifying()->get("https://api.telegram.org/bot{$token}/getMe");
             if ($response->successful() && ($response->json()['ok'] ?? false)) {
                 return $response->json()['result'] ?? [];
+            } else {
+                if ($this->option('debug')) {
+                    $this->error("Error obteniendo información del bot: " . $response->body());
+                }
             }
         } catch (\Exception $e) {
             if ($this->option('debug')) {
@@ -432,9 +435,13 @@ class TestTelegramWebhook extends Command
     private function getWebhookInfo($token)
     {
         try {
-            $response = Http::get("https://api.telegram.org/bot{$token}/getWebhookInfo");
+            $response = Http::withoutVerifying()->get("https://api.telegram.org/bot{$token}/getWebhookInfo");
             if ($response->successful() && ($response->json()['ok'] ?? false)) {
                 return $response->json()['result'] ?? [];
+            } else {
+                if ($this->option('debug')) {
+                    $this->error("Error obteniendo información del webhook: " . $response->body());
+                }
             }
         } catch (\Exception $e) {
             if ($this->option('debug')) {
@@ -447,9 +454,13 @@ class TestTelegramWebhook extends Command
     private function getCommands($token)
     {
         try {
-            $response = Http::get("https://api.telegram.org/bot{$token}/getMyCommands");
+            $response = Http::withoutVerifying()->get("https://api.telegram.org/bot{$token}/getMyCommands");
             if ($response->successful() && ($response->json()['ok'] ?? false)) {
                 return $response->json()['result'] ?? [];
+            } else {
+                if ($this->option('debug')) {
+                    $this->error("Error obteniendo comandos: " . $response->body());
+                }
             }
         } catch (\Exception $e) {
             if ($this->option('debug')) {

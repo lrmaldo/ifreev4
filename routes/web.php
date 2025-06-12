@@ -220,7 +220,9 @@ if (app()->environment() != 'production') {
       ->withoutMiddleware(['web', 'auth', 'verified', 'throttle']);
 }
 
-// Ruta adicional para el webhook de Telegraph (siguiendo su convención)
-Route::telegraph('/telegraph/{token}/webhook');
+// Usamos la macro de Telegraph para registrar su ruta (si está disponible)
+if (method_exists(\Illuminate\Support\Facades\Route::class, 'telegraph')) {
+    \Illuminate\Support\Facades\Route::telegraph();
+}
 
 require __DIR__.'/auth.php';
