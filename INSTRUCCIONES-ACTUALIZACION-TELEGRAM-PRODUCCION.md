@@ -194,6 +194,8 @@ Después de aplicar los cambios, verifica que:
 
 Si después de aplicar los cambios siguen ocurriendo problemas:
 
+### Diagnóstico General
+
 1. Verifica la configuración del webhook en Telegram utilizando la API:
    ```
    curl https://api.telegram.org/bot<TOKEN>/getWebhookInfo
@@ -206,4 +208,53 @@ Si después de aplicar los cambios siguen ocurriendo problemas:
 4. Ejecuta el comando de diagnóstico completo:
    ```
    php artisan telegram:test-webhook --diagnose
+   ```
+
+### Problema: Comandos se procesan pero no hay respuesta
+
+Si los logs muestran que los comandos se reciben correctamente pero el bot no envía respuestas:
+
+1. Ejecuta el script de diagnóstico de respuestas:
+   ```
+   php diagnostico-telegram-respuestas.php
+   ```
+
+2. Verifica la conectividad desde el servidor hacia la API de Telegram:
+   ```
+   curl -v https://api.telegram.org/bot<TOKEN>/getMe
+   ```
+
+3. Comprueba los permisos del bot en Telegram (debe tener habilitado el envío de mensajes).
+
+4. Verifica que no haya restricciones de firewall que bloqueen las solicitudes salientes a api.telegram.org.
+
+5. Reinicia el servicio web:
+   ```
+   sudo systemctl restart apache2   # Si usas Apache
+   # O
+   sudo systemctl restart nginx php-fpm   # Si usas Nginx + PHP-FPM
+   ```
+
+### Problema: Error 500 en las solicitudes webhook
+
+Si el diagnóstico muestra "Webhook respondió con error: HTTP 500":
+
+1. Verifica los logs de PHP/Apache/Nginx para errores específicos:
+   ```
+   sudo tail -f /var/log/apache2/error.log   # Para Apache
+   # O
+   sudo tail -f /var/log/nginx/error.log     # Para Nginx
+   ```
+
+2. Comprueba los permisos de los archivos:
+   ```
+   sudo chown -R www-data:www-data /var/www/v3.ifree.com.mx/storage
+   sudo chmod -R 755 /var/www/v3.ifree.com.mx/storage
+   ```
+
+3. Verifica la configuración de PHP para asegurarte de que hay suficiente memoria y tiempo de ejecución:
+   ```
+   grep -E 'memory_limit|max_execution_time' /etc/php/*/apache2/php.ini
+   # O
+   grep -E 'memory_limit|max_execution_time' /etc/php/*/fpm/php.ini
    ```
