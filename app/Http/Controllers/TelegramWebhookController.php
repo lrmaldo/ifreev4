@@ -243,7 +243,7 @@ class TelegramWebhookController extends WebhookHandler
         $message .= "📊 <b>Estado actual:</b>\n";
         $message .= "• Zonas asociadas: <b>{$zonasAsociadas}</b>\n";
         $message .= "• Chat ID: <code>{$this->chat->chat_id}</code>\n";
-        $message .= "• Tipo de chat: <b>" . $this->getChatType() . "</b>\n\n";
+        $message .= "• Tipo de chat: <b>" . $this->getChatType($this->chat) . "</b>\n\n";
 
         $message .= "💡 <b>Consejos:</b>\n";
         $message .= "• Puedes asociar este chat con múltiples zonas\n";
@@ -277,8 +277,8 @@ class TelegramWebhookController extends WebhookHandler
     {
         $chatData = [
             'chat_id' => $this->chat->chat_id,
-            'nombre' => $this->getChatName(),
-            'tipo' => $this->getChatType(),
+            'nombre' => $this->getChatName($this->chat),
+            'tipo' => $this->getChatType($this->chat),
             'activo' => true
         ];
 
@@ -301,11 +301,20 @@ class TelegramWebhookController extends WebhookHandler
 
     /**
      * Obtiene el nombre del chat
+     *
+     * @param \DefStudio\Telegraph\DTO\Chat $chat
+     * @return string
      */
-    protected function getChatName(): string
+    protected function getChatName(\DefStudio\Telegraph\DTO\Chat $chat): string
     {
         $update = $this->data;
 
+        // Primero utilizamos la información del objeto $chat si está disponible
+        if ($chat && !empty($chat->title)) {
+            return $chat->title;
+        }
+
+        // Fallback a nuestra implementación original
         if (isset($update['message']['chat']['title'])) {
             // Es un grupo
             return $update['message']['chat']['title'];
@@ -327,20 +336,31 @@ class TelegramWebhookController extends WebhookHandler
             return trim($name) ?: 'Usuario desconocido';
         }
 
-        return 'Chat desconocido';
+        // Si no hay información, devolvemos lo que la clase padre habría devuelto
+        return parent::getChatName($chat);
     }
 
     /**
      * Obtiene el tipo de chat
+     *
+     * @param \DefStudio\Telegraph\DTO\Chat $chat
+     * @return string
      */
-    protected function getChatType(): string
+    protected function getChatType(\DefStudio\Telegraph\DTO\Chat $chat): string
     {
+        // Primero utilizamos la información del objeto $chat si está disponible
+        if ($chat && !empty($chat->type)) {
+            return $chat->type;
+        }
+
+        // Fallback a nuestra implementación original
         $update = $this->data;
 
         if (isset($update['message']['chat']['type'])) {
             return $update['message']['chat']['type'];
         }
 
-        return 'private';
+        // Si no hay información, devolvemos lo que la clase padre habría devuelto
+        return parent::getChatType($chat);
     }
 }
