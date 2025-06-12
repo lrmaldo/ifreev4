@@ -145,7 +145,7 @@ HTML;            // Log para diagnóstico
 
             // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
             $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-            $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto
+            $telegraph = $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto y guardamos la instancia
 
             // Enviar el mensaje utilizando el cliente Telegraph
             $response = $telegraph->chat($this->chat->chat_id)
@@ -182,7 +182,7 @@ HTML;            // Log para diagnóstico
                 try {
                     // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
                     $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-                    $telegraph->bot($this->bot);
+                    $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
 
                     $telegraph->chat($this->chat->chat_id)
                         ->html("❌ No hay zonas configuradas en el sistema.")
@@ -217,7 +217,7 @@ HTML;            // Log para diagnóstico
 
             // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
             $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-            $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto
+            $telegraph = $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto y guardamos la instancia
 
             $response = $telegraph->chat($this->chat->chat_id)
                 ->html($message)
@@ -286,7 +286,7 @@ Este chat ya está asociado con la zona <b>{$zona->nombre}</b>.
 HTML;
                 // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
                 $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-                $telegraph->bot($this->bot);
+                $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
 
                 $telegraph->chat($this->chat->chat_id)
                     ->html($mensaje)
@@ -310,7 +310,7 @@ HTML;
                 'zona_nombre' => $zona->nombre
             ]);            // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
             $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-            $telegraph->bot($this->bot);
+            $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
 
             $response = $telegraph->chat($this->chat->chat_id)
                 ->html($mensaje)
@@ -378,7 +378,7 @@ HTML;
 
             // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
             $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-            $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto
+            $telegraph = $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto y guardamos la instancia
 
             // Enviar el mensaje utilizando el cliente Telegraph
             $response = $telegraph->chat($this->chat->chat_id)
@@ -425,7 +425,7 @@ HTML;
             ]);            if (str_contains($textLower, 'hola') || str_contains($textLower, 'ayuda') || str_contains($textLower, 'help')) {
                 // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
                 $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-                $telegraph->bot($this->bot);
+                $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
 
                 $response = $telegraph->chat($this->chat->chat_id)
                     ->html("👋 ¡Hola! Usa /start para comenzar o /ayuda para ver los comandos disponibles.")
@@ -479,7 +479,7 @@ Usa /zonas para ver las zonas disponibles.
 HTML;                try {
                     // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
                     $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-                    $telegraph->bot($this->bot);
+                    $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
 
                     $response = $telegraph->chat($this->chat->chat_id)
                         ->html($mensaje)

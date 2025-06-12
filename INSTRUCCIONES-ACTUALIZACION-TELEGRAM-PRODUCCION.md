@@ -20,6 +20,16 @@ Se ha corregido un error relacionado con la visibilidad de varios métodos:
 Access level to App\Http\Controllers\TelegramWebhookController::getChatName() must be protected (as in class DefStudio\Telegraph\Handlers\WebhookHandler) or weaker
 ```
 
+### 3. Error "No TelegraphBot defined for this request"
+
+Se ha corregido un error relacionado con la configuración del bot en el método `bot()`:
+
+```
+No TelegraphBot defined for this request
+```
+
+Este error ocurre porque el método `bot()` devuelve una nueva instancia configurada, pero no estábamos guardando esta instancia, lo que hacía que se perdiera la configuración del bot.
+
 ## Pasos para Actualizar en Producción
 
 ### 1. Conectarse al Servidor de Producción
@@ -214,31 +224,63 @@ Este cambio asegura que el método `ayuda()` utilice el mismo patrón de envío 
 
 Si hay alguna ruta de prueba en `routes/web.php` que llame al método `handle` directamente, asegúrate de actualizarla o comentarla.
 
-### 7. Limpiar la Caché de Laravel
+### 7. Corregir el uso del método bot() en Telegraph
+
+Debes asegurarte de guardar la instancia devuelta por el método `bot()`. Busca todos los patrones como este:
+
+```php
+$telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+$telegraph->bot($this->bot); // INCORRECTO: No guarda la instancia retornada
+
+$telegraph->chat($this->chat->chat_id)
+    ->html($mensaje)
+    ->send();
+```
+
+Y reemplázalos con:
+
+```php
+$telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+$telegraph = $telegraph->bot($this->bot); // CORRECTO: Guarda la instancia retornada
+
+$telegraph->chat($this->chat->chat_id)
+    ->html($mensaje)
+    ->send();
+```
+
+Debes hacer esta corrección en:
+
+- El método `start()`
+- El método `zonas()` (hay dos ocurrencias)
+- El método `registrar()`
+- El método `ayuda()`
+- El método `handleChatMessage()`
+
+### 8. Limpiar la Caché de Laravel
 
 ```bash
 php artisan optimize:clear
 ```
 
-### 8. Verificar la Configuración del Webhook
+### 9. Verificar la Configuración del Webhook
 
 ```bash
 php artisan telegram:test-webhook --verify
 ```
 
-### 9. Resetear el Webhook (Si es Necesario)
+### 10. Resetear el Webhook (Si es Necesario)
 
 ```bash
 php artisan telegram:test-webhook --reset
 ```
 
-### 10. Verificar los Logs
+### 11. Verificar los Logs
 
 ```bash
 tail -f storage/logs/laravel.log
 ```
 
-### 11. Probar los Comandos
+### 12. Probar los Comandos
 
 Envía los siguientes comandos al bot y verifica los logs para confirmar que se están procesando correctamente:
 

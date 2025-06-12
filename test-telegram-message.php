@@ -28,7 +28,12 @@ echo "🔄 Verificando conexión con la API de Telegram...\n";
 try {
     // Usar el cliente Telegraph para obtener la información del bot
     $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-    $telegraph->bot($bot);
+
+    // Registramos el bot en el contenedor de Laravel para uso posterior
+    app()->instance('telegraph.bot', $bot);
+
+    // Configuramos el bot de manera explícita y devolvemos la misma instancia
+    $telegraph = $telegraph->bot($bot);
     $response = $telegraph->botInfo()->send();
 
     if (isset($response['ok']) && $response['ok'] === true && isset($response['result'])) {
@@ -122,7 +127,12 @@ echo "🚀 Enviando mensaje de prueba...\n";
 try {
     // Usar método 1: Con la instancia de Telegraph
     $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-    $telegraph->bot($bot); // Primero establecer el bot
+
+    // Almacenamos el bot en el contenedor de servicios para que Telegraph lo use
+    app()->instance('telegraph.bot', $bot);
+
+    // Ahora configuramos el bot de manera explícita
+    $telegraph = $telegraph->bot($bot);
 
     $chatId = isset($chat->chat_id) ? $chat->chat_id : $chatId;
     echo "  → Enviando mensaje al chat ID: {$chatId}\n";
@@ -137,7 +147,21 @@ try {
 } catch (\Exception $e) {
     echo "❌ Error al enviar mensaje (Método 1): " . $e->getMessage() . "\n";
     echo "🔍 Clase de error: " . get_class($e) . "\n";
-    echo "📝 Traza:\n" . $e->getTraceAsString() . "\n\n";
+    echo "📝 Traza:\n" . $e->getTraceAsString() . "\n";
+
+    // Diagnóstico adicional para resolver problemas con Telegraph
+    echo "\n🔎 Diagnóstico de estados:\n";
+    echo "  - ¿Bot configurado?: " . (app()->bound('telegraph.bot') ? "✅ SÍ" : "❌ NO") . "\n";
+    echo "  - Clase de bot: " . get_class($bot) . "\n";
+
+    // Intentar recuperar la configuración del bot para verificar
+    try {
+        $botConfig = config('telegraph.models.bot');
+        echo "  - Clase de bot configurada: {$botConfig}\n";
+    } catch (\Exception $configException) {
+        echo "  - No se pudo obtener la configuración del bot: " . $configException->getMessage() . "\n";
+    }
+    echo "\n";
 }
 
 try {

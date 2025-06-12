@@ -24,6 +24,10 @@ Este documento proporciona los pasos para verificar que las correcciones del web
   - Uso consistente de `$telegraph->bot($this->bot)->chat($this->chat->chat_id)->html($message)->send()`
   - Reemplazo del método encadenado `$this->chat->html($message)->send()`
   - Mejora del registro de errores con trazas completas
+- ✅ **Corrección "No TelegraphBot defined for this request"**: Corregido el problema de pérdida de contexto del bot:
+  - Se guarda correctamente la instancia retornada por el método `bot()`: `$telegraph = $telegraph->bot($this->bot)`
+  - Se aplica la corrección en todos los métodos del controlador y scripts de prueba
+  - Se añade diagnóstico adicional para detectar si el bot está correctamente configurado
 
 ## Pasos para Verificación en Producción
 

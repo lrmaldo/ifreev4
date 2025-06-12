@@ -7,7 +7,10 @@ Este documento describe los pasos para solucionar los problemas con los comandos
 ### Problema 1: Comandos no responden
 El webhook de Telegram no está procesando correctamente los comandos (`/start`, `/zonas`, `/registrar`, `/ayuda`), a pesar de estar configurados en el bot.
 
-### Problema 2: Error fatal en producción
+### Problema 2: Error "No TelegraphBot defined for this request"
+Los scripts de prueba del bot fallan con el error "No TelegraphBot defined for this request" al intentar enviar mensajes.
+
+### Problema 3: Error fatal en producción
 Se identificaron errores fatales en la implementación:
 
 ```
@@ -147,22 +150,36 @@ $message .= "• Tipo de chat: <b>" . $this->getChatType() . "</b>\n\n";
 $message .= "• Tipo de chat: <b>" . $this->getChatType($this->chat) . "</b>\n\n";
 ```
 
-### 3. Corrección del Formato de Comandos
+### 2.5 Corrección del problema "No TelegraphBot defined for this request"
 
-Se implementaron dos formatos alternativos para configurar comandos:
+Se identificó que el método `bot()` en Telegraph devuelve una instancia configurada, pero no estábamos almacenando ese valor retornado. Esto causaba que la configuración del bot se perdiera inmediatamente después de configurarla.
+
+**Código incorrecto:**
 ```php
-// Formato 1
-$response = Http::post("https://api.telegram.org/bot{$token}/setMyCommands", [
-    'commands' => json_encode($commands)
-]);
-
-// Formato 2 (alternativo)
-$response = Http::post("https://api.telegram.org/bot{$token}/setMyCommands", [
-    'commands' => $commands
-]);
+// Problema - No guarda la instancia retornada
+$telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+$telegraph->bot($this->bot); // El resultado no se guarda
+$telegraph->chat($this->chat->chat_id)->html($mensaje)->send(); // No tiene bot configurado
 ```
 
-### 4. Herramientas de Diagnóstico
+**Código corregido:**
+```php
+// Solución - Guarda la instancia retornada por bot()
+$telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+$telegraph = $telegraph->bot($this->bot); // Guardamos la instancia configurada
+$telegraph->chat($this->chat->chat_id)->html($mensaje)->send(); // Ahora sí tiene bot configurado
+```
+
+Esta corrección se implementó en todas las ocurrencias dentro de `TelegramWebhookController`:
+- En el método `start()`
+- En el método `zonas()`
+- En el método `registrar()`
+- En el método `ayuda()`
+- En el método `handleChatMessage()`
+
+El problema de "No TelegraphBot defined for this request" ocurría porque la configuración del bot no persistía entre llamadas de método en la misma instancia de Telegraph.
+
+### 3. Scripts de Diagnóstico
 
 Se crearon herramientas de diagnóstico avanzadas:
 - Comando `php artisan telegram:test-webhook --diagnose`: Para diagnóstico completo
@@ -170,7 +187,7 @@ Se crearon herramientas de diagnóstico avanzadas:
 - Comando `php artisan telegram:debug-infrastructure`: Para verificar la infraestructura
 - Logs detallados en `storage/logs/laravel.log`
 
-### 5. Mejora en el Envío de Mensajes
+### 4. Mejora en el Envío de Mensajes
 
 Se ha estandarizado la forma de enviar mensajes en todos los métodos, utilizando el patrón:
 
@@ -185,6 +202,27 @@ $response = $telegraph->chat($this->chat->chat_id)
     ->html($message)
     ->send();
 ```
+
+### 5. Solución al Error "No TelegraphBot defined for this request"
+
+En los scripts de prueba, especialmente en `test-telegram-message.php`, se mejoró la forma de registrar el bot:
+
+```php
+// Antes - Problemático, el bot no se mantenía entre instancias
+$telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+$telegraph->bot($bot); // Esta configuración no persistía correctamente
+
+// Después - Solución correcta
+$telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+// Registrar el bot en el contenedor de servicios
+app()->instance('telegraph.bot', $bot);
+// Y también configurarlo explícitamente
+$telegraph = $telegraph->bot($bot);
+```
+
+Esta solución asegura que el bot se mantenga disponible para todas las operaciones subsiguientes de Telegraph, evitando el error "No TelegraphBot defined for this request".
+
+También se creó un script de diagnóstico específico `diagnostico-telegraph.php` para detectar y resolver problemas con la configuración de Telegraph.
 
 Esta mejora se implementó en todos los métodos del controlador, incluyendo:
 - `start()`
