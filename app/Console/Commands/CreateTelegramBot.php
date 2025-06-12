@@ -24,7 +24,7 @@ class CreateTelegramBot extends Command
     public function handle()
     {
         $token = config('app.telegram_bot_token', env('TELEGRAM_BOT_TOKEN'));
-        
+
         if (!$token) {
             $this->error('❌ Token de Telegram no configurado en TELEGRAM_BOT_TOKEN');
             return 1;
@@ -34,7 +34,7 @@ class CreateTelegramBot extends Command
 
         // Verificar si ya existe un bot con este token
         $existingBot = TelegraphBot::where('token', $token)->first();
-        
+
         if ($existingBot) {
             $this->info("✅ Bot ya existe: {$existingBot->name}");
             $bot = $existingBot;
@@ -50,7 +50,7 @@ class CreateTelegramBot extends Command
 
         // Configurar webhook
         $webhookUrl = $this->ask('Ingresa la URL del webhook (ej: https://tudominio.com/telegram/webhook)');
-        
+
         if ($webhookUrl) {
             try {
                 $bot->registerWebhook($webhookUrl)->send();
@@ -60,16 +60,24 @@ class CreateTelegramBot extends Command
             }
         }
 
-        // Configurar comandos
+        // Configurar comandos usando la API directa
         try {
-            $bot->setMyCommands([
-                'start' => 'Inicializar el bot y mostrar bienvenida',
-                'zonas' => 'Listar zonas disponibles del sistema',
-                'registrar' => 'Asociar chat con una zona específica',
-                'ayuda' => 'Mostrar ayuda y comandos disponibles'
-            ])->send();
+            $commands = [
+                ['command' => 'start', 'description' => 'Inicializar el bot y mostrar bienvenida'],
+                ['command' => 'zonas', 'description' => 'Listar zonas disponibles del sistema'],
+                ['command' => 'registrar', 'description' => 'Asociar chat con una zona específica'],
+                ['command' => 'ayuda', 'description' => 'Mostrar ayuda y comandos disponibles']
+            ];
 
-            $this->info("✅ Comandos configurados");
+            $response = \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/setMyCommands", [
+                'commands' => json_encode($commands)
+            ]);
+
+            if ($response->successful()) {
+                $this->info("✅ Comandos configurados");
+            } else {
+                $this->warn("⚠️  Error configurando comandos: " . $response->body());
+            }
         } catch (\Exception $e) {
             $this->warn("⚠️  Error configurando comandos: " . $e->getMessage());
         }
@@ -80,7 +88,7 @@ class CreateTelegramBot extends Command
         $this->line("ID: {$bot->id}");
         $this->line("Nombre: {$bot->name}");
         $this->line("Token: " . substr($bot->token, 0, 10) . "...");
-        
+
         $this->line('');
         $this->info('🎉 Bot configurado exitosamente');
         $this->line('💡 Usa el webhook URL en tu bot de Telegram: ' . ($webhookUrl ?? 'No configurado'));
