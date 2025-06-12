@@ -17,24 +17,32 @@ class TelegramWebhookController extends WebhookHandler
      * Este método recibe el webhook y delega a los métodos correspondientes
      *
      * @param Request $request
-     * @return \Illuminate\Http\Response
+     * @param DefStudio\Telegraph\Models\TelegraphBot $bot
+     * @return void
      */
-    public function handle(Request $request)
+    public function handle(Request $request, \DefStudio\Telegraph\Models\TelegraphBot $bot): void
     {
         // Registrar recepción del webhook para diagnóstico
         Log::info('Webhook recibido', [
             'content' => $request->getContent(),
-            'headers' => $request->headers->all()
+            'headers' => $request->headers->all(),
+            'bot_id' => $bot->id,
+            'bot_name' => $bot->name,
         ]);
 
         // Si es una solicitud de diagnóstico especial, responder directamente
         if ($request->has('diagnostic') && $request->get('diagnostic') === 'true') {
-            return response()->json([
+            // No podemos retornar una respuesta directamente debido a la firma del método
+            // Guardaremos un registro para diagnóstico
+            Log::info('Solicitud de diagnóstico recibida', [
                 'status' => 'ok',
                 'message' => 'Webhook endpoint funcional',
                 'timestamp' => now()->toIso8601String(),
                 'handler' => get_class($this)
             ]);
+
+            // Detener el procesamiento adicional pero sin retornar respuesta
+            return;
         }
 
         if ($this->shouldDebug()) {
@@ -42,7 +50,7 @@ class TelegramWebhookController extends WebhookHandler
         }
 
         // Delegar al manejador base de Telegraph
-        return parent::handle($request);
+        parent::handle($request, $bot);
     }
 
     /**

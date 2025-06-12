@@ -2,16 +2,25 @@
 
 Este documento describe los pasos para solucionar el problema con los comandos de Telegram que no responden en el bot.
 
-## Problema Detectado
+## Problemas Detectados
 
+### Problema 1: Comandos no responden
 El webhook de Telegram no está procesando correctamente los comandos (`/start`, `/zonas`, `/registrar`, `/ayuda`), a pesar de estar configurados en el bot.
 
-## Causas Potenciales Identificadas
+### Problema 2: Error fatal en producción
+Se identificó un error fatal en la implementación:
+
+```
+Declaration of App\Http\Controllers\TelegramWebhookController::handle(Illuminate\Http\Request $request) must be compatible with DefStudio\Telegraph\Handlers\WebhookHandler::handle(Illuminate\Http\Request $request, DefStudio\Telegraph\Models\TelegraphBot $bot): void
+```
+
+## Causas Identificadas
 
 1. **Inconsistencia en las rutas del webhook**: Discrepancia entre la ruta configurada en Telegram y la ruta definida en Laravel.
-2. **Falta de método `handle` explícito**: El controlador `TelegramWebhookController` no tenía un método `handle` explícito.
-3. **Formato incorrecto en la configuración de comandos**: Posible error en el formato JSON al enviar comandos a la API de Telegram.
-4. **Falta de logs de depuración**: No había suficiente información para diagnosticar problemas en tiempo real.
+2. **Firma de método incompatible**: El método `handle` en `TelegramWebhookController` tenía una firma incorrecta.
+3. **Return de valor en método void**: El método intentaba devolver respuestas HTTP cuando debe ser `void` (sin retorno).
+4. **Formato incorrecto en la configuración de comandos**: Posible error en el formato JSON al enviar comandos a la API de Telegram.
+5. **Falta de logs de depuración**: No había suficiente información para diagnosticar problemas en tiempo real.
 
 ## Soluciones Implementadas
 

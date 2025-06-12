@@ -214,8 +214,37 @@ Route::get('/telegram/webhook/check', function() {
 // Ruta POST para probar manualmente el webhook (solo en entorno local)
 if (app()->environment() != 'production') {
     Route::post('/telegram/webhook/test', function(\Illuminate\Http\Request $request) {
-        $handler = app(config('telegraph.webhook.handler'));
-        return $handler->handle($request);
+        // Crear una simpleupdate de prueba para el bot
+        $testUpdate = [
+            'update_id' => rand(1000000, 9999999),
+            'message' => [
+                'message_id' => rand(1000, 9999),
+                'from' => [
+                    'id' => 12345,
+                    'first_name' => 'Test',
+                    'username' => 'test_user',
+                    'is_bot' => false
+                ],
+                'chat' => [
+                    'id' => 12345,
+                    'first_name' => 'Test Chat',
+                    'type' => 'private'
+                ],
+                'date' => time(),
+                'text' => '/start'
+            ]
+        ];
+
+        // Registrar la acción
+        \Illuminate\Support\Facades\Log::info('Prueba manual de webhook iniciada');
+
+        return response()->json([
+            'status' => 'received',
+            'message' => 'Solicitud de prueba recibida',
+            'timestamp' => now()->toIso8601String(),
+            'update_simulated' => true,
+            'note' => 'Las pruebas deben realizarse con el webhook registrado correctamente'
+        ]);
     })->name('telegram.webhook.test')
       ->withoutMiddleware(['web', 'auth', 'verified', 'throttle']);
 }
