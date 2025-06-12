@@ -20,6 +20,10 @@ Este documento proporciona los pasos para verificar que las correcciones del web
 - ✅ **Llamadas a métodos**: Actualizadas para incluir el parámetro `$this->chat` en todas las llamadas a:
   - `getChatName()`
   - `getChatType()`
+- ✅ **Patrón de envío de mensajes**: Estandarizado en todos los métodos, incluyendo `ayuda()`:
+  - Uso consistente de `$telegraph->bot($this->bot)->chat($this->chat->chat_id)->html($message)->send()`
+  - Reemplazo del método encadenado `$this->chat->html($message)->send()`
+  - Mejora del registro de errores con trazas completas
 
 ## Pasos para Verificación en Producción
 

@@ -48,6 +48,8 @@ Edita el archivo con tu editor preferido (nano, vim, etc.):
 nano app/Http/Controllers/TelegramWebhookController.php
 ```
 
+> **NOTA IMPORTANTE**: En lugar de editar manualmente el archivo, puede ser más seguro reemplazarlo completamente con la versión actualizada. Si eliges esta opción, asegúrate de mantener cualquier configuración específica del entorno o personalización que pueda existir en el servidor de producción.
+
 #### 4.1 Corregir el método `handle`
 
 Busca la definición del método `handle` y reemplázala por:
@@ -150,6 +152,64 @@ $chatData = [
 
 Busca también en el método `ayuda()` y actualiza cualquier otra llamada a estos métodos.
 
+### 5.1 Actualizar el método `ayuda()`
+
+Es crucial mejorar el método `ayuda()` para utilizar el patrón correcto de envío de mensajes:
+
+```php
+/**
+ * Maneja el comando /ayuda
+ */
+public function ayuda(): void
+{
+    try {
+        $telegramChat = TelegramChat::where('chat_id', $this->chat->chat_id)->first();
+        $zonasAsociadas = $telegramChat ? $telegramChat->zonas->count() : 0;
+
+        $message = "📚 <b>Ayuda del Bot I-Free</b>\n\n";
+        
+        // ... (contenido del mensaje)
+
+        // Log para diagnóstico
+        \Illuminate\Support\Facades\Log::info('Enviando mensaje de ayuda', [
+            'chat_id' => $this->chat->chat_id,
+            'mensaje' => $message
+        ]);
+
+        // REEMPLAZAR ESTA LÍNEA:
+        // $response = $this->chat->html($message)->send();
+        
+        // POR ESTAS LÍNEAS:
+        // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
+        $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+        $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto
+
+        // Enviar el mensaje utilizando el cliente Telegraph
+        $response = $telegraph->chat($this->chat->chat_id)
+            ->html($message)
+            ->send();
+
+        // Log de respuesta para diagnóstico
+        \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (ayuda)', [
+            'response' => $response,
+            'chat_id' => $this->chat->chat_id,
+            'bot_id' => $this->bot->id,
+            'bot_name' => $this->bot->name
+        ]);
+    } catch (\Exception $e) {
+        // Capturar cualquier error durante el envío con información detallada
+        \Illuminate\Support\Facades\Log::error('Error enviando mensaje ayuda', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'chat_id' => $this->chat->chat_id ?? 'unknown',
+            'bot_id' => $this->bot->id ?? 'unknown'
+        ]);
+    }
+}
+```
+
+Este cambio asegura que el método `ayuda()` utilice el mismo patrón de envío de mensajes que los otros métodos, lo cual es crítico para la consistencia y correcto funcionamiento.
+
 ### 6. Corregir Cualquier Ruta de Prueba (Si Existe)
 
 Si hay alguna ruta de prueba en `routes/web.php` que llame al método `handle` directamente, asegúrate de actualizarla o comentarla.
@@ -180,7 +240,17 @@ tail -f storage/logs/laravel.log
 
 ### 11. Probar los Comandos
 
-Envía un comando `/start` al bot y verifica los logs para confirmar que se está procesando correctamente.
+Envía los siguientes comandos al bot y verifica los logs para confirmar que se están procesando correctamente:
+
+```bash
+# Monitorear logs mientras pruebas
+tail -f storage/logs/laravel.log | grep Telegram
+```
+
+1. `/start` - Debe mostrar el mensaje de bienvenida
+2. `/zonas` - Debe listar las zonas disponibles  
+3. `/ayuda` - Debe mostrar la ayuda detallada (verifica especialmente este comando ya que se actualizó)
+4. Mensaje normal "hola" - Debe responder con un mensaje de ayuda
 
 ## Verificación de Despliegue
 
@@ -189,6 +259,34 @@ Después de aplicar los cambios, verifica que:
 1. No hay errores en los logs del servidor.
 2. El bot responde a comandos como `/start`, `/zonas`, etc.
 3. Las notificaciones automáticas funcionan cuando se crean nuevas métricas de hotspot.
+
+## Casos de prueba específicos
+
+Para verificar que el bot funciona correctamente, puedes usar los scripts de diagnóstico creados:
+
+### Probar envío de mensajes directo
+
+```bash
+php test-telegram-message.php
+```
+
+Este script probará el envío de mensajes utilizando tanto el paquete Telegraph como directamente con la API de Telegram.
+
+### Probar simulación de webhook
+
+```bash
+php test-telegram-webhook.php
+```
+
+Este script te permitirá simular solicitudes de webhook para diferentes comandos y verificar cómo responde el controlador.
+
+### Ejecutar diagnóstico completo
+
+```bash
+php diagnostico-telegram-respuestas.php
+```
+
+Este script realizará un diagnóstico completo de la configuración de Telegram, verificando bots, chats, y la capacidad de enviar mensajes.
 
 ## Solución de Problemas
 

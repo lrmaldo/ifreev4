@@ -376,15 +376,29 @@ HTML;
                 'mensaje' => $message
             ]);
 
-            $response = $this->chat->html($message)->send();
+            // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
+            $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+            $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto
 
+            // Enviar el mensaje utilizando el cliente Telegraph
+            $response = $telegraph->chat($this->chat->chat_id)
+                ->html($message)
+                ->send();
+
+            // Log de respuesta para diagnóstico
             \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (ayuda)', [
-                'response' => $response
+                'response' => $response,
+                'chat_id' => $this->chat->chat_id,
+                'bot_id' => $this->bot->id,
+                'bot_name' => $this->bot->name
             ]);
         } catch (\Exception $e) {
+            // Capturar cualquier error durante el envío con información detallada
             \Illuminate\Support\Facades\Log::error('Error enviando mensaje ayuda', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'chat_id' => $this->chat->chat_id ?? 'unknown',
+                'bot_id' => $this->bot->id ?? 'unknown'
             ]);
         }
     }

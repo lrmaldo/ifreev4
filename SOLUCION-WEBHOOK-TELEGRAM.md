@@ -170,6 +170,32 @@ Se crearon herramientas de diagnóstico avanzadas:
 - Comando `php artisan telegram:debug-infrastructure`: Para verificar la infraestructura
 - Logs detallados en `storage/logs/laravel.log`
 
+### 5. Mejora en el Envío de Mensajes
+
+Se ha estandarizado la forma de enviar mensajes en todos los métodos, utilizando el patrón:
+
+```php
+// Antes - Forma problemática
+$response = $this->chat->html($message)->send();
+
+// Después - Forma mejorada y consistente
+$telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+$telegraph->bot($this->bot); // Aseguramos que se use el bot correcto
+$response = $telegraph->chat($this->chat->chat_id)
+    ->html($message)
+    ->send();
+```
+
+Esta mejora se implementó en todos los métodos del controlador, incluyendo:
+- `start()`
+- `zonas()`
+- `registrar()`
+- `ayuda()`
+- `handleChatMessage()`
+- `registerChat()`
+
+Esto soluciona problemas de contexto donde el bot no estaba correctamente asignado al usar el método de envío de mensajes.
+
 ## Pasos para Verificar la Solución
 
 1. **Ejecutar diagnóstico completo**:
@@ -194,7 +220,14 @@ Se crearon herramientas de diagnóstico avanzadas:
    ```
    Reemplazar CHAT_ID con el ID de un chat Telegram real.
 
-5. **Verificar los logs para diagnóstico**:
+5. **Probar comandos específicos**:
+   ```
+   # Probar el comando /ayuda
+   php test-telegram-webhook.php
+   # Seleccionar opción 3 para simular comando /ayuda
+   ```
+
+6. **Verificar los logs para diagnóstico**:
    ```
    tail -f storage/logs/laravel.log | grep Telegram
    ```
