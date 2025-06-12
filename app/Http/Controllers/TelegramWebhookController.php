@@ -56,7 +56,7 @@ class TelegramWebhookController extends WebhookHandler
     /**
      * Determina si se debe activar el modo debug para webhooks
      */
-    private function shouldDebug(): bool
+    protected function shouldDebug(): bool
     {
         return config('telegraph.webhook.debug', false) ||
                config('app.debug', false) ||
@@ -66,7 +66,7 @@ class TelegramWebhookController extends WebhookHandler
     /**
      * Registra información de depuración detallada sobre el webhook
      */
-    private function debugWebhook(Request $request): void
+    protected function debugWebhook(Request $request): void
     {
         try {
             $update = json_decode($request->getContent(), true);
@@ -273,7 +273,7 @@ class TelegramWebhookController extends WebhookHandler
     /**
      * Registra o actualiza el chat en la base de datos
      */
-    private function registerChat(): TelegramChat
+    protected function registerChat(): TelegramChat
     {
         $chatData = [
             'chat_id' => $this->chat->chat_id,
@@ -302,7 +302,7 @@ class TelegramWebhookController extends WebhookHandler
     /**
      * Obtiene el nombre del chat
      */
-    private function getChatName(): string
+    protected function getChatName(): string
     {
         $update = $this->data;
 
@@ -333,7 +333,7 @@ class TelegramWebhookController extends WebhookHandler
     /**
      * Obtiene el tipo de chat
      */
-    private function getChatType(): string
+    protected function getChatType(): string
     {
         $update = $this->data;
 

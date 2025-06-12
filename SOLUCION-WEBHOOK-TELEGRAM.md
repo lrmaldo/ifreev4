@@ -1,6 +1,6 @@
-# Solución al Problema de Webhook de Telegram
+# Solución a los Problemas de Webhook de Telegram
 
-Este documento describe los pasos para solucionar el problema con los comandos de Telegram que no responden en el bot.
+Este documento describe los pasos para solucionar los problemas con los comandos de Telegram que no responden en el bot y los errores fatales detectados.
 
 ## Problemas Detectados
 
@@ -8,10 +8,14 @@ Este documento describe los pasos para solucionar el problema con los comandos d
 El webhook de Telegram no está procesando correctamente los comandos (`/start`, `/zonas`, `/registrar`, `/ayuda`), a pesar de estar configurados en el bot.
 
 ### Problema 2: Error fatal en producción
-Se identificó un error fatal en la implementación:
+Se identificaron errores fatales en la implementación:
 
 ```
+# Error 1 - Firma de método incompatible
 Declaration of App\Http\Controllers\TelegramWebhookController::handle(Illuminate\Http\Request $request) must be compatible with DefStudio\Telegraph\Handlers\WebhookHandler::handle(Illuminate\Http\Request $request, DefStudio\Telegraph\Models\TelegraphBot $bot): void
+
+# Error 2 - Visibilidad de métodos incompatible
+Access level to App\Http\Controllers\TelegramWebhookController::getChatName() must be protected (as in class DefStudio\Telegraph\Handlers\WebhookHandler) or weaker
 ```
 
 ## Causas Identificadas
@@ -32,7 +36,9 @@ Se agregaron y sincronizaron las rutas:
 - Ruta de diagnóstico: `/telegram/webhook/check`
 - Ruta de prueba (solo desarrollo): `/telegram/webhook/test`
 
-### 2. Corrección del Método Handle
+### 2. Corrección de Métodos y Visibilidad
+
+#### 2.1 Corrección del método `handle`
 
 Se corrigió la firma del método `handle` en `TelegramWebhookController` para que coincida con la clase padre:
 
@@ -49,6 +55,26 @@ Además:
 - Se corrigió la llamada al método padre para incluir el parámetro `$bot`
 - Se mejoró el registro de diagnóstico para incluir información del bot
 - Se agregó una estructura de depuración avanzada para comandos
+
+#### 2.2 Corrección de visibilidad de métodos
+
+Se cambió la visibilidad de varios métodos de `private` a `protected` para mantener compatibilidad con la clase padre:
+
+```php
+// Antes
+private function getChatName(): string
+private function getChatType(): string
+private function registerChat(): TelegramChat
+private function shouldDebug(): bool
+private function debugWebhook(Request $request): void
+
+// Después
+protected function getChatName(): string
+protected function getChatType(): string
+protected function registerChat(): TelegramChat
+protected function shouldDebug(): bool
+protected function debugWebhook(Request $request): void
+```
 
 ### 3. Corrección del Formato de Comandos
 

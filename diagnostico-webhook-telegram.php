@@ -52,6 +52,20 @@ if (strpos($controllerContent, 'parent::handle($request, $bot)') !== false) {
     echo "❌ ERROR: Se está llamando a parent::handle sin el parámetro \$bot\n";
 }
 
+// 5. Verificar la visibilidad de métodos importantes
+echo "\n📋 Verificando visibilidad de métodos...\n";
+
+$methodsToCheck = ['getChatName', 'getChatType', 'registerChat', 'shouldDebug', 'debugWebhook'];
+foreach ($methodsToCheck as $method) {
+    if (preg_match('/private\s+function\s+' . $method . '/i', $controllerContent)) {
+        echo "❌ ERROR: El método {$method}() está declarado como private, debe ser protected\n";
+    } elseif (preg_match('/protected\s+function\s+' . $method . '/i', $controllerContent)) {
+        echo "✅ Método {$method}() tiene la visibilidad correcta (protected)\n";
+    } else {
+        echo "⚠️ ADVERTENCIA: No se pudo verificar la visibilidad del método {$method}()\n";
+    }
+}
+
 // 5. Verificar rutas
 $routesPath = __DIR__ . '/routes/web.php';
 if (!file_exists($routesPath)) {

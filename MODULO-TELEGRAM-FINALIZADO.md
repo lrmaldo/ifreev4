@@ -4,6 +4,10 @@
 
 El módulo de notificaciones Telegram para Laravel 12 + Livewire 3 + Flux está **COMPLETAMENTE IMPLEMENTADO** y funcionando.
 
+## 🟢 Últimas Correcciones Aplicadas (12 de junio de 2025)
+
+Se solucionó un error crítico en la implementación del webhook que impedía la correcta respuesta a comandos. El problema estaba en la firma del método `handle` en el controlador `TelegramWebhookController`. Ver archivo `SOLUCION-WEBHOOK-TELEGRAM.md` para más detalles.
+
 ## ✅ Componentes Implementados
 
 ### 1. **Sistema de Notificaciones Automáticas**
@@ -46,9 +50,9 @@ El módulo de notificaciones Telegram para Laravel 12 + Livewire 3 + Flux está 
 - ✅ `SendTelegramNotification` - Listener con cola
 - ✅ Procesamiento asíncrono de notificaciones
 
-## 🔧 Corrección Aplicada
+## 🔧 Correcciones Aplicadas
 
-**Problema:** Error `setMyCommands()` no existe en Telegraph
+### 1. Error `setMyCommands()` no existe en Telegraph
 **Solución:** Reemplazado con llamada directa a la API de Telegram usando `Http::post()`
 
 ```php
@@ -59,6 +63,33 @@ $bot->setMyCommands([...])->send();
 $response = \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/setMyCommands", [
     'commands' => json_encode($commands)
 ]);
+```
+
+### 2. Firma del método `handle` incompatible
+
+**Problema:** Error fatal en producción:
+```
+Declaration of App\Http\Controllers\TelegramWebhookController::handle(Illuminate\Http\Request $request) must be compatible with DefStudio\Telegraph\Handlers\WebhookHandler::handle(Illuminate\Http\Request $request, DefStudio\Telegraph\Models\TelegraphBot $bot): void
+```
+
+**Solución:** Se corrigió la firma del método para que coincida con la clase padre:
+
+```php
+// Antes - Con firma incorrecta
+public function handle(Request $request)
+
+// Después - Con firma correcta
+public function handle(Request $request, \DefStudio\Telegraph\Models\TelegraphBot $bot): void
+```
+
+También se eliminaron las respuestas HTTP directas y se corrigió la llamada al método padre:
+
+```php
+// Antes
+return parent::handle($request);
+
+// Después
+parent::handle($request, $bot);
 ```
 
 ## 🚀 Estado Actual del Sistema
@@ -135,7 +166,8 @@ php artisan optimize
 **EL MÓDULO ESTÁ 100% FUNCIONAL Y LISTO PARA PRODUCCIÓN**
 
 - ✅ Todas las funcionalidades implementadas
-- ✅ Errores corregidos (setMyCommands)
+- ✅ Errores corregidos (setMyCommands y firma del método handle)
+- ✅ Comandos del bot respondiendo correctamente
 - ✅ Vista Flux sin errores de compilación
 - ✅ Navegación completa agregada
 - ✅ Bot Telegraph creado
