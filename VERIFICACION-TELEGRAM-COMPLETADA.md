@@ -28,6 +28,7 @@ Este documento proporciona los pasos para verificar que las correcciones del web
   - Se guarda correctamente la instancia retornada por el método `bot()`: `$telegraph = $telegraph->bot($this->bot)`
   - Se aplica la corrección en todos los métodos del controlador y scripts de prueba
   - Se añade diagnóstico adicional para detectar si el bot está correctamente configurado
+  - Se elimina el uso del patrón incorrecto `$this->chat->html()->send()` y se reemplaza por el patrón correcto en todo el código
 
 ## Pasos para Verificación en Producción
 

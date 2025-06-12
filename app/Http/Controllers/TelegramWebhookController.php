@@ -256,7 +256,10 @@ Ejemplo: <code>/registrar 1</code>
 
 💡 Usa /zonas para ver las zonas disponibles.
 HTML;
-                $this->chat->html($mensaje)->send();
+                // Obtener el objeto Telegraph para usar la instancia correcta
+                $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+                $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
+                $telegraph->chat($this->chat->chat_id)->html($mensaje)->send();
                 return;
             }
 
@@ -270,7 +273,10 @@ HTML;
 La zona con ID <b>{$zonaId}</b> no existe.
 Usa /zonas para ver las zonas disponibles.
 HTML;
-                $this->chat->html($mensaje)->send();
+                // Obtener el objeto Telegraph para usar la instancia correcta
+                $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+                $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
+                $telegraph->chat($this->chat->chat_id)->html($mensaje)->send();
                 return;
             }
 
@@ -422,7 +428,9 @@ HTML;
             \Illuminate\Support\Facades\Log::info('Mensaje recibido no comando', [
                 'chat_id' => $this->chat->chat_id,
                 'text' => $textLower
-            ]);            if (str_contains($textLower, 'hola') || str_contains($textLower, 'ayuda') || str_contains($textLower, 'help')) {
+            ]);
+
+            if (str_contains($textLower, 'hola') || str_contains($textLower, 'ayuda') || str_contains($textLower, 'help')) {
                 // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
                 $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
                 $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve

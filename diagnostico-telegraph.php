@@ -86,7 +86,7 @@ try {
         try {
             $response = $telegraph2->botInfo()->send();
             echo "    ✓ Funcionó correctamente al guardar la instancia\n";
-            echo "    ✓ Resultado: " . json_encode(array_slice($response, 0, 2)) . "\n";
+            echo "    ✓ Resultado: " . json_encode(isset($response['result']) ? ['ok' => $response['ok'], 'result_sample' => true] : $response) . "\n";
         } catch (\Exception $e) {
             echo "    ❌ Error inesperado: " . $e->getMessage() . "\n";
         }
@@ -138,6 +138,12 @@ try {
                     echo "  ⚠️ Patrón incorrecto detectado en el código: \$telegraph->bot(\$this->bot);\n";
                     echo "     Corrección recomendada: \$telegraph = \$telegraph->bot(\$this->bot);\n";
                 }
+
+                // Verificar el uso incorrecto de $this->chat->html()
+                if (strpos($methodBody, '$this->chat->html(') !== false) {
+                    echo "  ⚠️ Patrón incorrecto detectado en el código: \$this->chat->html();\n";
+                    echo "     Corrección recomendada: Usar \$telegraph->chat(\$this->chat->chat_id)->html();\n";
+                }
             } else {
                 echo "  ❌ No se encontró el método {$method}\n";
             }
@@ -173,4 +179,5 @@ echo "\n🏁 Diagnóstico completado.\n";
 echo "\n📝 RECOMENDACIONES:\n";
 echo "1. Siempre usar: \$telegraph = \$telegraph->bot(\$bot); para mantener el contexto\n";
 echo "2. Verificar que todas las llamadas a bot() guarden el resultado\n";
-echo "3. Considerar usar app()->instance('telegraph.bot', \$bot) para registrar el bot globalmente\n";
+echo "3. NUNCA usar \$this->chat->html() directamente, usar siempre el patrón completo con \$telegraph\n";
+echo "4. Considerar usar app()->instance('telegraph.bot', \$bot) para registrar el bot globalmente\n";

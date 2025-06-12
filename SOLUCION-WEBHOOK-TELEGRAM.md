@@ -170,14 +170,23 @@ $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia configurada
 $telegraph->chat($this->chat->chat_id)->html($mensaje)->send(); // Ahora sí tiene bot configurado
 ```
 
-Esta corrección se implementó en todas las ocurrencias dentro de `TelegramWebhookController`:
-- En el método `start()`
-- En el método `zonas()`
-- En el método `registrar()`
-- En el método `ayuda()`
-- En el método `handleChatMessage()`
+#### 2.6 Eliminación del uso directo de `$this->chat->html()`
 
-El problema de "No TelegraphBot defined for this request" ocurría porque la configuración del bot no persistía entre llamadas de método en la misma instancia de Telegraph.
+Se encontraron instancias donde se usaba directamente el método `$this->chat->html()->send()` para enviar mensajes, lo cual no es compatible con el enfoque corregido. Se reemplazaron todas estas llamadas por el patrón estándar que usa la instancia `$telegraph`.
+
+**Código incorrecto:**
+```php
+$this->chat->html($mensaje)->send();
+```
+
+**Código corregido:**
+```php
+$telegraph = app(\DefStudio\Telegraph\Telegraph::class);
+$telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
+$telegraph->chat($this->chat->chat_id)->html($mensaje)->send();
+```
+
+Esta corrección se aplicó en el método `registrar()` donde había dos ocurrencias del patrón incorrecto.
 
 ### 3. Scripts de Diagnóstico
 
