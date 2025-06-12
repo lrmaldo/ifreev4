@@ -66,7 +66,13 @@ class Index extends Component
         'formField.orden' => 'integer|min:0',
     ];
 
-    protected $listeners = ['refresh' => '$refresh'];
+    protected $listeners = ['refresh' => '$refresh', 'openZonaModal' => 'openModal'];
+
+    // Método adicional para debugging y comunicación directa
+    public function openNewZonaModal()
+    {
+        $this->openModal();
+    }
 
     public function render()
     {

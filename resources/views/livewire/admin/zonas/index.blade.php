@@ -560,6 +560,69 @@
                 button.__x.$data.position = position;
             }
         };
+
+        // Script de depuración para verificar eventos de Livewire
+        document.addEventListener('livewire:initialized', function () {
+            console.log('Livewire inicializado correctamente');
+
+            // Verificar si el evento openZonaModal está siendo escuchado
+            Livewire.on('openZonaModal', function() {
+                console.log('Evento openZonaModal recibido por Livewire');
+            });
+        });
+
+        // Función global para abrir modal desde cualquier lugar
+        window.openZonaModal = function() {
+            console.log('Función global openZonaModal llamada');
+
+            // Método 1: Intentar con eventos de Livewire
+            if (window.Livewire) {
+                console.log('Método 1: Disparando evento openZonaModal');
+                Livewire.dispatch('openZonaModal');
+                return;
+            }
+
+            // Método 2: Intentar encontrar el componente Livewire directamente
+            const livewireComponents = document.querySelectorAll('[wire\\:id]');
+            console.log('Método 2: Componentes Livewire encontrados:', livewireComponents.length);
+
+            for (let component of livewireComponents) {
+                if (component.__livewire) {
+                    console.log('Método 2: Llamando método openModal directamente');
+                    component.__livewire.call('openModal');
+                    return;
+                }
+            }
+
+            // Método 3: Usar Alpine.js si está disponible
+            if (window.Alpine) {
+                console.log('Método 3: Usando Alpine.js como fallback');
+                // Buscar el componente con showModal
+                const alpineComponent = document.querySelector('[x-data*="showModal"]');
+                if (alpineComponent && alpineComponent._x_dataStack) {
+                    alpineComponent._x_dataStack[0].showModal = true;
+                    return;
+                }
+            }
+
+            console.error('No se pudo abrir el modal usando ningún método');
+        };
+
+        // Función alternativa más específica
+        window.openNewZona = function() {
+            console.log('Función alternativa openNewZona llamada');
+
+            // Buscar directamente el botón dentro del componente Livewire
+            const internalButton = document.querySelector('[wire\\:click="openModal()"]');
+            if (internalButton) {
+                console.log('Encontrado botón interno, simulando click');
+                internalButton.click();
+                return;
+            }
+
+            // Si no encontramos el botón, intentar el método global
+            window.openZonaModal();
+        };
     </script>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -596,7 +659,7 @@
                     >
                 </div>
             </div>
-            <div class="mt-3 sm:mt-0">
+            <div class="mt-3 sm:mt-0 flex items-center gap-3">
                 <select
                     wire:model.live="perPage"
                     id="perPage"
@@ -607,6 +670,18 @@
                     <option value="25">25 por página</option>
                     <option value="50">50 por página</option>
                 </select>
+
+                <!-- Botón de respaldo para Nueva Zona -->
+                <button
+                    wire:click="openModal()"
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    title="Nueva Zona"
+                >
+                    <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span class="hidden sm:inline">Nueva Zona</span>
+                </button>
             </div>
         </div>
 
