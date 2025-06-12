@@ -32,12 +32,23 @@ Se agregaron y sincronizaron las rutas:
 - Ruta de diagnóstico: `/telegram/webhook/check`
 - Ruta de prueba (solo desarrollo): `/telegram/webhook/test`
 
-### 2. Implementación del Método Handle
+### 2. Corrección del Método Handle
 
-Se agregó un método `handle` explícito en `TelegramWebhookController` que:
-- Registra todos los webhooks entrantes para diagnóstico
-- Proporciona información detallada para depuración
-- Delega al manejador base de Telegraph
+Se corrigió la firma del método `handle` en `TelegramWebhookController` para que coincida con la clase padre:
+
+```php
+// Antes - Con firma incorrecta
+public function handle(Request $request)
+
+// Después - Con firma correcta
+public function handle(Request $request, \DefStudio\Telegraph\Models\TelegraphBot $bot): void
+```
+
+Además:
+- Se eliminó la devolución de respuestas HTTP directas (retorno void)
+- Se corrigió la llamada al método padre para incluir el parámetro `$bot`
+- Se mejoró el registro de diagnóstico para incluir información del bot
+- Se agregó una estructura de depuración avanzada para comandos
 
 ### 3. Corrección del Formato de Comandos
 
