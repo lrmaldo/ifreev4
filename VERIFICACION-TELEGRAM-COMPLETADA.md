@@ -16,6 +16,7 @@ Este documento proporciona los pasos para verificar que las correcciones del web
 - ✅ **Parámetros de métodos**: Añadido parámetro `\DefStudio\Telegraph\DTO\Chat $chat` a:
   - `getChatName()`
   - `getChatType()`
+- ✅ **Firma de método `handleChatMessage()`**: Corregida para recibir parámetro `\Illuminate\Support\Stringable $text`
 - ✅ **Llamadas a métodos**: Actualizadas para incluir el parámetro `$this->chat` en todas las llamadas a:
   - `getChatName()`
   - `getChatType()`

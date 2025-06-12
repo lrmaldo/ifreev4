@@ -255,6 +255,9 @@ class TelegramWebhookController extends WebhookHandler
 
     /**
      * Maneja mensajes no reconocidos
+     *
+     * @param \Illuminate\Support\Stringable $text El texto del mensaje
+     * @return void
      */
     public function handleChatMessage(\Illuminate\Support\Stringable $text): void
     {
@@ -262,9 +265,9 @@ class TelegramWebhookController extends WebhookHandler
         $this->registerChat();
 
         // Responder solo si el mensaje contiene texto específico
-        $text = strtolower($this->message->text() ?? '');
+        $textLower = strtolower($text->toString());
 
-        if (str_contains($text, 'hola') || str_contains($text, 'ayuda') || str_contains($text, 'help')) {
+        if (str_contains($textLower, 'hola') || str_contains($textLower, 'ayuda') || str_contains($textLower, 'help')) {
             $this->chat->message("👋 ¡Hola! Usa /start para comenzar o /ayuda para ver los comandos disponibles.")
                 ->send();
         }

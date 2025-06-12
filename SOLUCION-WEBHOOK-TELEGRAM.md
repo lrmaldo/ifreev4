@@ -16,6 +16,9 @@ Declaration of App\Http\Controllers\TelegramWebhookController::handle(Illuminate
 
 # Error 2 - Visibilidad de métodos incompatible
 Access level to App\Http\Controllers\TelegramWebhookController::getChatName() must be protected (as in class DefStudio\Telegraph\Handlers\WebhookHandler) or weaker
+
+# Error 3 - Firma de método incompatible
+Declaration of App\Http\Controllers\TelegramWebhookController::handleChatMessage(): void must be compatible with DefStudio\Telegraph\Handlers\WebhookHandler::handleChatMessage(Illuminate\Support\Stringable $text): void
 ```
 
 ## Causas Identificadas
@@ -96,6 +99,42 @@ $chatData = [
     'tipo' => $this->getChatType($this->chat),
     'activo' => true
 ];
+```
+
+#### 2.4 Corrección del método handleChatMessage
+
+Se corrigió la firma del método `handleChatMessage()` para que acepte el parámetro `$text` de tipo `Illuminate\Support\Stringable` y se modificó para utilizar este parámetro:
+
+```php
+// Antes - Sin usar el parámetro correctamente
+public function handleChatMessage(\Illuminate\Support\Stringable $text): void
+{
+    // Solo registrar el chat si envía un mensaje directo
+    $this->registerChat();
+
+    // Responder solo si el mensaje contiene texto específico
+    $text = strtolower($this->message->text() ?? '');
+
+    if (str_contains($text, 'hola') || str_contains($text, 'ayuda') || str_contains($text, 'help')) {
+        $this->chat->message("👋 ¡Hola! Usa /start para comenzar o /ayuda para ver los comandos disponibles.")
+            ->send();
+    }
+}
+
+// Después - Usando correctamente el parámetro
+public function handleChatMessage(\Illuminate\Support\Stringable $text): void
+{
+    // Solo registrar el chat si envía un mensaje directo
+    $this->registerChat();
+
+    // Responder solo si el mensaje contiene texto específico
+    $textLower = strtolower($text->toString());
+
+    if (str_contains($textLower, 'hola') || str_contains($textLower, 'ayuda') || str_contains($textLower, 'help')) {
+        $this->chat->message("👋 ¡Hola! Usa /start para comenzar o /ayuda para ver los comandos disponibles.")
+            ->send();
+    }
+}
 ```
 
 También se actualizaron otras referencias:
