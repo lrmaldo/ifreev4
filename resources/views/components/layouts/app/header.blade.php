@@ -29,9 +29,9 @@
                 <flux:navbar.item icon="map-pin" :href="route('admin.zonas.index')" :current="request()->routeIs('admin.zonas.*')" wire:navigate>
                     {{ __('Zonas') }}
                 </flux:navbar.item>
-                <flux:navbar.item icon="file-text" :href="route('admin.forms.index')" :current="request()->routeIs('admin.forms.*')" wire:navigate>
+                {{-- <flux:navbar.item icon="file-text" :href="route('admin.forms.index')" :current="request()->routeIs('admin.forms.*')" wire:navigate>
                     {{ __('Formularios') }}
-                </flux:navbar.item>
+                </flux:navbar.item> --}}
                 <flux:navbar.item icon="users" :href="route('admin.clientes.index')" :current="request()->routeIs('admin.clientes.*')" wire:navigate>
                     {{ __('Clientes') }}
                 </flux:navbar.item>
@@ -149,9 +149,9 @@
                     <flux:navlist.item icon="map-pin" :href="route('admin.zonas.index')" :current="request()->routeIs('admin.zonas.*')" wire:navigate>
                         {{ __('Zonas') }}
                     </flux:navlist.item>
-                    <flux:navlist.item icon="file-text" :href="route('admin.forms.index')" :current="request()->routeIs('admin.forms.*')" wire:navigate>
+                    {{-- <flux:navlist.item icon="file-text" :href="route('admin.forms.index')" :current="request()->routeIs('admin.forms.*')" wire:navigate>
                         {{ __('Formularios') }}
-                    </flux:navlist.item>
+                    </flux:navlist.item> --}}
                     <flux:navlist.item icon="users" :href="route('admin.clientes.index')" :current="request()->routeIs('admin.clientes.*')" wire:navigate>
                         {{ __('Clientes') }}
                     </flux:navlist.item>
