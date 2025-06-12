@@ -20,12 +20,12 @@ echo "🔍 Iniciando diagnóstico de respuestas de Telegram...\n\n";
 echo "1️⃣ Verificando configuración del bot...\n";
 try {
     $bot = TelegraphBot::first();
-    
+
     if (!$bot) {
         echo "   ❌ No se encontró ningún bot configurado en la base de datos.\n";
         exit(1);
     }
-    
+
     echo "   ✅ Bot encontrado: {$bot->name}\n";
     echo "   👤 Token: " . substr($bot->token, 0, 5) . "..." . substr($bot->token, -5) . "\n";
     echo "   🆔 ID: {$bot->id}\n\n";
@@ -38,7 +38,7 @@ try {
 echo "2️⃣ Verificando configuración de chats...\n";
 try {
     $chats = TelegraphChat::all();
-    
+
     if ($chats->isEmpty()) {
         echo "   ⚠️ No se encontraron chats registrados en la base de datos.\n\n";
     } else {
@@ -60,7 +60,7 @@ if ($chats->isEmpty()) {
     echo "   👉 Primero ejecuta /start en el bot para registrar un chat.\n\n";
 } else {
     $testChat = $chats->first();
-    
+
     try {
         // Método 1: Usar la clase Telegraph directamente
         echo "   🔹 Método 1: Utilizando la clase Telegraph directamente...\n";
@@ -68,7 +68,7 @@ if ($chats->isEmpty()) {
             ->chat($testChat->chat_id)
             ->message("🧪 Prueba de diagnóstico (Método 1): " . date('Y-m-d H:i:s'))
             ->send();
-        
+
         echo "   ✅ Mensaje enviado correctamente (Método 1)\n";
         echo "   📊 Respuesta: " . json_encode($result1) . "\n\n";
     } catch (\Exception $e) {
@@ -76,13 +76,13 @@ if ($chats->isEmpty()) {
         echo "   🔍 Detalles: " . get_class($e) . "\n";
         echo "   📝 Traza:\n" . $e->getTraceAsString() . "\n\n";
     }
-    
+
     try {
         // Método 2: Usar el modelo TelegraphChat
         echo "   🔹 Método 2: Utilizando el modelo TelegraphChat...\n";
         $result2 = $testChat->message("🧪 Prueba de diagnóstico (Método 2): " . date('Y-m-d H:i:s'))
             ->send();
-        
+
         echo "   ✅ Mensaje enviado correctamente (Método 2)\n";
         echo "   📊 Respuesta: " . json_encode($result2) . "\n\n";
     } catch (\Exception $e) {
@@ -111,31 +111,31 @@ echo "5️⃣ Verificando permisos y métodos del controlador...\n";
 try {
     $controllerClass = config('telegraph.webhook.handler');
     $controller = app($controllerClass);
-    
+
     $requiredMethods = [
         'handle' => 'public',
         'getChatName' => 'protected',
         'getChatType' => 'protected',
         'handleChatMessage' => 'public',
     ];
-    
+
     $reflection = new ReflectionClass($controller);
-    
+
     foreach ($requiredMethods as $method => $expectedVisibility) {
         if (!$reflection->hasMethod($method)) {
             echo "   ❌ Método {$method} no encontrado en el controlador\n";
             continue;
         }
-        
+
         $reflectionMethod = $reflection->getMethod($method);
         $actualVisibility = $reflectionMethod->isPublic() ? 'public' : ($reflectionMethod->isProtected() ? 'protected' : 'private');
-        
+
         if ($actualVisibility !== $expectedVisibility) {
             echo "   ⚠️ El método {$method} tiene visibilidad {$actualVisibility}, pero se esperaba {$expectedVisibility}\n";
         } else {
             echo "   ✅ Método {$method} tiene la visibilidad correcta ({$actualVisibility})\n";
         }
-        
+
         // Verificar firma de métodos específicos
         if ($method === 'handle') {
             $params = $reflectionMethod->getParameters();

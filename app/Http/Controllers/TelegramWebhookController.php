@@ -117,15 +117,41 @@ class TelegramWebhookController extends WebhookHandler
      */
     public function start(): void
     {
-        $this->chat->message("🤖 <b>¡Bienvenido al Bot de I-Free!</b>\n\n")
-            ->message("Este bot te notificará sobre eventos importantes del sistema de hotspots.\n\n")
-            ->message("📋 <b>Comandos disponibles:</b>\n")
-            ->message("/start - Mostrar este mensaje\n")
-            ->message("/zonas - Ver zonas disponibles\n")
-            ->message("/registrar [zona_id] - Asociar chat con una zona\n")
-            ->message("/ayuda - Mostrar ayuda detallada\n\n")
-            ->message("🔧 Para empezar, usa /zonas para ver las zonas disponibles.")
-            ->send();
+        try {
+            $mensaje = <<<HTML
+🤖 <b>¡Bienvenido al Bot de I-Free!</b>
+
+Este bot te notificará sobre eventos importantes del sistema de hotspots.
+
+📋 <b>Comandos disponibles:</b>
+/start - Mostrar este mensaje
+/zonas - Ver zonas disponibles
+/registrar [zona_id] - Asociar chat con una zona
+/ayuda - Mostrar ayuda detallada
+
+🔧 Para empezar, usa /zonas para ver las zonas disponibles.
+HTML;
+
+            // Log para diagnóstico
+            \Illuminate\Support\Facades\Log::info('Enviando mensaje de start', [
+                'chat_id' => $this->chat->chat_id,
+                'mensaje' => $mensaje
+            ]);
+
+            // Enviar respuesta usando el método html() directamente con todo el contenido
+            $response = $this->chat->html($mensaje)->send();
+
+            // Log de respuesta
+            \Illuminate\Support\Facades\Log::info('Respuesta API Telegram', [
+                'response' => $response
+            ]);
+        } catch (\Exception $e) {
+            // Capturar cualquier error durante el envío
+            \Illuminate\Support\Facades\Log::error('Error enviando mensaje start', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
 
         $this->registerChat();
     }
@@ -135,31 +161,48 @@ class TelegramWebhookController extends WebhookHandler
      */
     public function zonas(): void
     {
-        $zonas = Zona::all();
+        try {
+            $zonas = Zona::all();
 
-        if ($zonas->isEmpty()) {
-            $this->chat->message("❌ No hay zonas configuradas en el sistema.")
-                ->send();
-            return;
-        }
-
-        $message = "📍 <b>Zonas disponibles:</b>\n\n";
-
-        foreach ($zonas as $zona) {
-            $message .= "🏷️ <b>ID:</b> {$zona->id}\n";
-            $message .= "📌 <b>Nombre:</b> {$zona->nombre}\n";
-
-            if ($zona->id_personalizado) {
-                $message .= "🆔 <b>ID Personalizado:</b> {$zona->id_personalizado}\n";
+            if ($zonas->isEmpty()) {
+                $this->chat->html("❌ No hay zonas configuradas en el sistema.")->send();
+                return;
             }
 
-            $message .= "\n";
+            $message = "📍 <b>Zonas disponibles:</b>\n\n";
+
+            foreach ($zonas as $zona) {
+                $message .= "🏷️ <b>ID:</b> {$zona->id}\n";
+                $message .= "📌 <b>Nombre:</b> {$zona->nombre}\n";
+
+                if ($zona->id_personalizado) {
+                    $message .= "🆔 <b>ID Personalizado:</b> {$zona->id_personalizado}\n";
+                }
+
+                $message .= "\n";
+            }
+
+            $message .= "💡 <i>Para asociar este chat con una zona, usa:</i>\n";
+            $message .= "<code>/registrar [zona_id]</code>";
+
+            // Log para diagnóstico
+            \Illuminate\Support\Facades\Log::info('Enviando mensaje de zonas', [
+                'chat_id' => $this->chat->chat_id,
+                'mensaje' => $message
+            ]);
+
+            $response = $this->chat->html($message)->send();
+
+            \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (zonas)', [
+                'response' => $response
+            ]);
+        } catch (\Exception $e) {
+            // Capturar cualquier error durante el envío
+            \Illuminate\Support\Facades\Log::error('Error enviando mensaje zonas', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
-
-        $message .= "💡 <i>Para asociar este chat con una zona, usa:</i>\n";
-        $message .= "<code>/registrar [zona_id]</code>";
-
-        $this->chat->message($message)->send();
     }
 
     /**
@@ -167,49 +210,80 @@ class TelegramWebhookController extends WebhookHandler
      */
     public function registrar(): void
     {
-        $messageText = $this->message->text();
-        $parts = explode(' ', $messageText);
+        try {
+            $messageText = $this->message->text();
+            $parts = explode(' ', $messageText);
 
-        if (count($parts) < 2) {
-            $this->chat->message("❌ <b>Formato incorrecto</b>\n\n")
-                ->message("Uso: <code>/registrar [zona_id]</code>\n")
-                ->message("Ejemplo: <code>/registrar 1</code>\n\n")
-                ->message("💡 Usa /zonas para ver las zonas disponibles.")
-                ->send();
-            return;
+            if (count($parts) < 2) {
+                $mensaje = <<<HTML
+❌ <b>Formato incorrecto</b>
+
+Uso: <code>/registrar [zona_id]</code>
+Ejemplo: <code>/registrar 1</code>
+
+💡 Usa /zonas para ver las zonas disponibles.
+HTML;
+                $this->chat->html($mensaje)->send();
+                return;
+            }
+
+            $zonaId = (int) $parts[1];
+            $zona = Zona::find($zonaId);
+
+            if (!$zona) {
+                $mensaje = <<<HTML
+❌ <b>Zona no encontrada</b>
+
+La zona con ID <b>{$zonaId}</b> no existe.
+Usa /zonas para ver las zonas disponibles.
+HTML;
+                $this->chat->html($mensaje)->send();
+                return;
+            }
+
+            // Registrar o obtener el chat
+            $telegramChat = $this->registerChat();
+
+            // Verificar si ya está asociado
+            if ($telegramChat->zonas()->where('zona_id', $zonaId)->exists()) {
+                $mensaje = <<<HTML
+⚠️ <b>Ya registrado</b>
+
+Este chat ya está asociado con la zona <b>{$zona->nombre}</b>.
+HTML;
+                $this->chat->html($mensaje)->send();
+                return;
+            }
+
+            // Asociar chat con zona
+            $telegramChat->zonas()->attach($zonaId);
+
+            $mensaje = <<<HTML
+✅ <b>¡Registro exitoso!</b>
+
+Chat asociado con la zona: <b>{$zona->nombre}</b>
+🔔 Ahora recibirás notificaciones de esta zona.
+HTML;
+
+            \Illuminate\Support\Facades\Log::info('Enviando mensaje de registro exitoso', [
+                'chat_id' => $this->chat->chat_id,
+                'zona_id' => $zonaId,
+                'zona_nombre' => $zona->nombre
+            ]);
+
+            $response = $this->chat->html($mensaje)->send();
+
+            \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (registro)', [
+                'response' => $response
+            ]);
+
+            Log::info("Chat {$this->chat->chat_id} asociado con zona {$zona->nombre} (ID: {$zonaId})");
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error en comando registrar', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
-
-        $zonaId = (int) $parts[1];
-        $zona = Zona::find($zonaId);
-
-        if (!$zona) {
-            $this->chat->message("❌ <b>Zona no encontrada</b>\n\n")
-                ->message("La zona con ID <b>{$zonaId}</b> no existe.\n")
-                ->message("Usa /zonas para ver las zonas disponibles.")
-                ->send();
-            return;
-        }
-
-        // Registrar o obtener el chat
-        $telegramChat = $this->registerChat();
-
-        // Verificar si ya está asociado
-        if ($telegramChat->zonas()->where('zona_id', $zonaId)->exists()) {
-            $this->chat->message("⚠️ <b>Ya registrado</b>\n\n")
-                ->message("Este chat ya está asociado con la zona <b>{$zona->nombre}</b>.")
-                ->send();
-            return;
-        }
-
-        // Asociar chat con zona
-        $telegramChat->zonas()->attach($zonaId);
-
-        $this->chat->message("✅ <b>¡Registro exitoso!</b>\n\n")
-            ->message("Chat asociado con la zona: <b>{$zona->nombre}</b>\n")
-            ->message("🔔 Ahora recibirás notificaciones de esta zona.")
-            ->send();
-
-        Log::info("Chat {$this->chat->chat_id} asociado con zona {$zona->nombre} (ID: {$zonaId})");
     }
 
     /**
@@ -217,40 +291,57 @@ class TelegramWebhookController extends WebhookHandler
      */
     public function ayuda(): void
     {
-        $telegramChat = TelegramChat::where('chat_id', $this->chat->chat_id)->first();
-        $zonasAsociadas = $telegramChat ? $telegramChat->zonas->count() : 0;
+        try {
+            $telegramChat = TelegramChat::where('chat_id', $this->chat->chat_id)->first();
+            $zonasAsociadas = $telegramChat ? $telegramChat->zonas->count() : 0;
 
-        $message = "📚 <b>Ayuda del Bot I-Free</b>\n\n";
+            $message = "📚 <b>Ayuda del Bot I-Free</b>\n\n";
 
-        $message .= "🎯 <b>Propósito:</b>\n";
-        $message .= "Este bot envía notificaciones automáticas cuando se detectan nuevas conexiones en las zonas de hotspot.\n\n";
+            $message .= "🎯 <b>Propósito:</b>\n";
+            $message .= "Este bot envía notificaciones automáticas cuando se detectan nuevas conexiones en las zonas de hotspot.\n\n";
 
-        $message .= "📋 <b>Comandos disponibles:</b>\n\n";
+            $message .= "📋 <b>Comandos disponibles:</b>\n\n";
 
-        $message .= "🚀 <code>/start</code>\n";
-        $message .= "Mostrar mensaje de bienvenida\n\n";
+            $message .= "🚀 <code>/start</code>\n";
+            $message .= "Mostrar mensaje de bienvenida\n\n";
 
-        $message .= "📍 <code>/zonas</code>\n";
-        $message .= "Listar todas las zonas disponibles\n\n";
+            $message .= "📍 <code>/zonas</code>\n";
+            $message .= "Listar todas las zonas disponibles\n\n";
 
-        $message .= "📝 <code>/registrar [zona_id]</code>\n";
-        $message .= "Asociar este chat con una zona específica\n";
-        $message .= "Ejemplo: <code>/registrar 1</code>\n\n";
+            $message .= "📝 <code>/registrar [zona_id]</code>\n";
+            $message .= "Asociar este chat con una zona específica\n";
+            $message .= "Ejemplo: <code>/registrar 1</code>\n\n";
 
-        $message .= "❓ <code>/ayuda</code>\n";
-        $message .= "Mostrar esta ayuda\n\n";
+            $message .= "❓ <code>/ayuda</code>\n";
+            $message .= "Mostrar esta ayuda\n\n";
 
-        $message .= "📊 <b>Estado actual:</b>\n";
-        $message .= "• Zonas asociadas: <b>{$zonasAsociadas}</b>\n";
-        $message .= "• Chat ID: <code>{$this->chat->chat_id}</code>\n";
-        $message .= "• Tipo de chat: <b>" . $this->getChatType($this->chat) . "</b>\n\n";
+            $message .= "📊 <b>Estado actual:</b>\n";
+            $message .= "• Zonas asociadas: <b>{$zonasAsociadas}</b>\n";
+            $message .= "• Chat ID: <code>{$this->chat->chat_id}</code>\n";
+            $message .= "• Tipo de chat: <b>" . $this->getChatType($this->chat) . "</b>\n\n";
 
-        $message .= "💡 <b>Consejos:</b>\n";
-        $message .= "• Puedes asociar este chat con múltiples zonas\n";
-        $message .= "• Las notificaciones incluyen detalles del dispositivo conectado\n";
-        $message .= "• Funciona tanto en grupos como en chats privados";
+            $message .= "💡 <b>Consejos:</b>\n";
+            $message .= "• Puedes asociar este chat con múltiples zonas\n";
+            $message .= "• Las notificaciones incluyen detalles del dispositivo conectado\n";
+            $message .= "• Funciona tanto en grupos como en chats privados";
 
-        $this->chat->message($message)->send();
+            // Log para diagnóstico
+            \Illuminate\Support\Facades\Log::info('Enviando mensaje de ayuda', [
+                'chat_id' => $this->chat->chat_id,
+                'mensaje' => $message
+            ]);
+
+            $response = $this->chat->html($message)->send();
+
+            \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (ayuda)', [
+                'response' => $response
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error enviando mensaje ayuda', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
     }
 
     /**
@@ -261,15 +352,32 @@ class TelegramWebhookController extends WebhookHandler
      */
     public function handleChatMessage(\Illuminate\Support\Stringable $text): void
     {
-        // Solo registrar el chat si envía un mensaje directo
-        $this->registerChat();
+        try {
+            // Solo registrar el chat si envía un mensaje directo
+            $this->registerChat();
 
-        // Responder solo si el mensaje contiene texto específico
-        $textLower = strtolower($text->toString());
+            // Responder solo si el mensaje contiene texto específico
+            $textLower = strtolower($text->toString());
 
-        if (str_contains($textLower, 'hola') || str_contains($textLower, 'ayuda') || str_contains($textLower, 'help')) {
-            $this->chat->message("👋 ¡Hola! Usa /start para comenzar o /ayuda para ver los comandos disponibles.")
-                ->send();
+            // Log para diagnóstico
+            \Illuminate\Support\Facades\Log::info('Mensaje recibido no comando', [
+                'chat_id' => $this->chat->chat_id,
+                'text' => $textLower
+            ]);
+
+            if (str_contains($textLower, 'hola') || str_contains($textLower, 'ayuda') || str_contains($textLower, 'help')) {
+                $response = $this->chat->html("👋 ¡Hola! Usa /start para comenzar o /ayuda para ver los comandos disponibles.")
+                    ->send();
+
+                \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (chat message)', [
+                    'response' => $response
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error al manejar mensaje de chat', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 
@@ -278,28 +386,65 @@ class TelegramWebhookController extends WebhookHandler
      */
     protected function registerChat(): TelegramChat
     {
-        $chatData = [
-            'chat_id' => $this->chat->chat_id,
-            'nombre' => $this->getChatName($this->chat),
-            'tipo' => $this->getChatType($this->chat),
-            'activo' => true
-        ];
+        try {
+            $chatData = [
+                'chat_id' => $this->chat->chat_id,
+                'nombre' => $this->getChatName($this->chat),
+                'tipo' => $this->getChatType($this->chat),
+                'activo' => true
+            ];
 
-        $telegramChat = TelegramChat::updateOrCreate(
-            ['chat_id' => $this->chat->chat_id],
-            $chatData
-        );
+            \Illuminate\Support\Facades\Log::info('Registrando chat', [
+                'chat_id' => $this->chat->chat_id,
+                'data' => $chatData
+            ]);
 
-        if ($telegramChat->wasRecentlyCreated) {
-            Log::info("Nuevo chat registrado: {$telegramChat->nombre} (ID: {$telegramChat->chat_id})");
+            $telegramChat = TelegramChat::updateOrCreate(
+                ['chat_id' => $this->chat->chat_id],
+                $chatData
+            );
 
-            $this->chat->message("✅ <b>Chat registrado correctamente</b>\n\n")
-                ->message("Tu chat ha sido añadido a nuestro sistema.\n")
-                ->message("Usa /zonas para ver las zonas disponibles.")
-                ->send();
+            if ($telegramChat->wasRecentlyCreated) {
+                Log::info("Nuevo chat registrado: {$telegramChat->nombre} (ID: {$telegramChat->chat_id})");
+
+                $mensaje = <<<HTML
+✅ <b>Chat registrado correctamente</b>
+
+Tu chat ha sido añadido a nuestro sistema.
+Usa /zonas para ver las zonas disponibles.
+HTML;
+
+                try {
+                    $response = $this->chat->html($mensaje)->send();
+
+                    \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (registro chat)', [
+                        'response' => $response
+                    ]);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Error enviando mensaje de registro', [
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            return $telegramChat;
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error en registerChat', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Crear un registro mínimo para poder continuar
+            return TelegramChat::firstOrCreate(
+                ['chat_id' => $this->chat->chat_id],
+                [
+                    'chat_id' => $this->chat->chat_id,
+                    'nombre' => 'Chat sin registrar',
+                    'tipo' => 'unknown',
+                    'activo' => true
+                ]
+            );
         }
-
-        return $telegramChat;
     }
 
     /**
