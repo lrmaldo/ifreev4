@@ -193,10 +193,12 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Rutas para el webhook de Telegram
-Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])
-    ->name('telegram.webhook')
-    ->withoutMiddleware(['web', 'auth', 'verified'])
-    ->middleware(['throttle:100,1']);
+// Nota: La ruta principal del webhook es manejada por Telegraph::telegraph() más abajo en este archivo
+// Se comenta esta ruta para evitar conflictos con el enrutamiento automático de Telegraph
+// Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])
+//    ->name('telegram.webhook')
+//    ->withoutMiddleware(['web', 'auth', 'verified'])
+//    ->middleware(['throttle:100,1']);
 
 // Ruta GET para diagnóstico rápido del webhook
 Route::get('/telegram/webhook/check', function() {

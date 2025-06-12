@@ -29,6 +29,10 @@ Este documento proporciona los pasos para verificar que las correcciones del web
   - Se aplica la corrección en todos los métodos del controlador y scripts de prueba
   - Se añade diagnóstico adicional para detectar si el bot está correctamente configurado
   - Se elimina el uso del patrón incorrecto `$this->chat->html()->send()` y se reemplaza por el patrón correcto en todo el código
+- ✅ **Corrección "bot_id: null" en logs**: Resuelto el problema de logs sin identificación del bot:
+  - Se eliminó la ruta manual `/telegram/webhook` que competía con la ruta automática de Telegraph
+  - Se dejó solo la ruta automática que gestiona correctamente la inyección de dependencias
+  - Se creó un nuevo script `check-telegraph-bots.php` para diagnosticar problemas con los bots en la base de datos
 
 ## Pasos para Verificación en Producción
 

@@ -188,50 +188,40 @@ $telegraph->chat($this->chat->chat_id)->html($mensaje)->send();
 
 Esta corrección se aplicó en el método `registrar()` donde había dos ocurrencias del patrón incorrecto.
 
-### 3. Scripts de Diagnóstico
+### 2.7 Corrección del problema "bot_id: null" en logs de webhook
 
-Se crearon herramientas de diagnóstico avanzadas:
-- Comando `php artisan telegram:test-webhook --diagnose`: Para diagnóstico completo
-- Comando `php artisan telegram:test-webhook --reset`: Para reiniciar la configuración
-- Comando `php artisan telegram:debug-infrastructure`: Para verificar la infraestructura
-- Logs detallados en `storage/logs/laravel.log`
+Se identificó un problema adicional donde los logs mostraban:
 
-### 4. Mejora en el Envío de Mensajes
-
-Se ha estandarizado la forma de enviar mensajes en todos los métodos, utilizando el patrón:
-
-```php
-// Antes - Forma problemática
-$response = $this->chat->html($message)->send();
-
-// Después - Forma mejorada y consistente
-$telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-$telegraph->bot($this->bot); // Aseguramos que se use el bot correcto
-$response = $telegraph->chat($this->chat->chat_id)
-    ->html($message)
-    ->send();
+```
+"bot_id":null,"bot_name":null
 ```
 
-### 5. Solución al Error "No TelegraphBot defined for this request"
+Este problema se debía a un conflicto entre rutas definidas manualmente y la ruta automática generada por Telegraph.
 
-En los scripts de prueba, especialmente en `test-telegram-message.php`, se mejoró la forma de registrar el bot:
-
+**Causa:**
 ```php
-// Antes - Problemático, el bot no se mantenía entre instancias
-$telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-$telegraph->bot($bot); // Esta configuración no persistía correctamente
+// Ruta manual que interfiere con la inyección de dependencias de Telegraph
+Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])
+    ->name('telegram.webhook');
 
-// Después - Solución correcta
-$telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-// Registrar el bot en el contenedor de servicios
-app()->instance('telegraph.bot', $bot);
-// Y también configurarlo explícitamente
-$telegraph = $telegraph->bot($bot);
+// Más abajo en el mismo archivo
+// Ruta automática gestionada por Telegraph
+\Illuminate\Support\Facades\Route::telegraph();
 ```
 
-Esta solución asegura que el bot se mantenga disponible para todas las operaciones subsiguientes de Telegraph, evitando el error "No TelegraphBot defined for this request".
+**Solución:**
+```php
+// Comentamos la ruta manual y dejamos solo la automática
+// Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])
+//     ->name('telegram.webhook');
 
-También se creó un script de diagnóstico específico `diagnostico-telegraph.php` para detectar y resolver problemas con la configuración de Telegraph.
+// Solo usamos la ruta automática que gestiona correctamente la inyección de dependencias
+\Illuminate\Support\Facades\Route::telegraph();
+```
+
+Este cambio permite que Telegraph gestione correctamente la inyección del `TelegraphBot` en el controlador, evitando que aparezca como `null` en los logs y permitiendo el envío correcto de respuestas a los comandos recibidos.
+
+También se creó un script de diagnóstico específico `check-telegraph-bots.php` para verificar que los bots y chats estén correctamente configurados en la base de datos.
 
 Esta mejora se implementó en todos los métodos del controlador, incluyendo:
 - `start()`

@@ -256,31 +256,75 @@ Debes hacer esta corrección en:
 - El método `ayuda()`
 - El método `handleChatMessage()`
 
-### 8. Limpiar la Caché de Laravel
+### 8. Corrección del problema "bot_id: null" en los logs
+
+Se ha detectado que el webhook recibe correctamente los comandos pero en los logs aparece:
+
+```
+"bot_id":null,"bot_name":null
+```
+
+Este problema se debe a un conflicto entre las rutas definidas manualmente en `routes/web.php` y la ruta automática creada por Telegraph.
+
+#### 8.1 Actualizar rutas de webhook
+
+Abre el archivo `routes/web.php` y comenta la ruta manual del webhook:
+
+```php
+// Rutas para el webhook de Telegram
+// Nota: La ruta principal del webhook es manejada por Telegraph::telegraph() más abajo en este archivo
+// Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])
+//     ->name('telegram.webhook')
+//     ->withoutMiddleware(['web', 'auth', 'verified'])
+//     ->middleware(['throttle:100,1']);
+```
+
+Asegúrate de que se mantenga la siguiente parte al final del archivo:
+
+```php
+// Usamos la macro de Telegraph para registrar su ruta (si está disponible)
+if (method_exists(\Illuminate\Support\Facades\Route::class, 'telegraph')) {
+    \Illuminate\Support\Facades\Route::telegraph();
+}
+```
+
+Esta corrección permite que Telegraph gestione correctamente la inyección de dependencias del bot, evitando el problema de `bot_id: null` en los logs.
+
+#### 8.2 Verificar la configuración de los bots
+
+Para verificar que los bots están correctamente configurados en la base de datos, ejecuta:
+
+```bash
+php check-telegraph-bots.php
+```
+
+Este script mostrará información útil sobre los bots registrados y los chats asociados, además de verificar la configuración general de Telegraph.
+
+### 9. Limpiar la Caché de Laravel
 
 ```bash
 php artisan optimize:clear
 ```
 
-### 9. Verificar la Configuración del Webhook
+### 10. Verificar la Configuración del Webhook
 
 ```bash
 php artisan telegram:test-webhook --verify
 ```
 
-### 10. Resetear el Webhook (Si es Necesario)
+### 11. Resetear el Webhook (Si es Necesario)
 
 ```bash
 php artisan telegram:test-webhook --reset
 ```
 
-### 11. Verificar los Logs
+### 12. Verificar los Logs
 
 ```bash
 tail -f storage/logs/laravel.log
 ```
 
-### 12. Probar los Comandos
+### 13. Probar los Comandos
 
 Envía los siguientes comandos al bot y verifica los logs para confirmar que se están procesando correctamente:
 
