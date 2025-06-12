@@ -8,7 +8,7 @@
 
     <flux:main container class="space-y-6">
         <!-- Panel de Estado -->
-        <flux:card class="p-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-blue-50 p-4 rounded-lg">
                     <div class="flex items-center">
@@ -60,60 +60,53 @@
             </div>
 
             <!-- Instrucciones Rápidas -->
-            <flux:card class="bg-blue-50 border border-blue-200">
-                <flux:card.body>
-                    <flux:heading size="lg" class="text-blue-900 mb-2">🚀 Instrucciones Rápidas</flux:heading>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
-                        <div>
-                            <h4 class="font-semibold mb-1">Para empezar:</h4>
-                            <ul class="list-disc list-inside space-y-1">
-                                <li>Los chats se registran automáticamente</li>
-                                <li>Los usuarios envían <code>/start</code> al bot</li>
-                                <li>Usan <code>/registrar [zona_id]</code> para asociarse</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold mb-1">Webhook URL:</h4>
-                            <p class="bg-white p-2 rounded border font-mono text-xs">
-                                https://v3.i-free.com.mx/telegram/webhook
-                            </p>
-                        </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <flux:heading size="lg" class="text-blue-900 mb-2">🚀 Instrucciones Rápidas</flux:heading>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+                    <div>
+                        <h4 class="font-semibold mb-1">Para empezar:</h4>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Los chats se registran automáticamente</li>
+                            <li>Los usuarios envían <code>/start</code> al bot</li>
+                            <li>Usan <code>/registrar [zona_id]</code> para asociarse</li>
+                        </ul>
                     </div>
-                </flux:card.body>
-            </flux:card>
-        </flux:card>
-
-        <!-- Componente Principal -->
-        <flux:card>
-            <flux:card.body>
-                <livewire:telegram-chat-manager />
-            </flux:card.body>
-        </flux:card>
-
-        <!-- Panel de Comandos Útiles -->
-        <flux:card>
-            <flux:card.body>
-                <flux:heading size="lg" class="mb-4">🛠️ Comandos Útiles</flux:heading>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-semibold text-gray-800 mb-2">Verificar Estado</h4>
-                        <code class="text-sm bg-gray-800 text-green-400 p-2 rounded block">php artisan telegram:status</code>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-semibold text-gray-800 mb-2">Probar Notificaciones</h4>
-                        <code class="text-sm bg-gray-800 text-green-400 p-2 rounded block">php artisan telegram:test --zona_id=1</code>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-semibold text-gray-800 mb-2">Probar Webhook</h4>
-                        <code class="text-sm bg-gray-800 text-green-400 p-2 rounded block">php artisan telegram:test-webhook [chat_id]</code>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-semibold text-gray-800 mb-2">Ejecutar Colas</h4>
-                        <code class="text-sm bg-gray-800 text-green-400 p-2 rounded block">php artisan queue:work</code>
+                    <div>
+                        <h4 class="font-semibold mb-1">Webhook URL:</h4>
+                        <p class="bg-white p-2 rounded border font-mono text-xs">
+                            https://v3.i-free.com.mx/telegram/webhook
+                        </p>
                     </div>
                 </div>
-            </flux:card.body>
-        </flux:card>
+            </div>
+        </div>
+        <!-- Componente Principal -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <livewire:telegram-chat-manager />
+        </div>
+
+        <!-- Panel de Comandos Útiles -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <flux:heading size="lg" class="mb-4">🛠️ Comandos Útiles</flux:heading>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">Verificar Estado</h4>
+                    <code class="text-sm bg-gray-800 text-green-400 p-2 rounded block">php artisan telegram:status</code>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">Probar Notificaciones</h4>
+                    <code class="text-sm bg-gray-800 text-green-400 p-2 rounded block">php artisan telegram:test --zona_id=1</code>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">Probar Webhook</h4>
+                    <code class="text-sm bg-gray-800 text-green-400 p-2 rounded block">php artisan telegram:test-webhook [chat_id]</code>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">Ejecutar Colas</h4>
+                    <code class="text-sm bg-gray-800 text-green-400 p-2 rounded block">php artisan queue:work</code>
+                </div>
+            </div>
+        </div>
     </flux:main>
 
     @push('scripts')
