@@ -13,6 +13,98 @@ use Illuminate\Support\Facades\Log;
 class TelegramWebhookController extends WebhookHandler
 {
     /**
+     * Maneja las solicitudes webhook entrantes
+     * Este método recibe el webhook y delega a los métodos correspondientes
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function handle(Request $request)
+    {
+        // Registrar recepción del webhook para diagnóstico
+        Log::info('Webhook recibido', [
+            'content' => $request->getContent(),
+            'headers' => $request->headers->all()
+        ]);
+
+        // Si es una solicitud de diagnóstico especial, responder directamente
+        if ($request->has('diagnostic') && $request->get('diagnostic') === 'true') {
+            return response()->json([
+                'status' => 'ok',
+                'message' => 'Webhook endpoint funcional',
+                'timestamp' => now()->toIso8601String(),
+                'handler' => get_class($this)
+            ]);
+        }
+
+        if ($this->shouldDebug()) {
+            $this->debugWebhook($request);
+        }
+
+        // Delegar al manejador base de Telegraph
+        return parent::handle($request);
+    }
+
+    /**
+     * Determina si se debe activar el modo debug para webhooks
+     */
+    private function shouldDebug(): bool
+    {
+        return config('telegraph.webhook.debug', false) ||
+               config('app.debug', false) ||
+               env('TELEGRAM_WEBHOOK_DEBUG', false);
+    }
+
+    /**
+     * Registra información de depuración detallada sobre el webhook
+     */
+    private function debugWebhook(Request $request): void
+    {
+        try {
+            $update = json_decode($request->getContent(), true);
+
+            $debugData = [
+                'timestamp' => now()->toIso8601String(),
+                'ip' => $request->ip(),
+                'method' => $request->method(),
+                'headers' => $request->headers->all(),
+            ];
+
+            // Analizar el tipo de actualización
+            if (isset($update['message'])) {
+                $message = $update['message'];
+                $debugData['update_type'] = 'message';
+                $debugData['chat_id'] = $message['chat']['id'] ?? 'unknown';
+                $debugData['from_id'] = $message['from']['id'] ?? 'unknown';
+                $debugData['text'] = $message['text'] ?? 'no text';
+
+                // Detectar si es un comando
+                if (isset($message['text']) && str_starts_with($message['text'], '/')) {
+                    $parts = explode(' ', $message['text']);
+                    $command = ltrim($parts[0], '/');
+                    $debugData['command'] = $command;
+                    $debugData['arguments'] = array_slice($parts, 1);
+
+                    // Verificar si hay un método correspondiente
+                    $methodExists = method_exists($this, $command);
+                    $debugData['handler_method_exists'] = $methodExists;
+                    $debugData['handler_method'] = $methodExists ? get_class($this) . '::' . $command : 'not found';
+                }
+            } elseif (isset($update['callback_query'])) {
+                $debugData['update_type'] = 'callback_query';
+                $debugData['data'] = $update['callback_query']['data'] ?? 'no data';
+            } else {
+                $debugData['update_type'] = 'other';
+            }
+
+            Log::info('Telegram Webhook Debug', $debugData);
+
+        } catch (\Exception $e) {
+            Log::error('Error depurando webhook', ['exception' => $e]);
+        }
+    }
+
+    /**
      * Maneja el comando /start
      */
     public function start(): void

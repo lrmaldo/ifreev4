@@ -192,10 +192,35 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-// Ruta para el webhook de Telegram
+// Rutas para el webhook de Telegram
 Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])
     ->name('telegram.webhook')
     ->withoutMiddleware(['web', 'auth', 'verified'])
     ->middleware(['throttle:100,1']);
+
+// Ruta GET para diagnóstico rápido del webhook
+Route::get('/telegram/webhook/check', function() {
+    return response()->json([
+        'status' => 'active',
+        'message' => 'El endpoint del webhook está configurado correctamente',
+        'timestamp' => now()->toIso8601String(),
+        'telegram_bot_enabled' => (bool)config('app.telegram_bot_enabled', env('TELEGRAM_BOT_ENABLED')),
+        'handler' => config('telegraph.webhook.handler'),
+        'env' => app()->environment(),
+        'debug' => config('app.debug'),
+    ]);
+})->name('telegram.webhook.check');
+
+// Ruta POST para probar manualmente el webhook (solo en entorno local)
+if (app()->environment() != 'production') {
+    Route::post('/telegram/webhook/test', function(\Illuminate\Http\Request $request) {
+        $handler = app(config('telegraph.webhook.handler'));
+        return $handler->handle($request);
+    })->name('telegram.webhook.test')
+      ->withoutMiddleware(['web', 'auth', 'verified', 'throttle']);
+}
+
+// Ruta adicional para el webhook de Telegraph (siguiendo su convención)
+Route::telegraph('/telegraph/{token}/webhook');
 
 require __DIR__.'/auth.php';

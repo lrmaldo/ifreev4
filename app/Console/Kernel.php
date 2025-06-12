@@ -43,5 +43,9 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\FormatearMetricasCommand::class,
         \App\Console\Commands\ProbarFormateadorRespuestasCommand::class,
         \App\Console\Commands\CorregirRespuestasFormularioCommand::class,
+        \App\Console\Commands\DebugTelegramInfrastructure::class,
+        \App\Console\Commands\CreateTelegramBot::class,
+        \App\Console\Commands\TelegramStatus::class,
+        \App\Console\Commands\TestTelegramWebhook::class,
     ];
 }

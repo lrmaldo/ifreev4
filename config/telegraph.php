@@ -20,7 +20,7 @@ return [
          * Sets the webhook URL that will be exposed by the server,
          * this can be customized or entirely disabled (by setting it to NULL)
          */
-        'url' => '/telegraph/{token}/webhook',
+        'url' => '/telegram/webhook',
 
         /*
          * Sets the handler to be used when Telegraph
@@ -74,7 +74,7 @@ return [
          * If enabled, Telegraph dumps received
          * webhook messages to logs
          */
-        'debug' => env('TELEGRAPH_WEBHOOK_DEBUG', false),
+        'debug' => env('TELEGRAPH_WEBHOOK_DEBUG', true),
     ],
 
     /*

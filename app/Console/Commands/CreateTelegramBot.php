@@ -73,6 +73,15 @@ class CreateTelegramBot extends Command
                 'commands' => json_encode($commands)
             ]);
 
+            // Forma alternativa si la anterior no funciona
+            if (!$response->successful()) {
+                $this->warn("Intentando configurar comandos con formato alternativo...");
+
+                $response = \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/setMyCommands", [
+                    'commands' => $commands
+                ]);
+            }
+
             if ($response->successful()) {
                 $this->info("✅ Comandos configurados");
             } else {
