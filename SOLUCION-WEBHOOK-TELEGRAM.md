@@ -69,11 +69,43 @@ private function shouldDebug(): bool
 private function debugWebhook(Request $request): void
 
 // Después
-protected function getChatName(): string
-protected function getChatType(): string
+protected function getChatName(\DefStudio\Telegraph\DTO\Chat $chat): string
+protected function getChatType(\DefStudio\Telegraph\DTO\Chat $chat): string
 protected function registerChat(): TelegramChat
 protected function shouldDebug(): bool
 protected function debugWebhook(Request $request): void
+```
+
+#### 2.3 Corrección de parámetros de métodos
+
+Se corrigieron las firmas de los métodos `getChatName()` y `getChatType()` para recibir el parámetro `$chat` y se actualizaron todas las llamadas a estos métodos:
+
+```php
+// Antes - Sin parámetro
+$chatData = [
+    'chat_id' => $this->chat->chat_id,
+    'nombre' => $this->getChatName(),
+    'tipo' => $this->getChatType(),
+    'activo' => true
+];
+
+// Después - Con parámetro
+$chatData = [
+    'chat_id' => $this->chat->chat_id,
+    'nombre' => $this->getChatName($this->chat),
+    'tipo' => $this->getChatType($this->chat),
+    'activo' => true
+];
+```
+
+También se actualizaron otras referencias:
+
+```php
+// Antes
+$message .= "• Tipo de chat: <b>" . $this->getChatType() . "</b>\n\n";
+
+// Después
+$message .= "• Tipo de chat: <b>" . $this->getChatType($this->chat) . "</b>\n\n";
 ```
 
 ### 3. Corrección del Formato de Comandos

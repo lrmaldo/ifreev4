@@ -256,7 +256,7 @@ class TelegramWebhookController extends WebhookHandler
     /**
      * Maneja mensajes no reconocidos
      */
-    public function handleChatMessage(): void
+    public function handleChatMessage(\Illuminate\Support\Stringable $text): void
     {
         // Solo registrar el chat si envía un mensaje directo
         $this->registerChat();

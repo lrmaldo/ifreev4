@@ -95,46 +95,90 @@ public function handle(Request $request, \DefStudio\Telegraph\Models\TelegraphBo
 }
 ```
 
-#### 4.2 Corregir la visibilidad de los métodos
+#### 4.2 Corregir la visibilidad y parámetros de los métodos
 
-También debes cambiar la visibilidad de varios métodos auxiliares de `private` a `protected`:
+Debes cambiar la visibilidad de varios métodos auxiliares de `private` a `protected` y ajustar sus parámetros:
 
-1. Busca `private function getChatName()` y cámbialo a `protected function getChatName()`
-2. Busca `private function getChatType()` y cámbialo a `protected function getChatType()`
-3. Busca `private function registerChat()` y cámbialo a `protected function registerChat()`
-4. Busca `private function shouldDebug()` y cámbialo a `protected function shouldDebug()`
-5. Busca `private function debugWebhook()` y cámbialo a `protected function debugWebhook()`
+1. Actualiza la firma completa del método `getChatName`:
+```php
+/**
+ * Obtiene el nombre del chat
+ * 
+ * @param \DefStudio\Telegraph\DTO\Chat $chat
+ * @return string
+ */
+protected function getChatName(\DefStudio\Telegraph\DTO\Chat $chat): string
 ```
 
-### 5. Corregir Cualquier Ruta de Prueba (Si Existe)
+2. Actualiza la firma completa del método `getChatType`:
+```php
+/**
+ * Obtiene el tipo de chat
+ * 
+ * @param \DefStudio\Telegraph\DTO\Chat $chat
+ * @return string
+ */
+protected function getChatType(\DefStudio\Telegraph\DTO\Chat $chat): string
+```
+
+3. Cambia de `private function registerChat()` a `protected function registerChat()`
+4. Cambia de `private function shouldDebug()` a `protected function shouldDebug()`
+5. Cambia de `private function debugWebhook()` a `protected function debugWebhook()`
+```
+
+### 5. Actualizar las llamadas a los métodos modificados
+
+Debes actualizar todas las llamadas a los métodos `getChatName` y `getChatType` para que incluyan el parámetro `$this->chat`:
+
+```php
+// Buscar en registerChat() y cambiar:
+$chatData = [
+    'chat_id' => $this->chat->chat_id,
+    'nombre' => $this->getChatName(),
+    'tipo' => $this->getChatType(),
+    'activo' => true
+];
+
+// Por:
+$chatData = [
+    'chat_id' => $this->chat->chat_id,
+    'nombre' => $this->getChatName($this->chat),
+    'tipo' => $this->getChatType($this->chat),
+    'activo' => true
+];
+```
+
+Busca también en el método `ayuda()` y actualiza cualquier otra llamada a estos métodos.
+
+### 6. Corregir Cualquier Ruta de Prueba (Si Existe)
 
 Si hay alguna ruta de prueba en `routes/web.php` que llame al método `handle` directamente, asegúrate de actualizarla o comentarla.
 
-### 6. Limpiar la Caché de Laravel
+### 7. Limpiar la Caché de Laravel
 
 ```bash
 php artisan optimize:clear
 ```
 
-### 7. Verificar la Configuración del Webhook
+### 8. Verificar la Configuración del Webhook
 
 ```bash
 php artisan telegram:test-webhook --verify
 ```
 
-### 8. Resetear el Webhook (Si es Necesario)
+### 9. Resetear el Webhook (Si es Necesario)
 
 ```bash
 php artisan telegram:test-webhook --reset
 ```
 
-### 9. Verificar los Logs
+### 10. Verificar los Logs
 
 ```bash
 tail -f storage/logs/laravel.log
 ```
 
-### 10. Probar los Comandos
+### 11. Probar los Comandos
 
 Envía un comando `/start` al bot y verifica los logs para confirmar que se está procesando correctamente.
 
