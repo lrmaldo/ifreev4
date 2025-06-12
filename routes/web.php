@@ -139,6 +139,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/clientes', function() {
             return view('clientes');
         })->name('admin.clientes.index');
+
+        // Ruta para gestión de Telegram
+        Route::get('/telegram', function() {
+            return view('admin.telegram');
+        })->name('admin.telegram.index');
     });    // Rutas para clientes y admins (acceso a zonas)
     Route::middleware(['role:cliente|admin'])->group(function () {
         Route::get('/zonas', function() {

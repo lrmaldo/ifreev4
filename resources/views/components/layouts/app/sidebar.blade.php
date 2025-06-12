@@ -23,6 +23,7 @@
                         <flux:navlist.item icon="building-office-2" :href="route('admin.clientes.index')" :current="request()->routeIs('admin.clientes.*')" wire:navigate>{{ __('Clientes') }}</flux:navlist.item>
                         <flux:navlist.item icon="signal" :href="route('admin.zonas.index')" :current="request()->routeIs('admin.zonas.*')" wire:navigate>{{ __('Zonas WiFi') }}</flux:navlist.item>
                         <flux:navlist.item icon="presentation-chart-bar" :href="route('admin.campanas.index')" :current="request()->routeIs('admin.campanas.*')" wire:navigate>{{ __('Campañas') }}</flux:navlist.item>
+                        <flux:navlist.item icon="chat-bubble-left-right" :href="route('admin.telegram.index')" :current="request()->routeIs('admin.telegram.*')" wire:navigate>{{ __('Telegram') }}</flux:navlist.item>
                     </flux:navlist.group>
                     @endif
 

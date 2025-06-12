@@ -41,6 +41,9 @@
                 <flux:navbar.item icon="chart-bar" :href="route('admin.hotspot-metrics.index')" :current="request()->routeIs('admin.hotspot-metrics.*')" wire:navigate>
                     {{ __('Métricas Hotspot') }}
                 </flux:navbar.item>
+                <flux:navbar.item icon="chat-bubble-left-right" :href="route('admin.telegram.index')" :current="request()->routeIs('admin.telegram.*')" wire:navigate>
+                    {{ __('Telegram') }}
+                </flux:navbar.item>
                 @endhasrole
 
                 @hasrole('cliente')
@@ -154,6 +157,9 @@
                     </flux:navlist.item>
                     <flux:navlist.item icon="presentation-chart-bar" :href="route('admin.campanas.index')" :current="request()->routeIs('admin.campanas.*')" wire:navigate>
                         {{ __('Campañas') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="chat-bubble-left-right" :href="route('admin.telegram.index')" :current="request()->routeIs('admin.telegram.*')" wire:navigate>
+                        {{ __('Telegram') }}
                     </flux:navlist.item>
                     @endhasrole
 
