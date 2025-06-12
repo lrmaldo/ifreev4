@@ -6,7 +6,11 @@ El módulo de notificaciones Telegram para Laravel 12 + Livewire 3 + Flux está 
 
 ## 🟢 Últimas Correcciones Aplicadas (12 de junio de 2025)
 
-Se solucionó un error crítico en la implementación del webhook que impedía la correcta respuesta a comandos. El problema estaba en la firma del método `handle` en el controlador `TelegramWebhookController`. Ver archivo `SOLUCION-WEBHOOK-TELEGRAM.md` para más detalles.
+Se solucionaron errores críticos en la implementación del webhook que impedían la correcta respuesta a comandos:
+1. Firma incorrecta del método `handle` en el controlador `TelegramWebhookController`
+2. Visibilidad incorrecta de métodos auxiliares (private vs protected)
+
+Ver archivo `SOLUCION-WEBHOOK-TELEGRAM.md` para más detalles.
 
 ## ✅ Componentes Implementados
 
