@@ -67,7 +67,18 @@ class Zona extends Model
     public function metricas()
     {
         return $this->hasMany(HotspotMetric::class);
-    }    public function getCampanasActivas()
+    }
+
+    /**
+     * Relación muchos a muchos con chats de Telegram
+     */
+    public function telegramChats()
+    {
+        return $this->belongsToMany(TelegramChat::class, 'telegram_chat_zona')
+                    ->withTimestamps();
+    }
+
+    public function getCampanasActivas()
     {
         \Log::info("Obteniendo campañas activas para Zona {$this->id}");
 

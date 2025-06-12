@@ -4,6 +4,7 @@ use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
 use App\Http\Controllers\ZonaLoginController;
+use App\Http\Controllers\TelegramWebhookController;
 use Illuminate\Support\Facades\Route;
 
 // Ruta para manejar las solicitudes de login del Mikrotik
@@ -185,5 +186,11 @@ Route::middleware(['auth'])->group(function () {
             ->name('hotspot-metrics.export');
     });
 });
+
+// Ruta para el webhook de Telegram
+Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])
+    ->name('telegram.webhook')
+    ->withoutMiddleware(['web', 'auth', 'verified'])
+    ->middleware(['throttle:100,1']);
 
 require __DIR__.'/auth.php';

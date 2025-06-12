@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Event;
+use App\Events\HotspotMetricCreated;
+use App\Listeners\SendTelegramNotification;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +24,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
-        // Set the default string length for database columns to 191 characters
+
+        // Registrar eventos y listeners
+        Event::listen(
+            HotspotMetricCreated::class,
+            SendTelegramNotification::class
+        );
     }
 }

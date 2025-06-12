@@ -125,4 +125,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Telegram Bot Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for Telegram Bot notifications
+    |
+    */
+
+    'telegram_bot_token' => env('TELEGRAM_BOT_TOKEN'),
+    'telegram_bot_enabled' => env('TELEGRAM_BOT_ENABLED', true),
+
 ];
