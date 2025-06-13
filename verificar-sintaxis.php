@@ -14,17 +14,17 @@ $archivos = [
 
 foreach ($archivos as $archivo) {
     echo "📋 Verificando {$archivo}...\n";
-    
+
     if (!file_exists($archivo)) {
         echo "  ❌ El archivo no existe\n\n";
         continue;
     }
-    
+
     // Ejecutar PHP con la opción -l para verificar la sintaxis
     $output = [];
     $return_var = 0;
     exec('php -l "' . $archivo . '" 2>&1', $output, $return_var);
-    
+
     if ($return_var === 0) {
         echo "  ✅ Sintaxis correcta\n\n";
     } else {
