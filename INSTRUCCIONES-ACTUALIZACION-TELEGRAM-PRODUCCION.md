@@ -1,34 +1,26 @@
-# Instrucciones para Actualizar el Webhook de Telegram en Producción
+# Instrucciones para Actualizar el Bot de Telegram en Producción
 
-Estas instrucciones detallan los pasos para aplicar la corrección del webhook de Telegram en el servidor de producción.
+Estas instrucciones detallan los pasos para migrar de la biblioteca `defstudio/telegraph` a `irazasyed/telegram-bot-sdk` en el servidor de producción.
 
-## Problemas Resueltos
+## Motivo de la Migración
 
-### 1. Error en la firma del método `handle`
+La migración se realiza para solucionar problemas de compatibilidad con Laravel 12 y PHP 8.2, específicamente:
 
-Se ha corregido un error fatal relacionado con la firma del método `handle` en el controlador `TelegramWebhookController`:
+### 1. Error en la firma del método `getChatName`
 
-```
-Declaration of App\Http\Controllers\TelegramWebhookController::handle(Illuminate\Http\Request $request) must be compatible with DefStudio\Telegraph\Handlers\WebhookHandler::handle(Illuminate\Http\Request $request, DefStudio\Telegraph\Models\TelegraphBot $bot): void
-```
-
-### 2. Error en la visibilidad de métodos
-
-Se ha corregido un error relacionado con la visibilidad de varios métodos:
+Se ha detectado un error fatal relacionado con la visibilidad y firma del método `getChatName` en el controlador `TelegramWebhookController`:
 
 ```
 Access level to App\Http\Controllers\TelegramWebhookController::getChatName() must be protected (as in class DefStudio\Telegraph\Handlers\WebhookHandler) or weaker
 ```
 
-### 3. Error "No TelegraphBot defined for this request"
+### 2. Problemas de Compatibilidad con Laravel 12
 
-Se ha corregido un error relacionado con la configuración del bot en el método `bot()`:
+La biblioteca `defstudio/telegraph` tiene problemas de compatibilidad con las nuevas versiones de Laravel, lo que podría causar fallos en actualizaciones futuras.
 
-```
-No TelegraphBot defined for this request
-```
+### 3. Mayor Estabilidad y Funcionalidad
 
-Este error ocurre porque el método `bot()` devuelve una nueva instancia configurada, pero no estábamos guardando esta instancia, lo que hacía que se perdiera la configuración del bot.
+La migración a `irazasyed/telegram-bot-sdk` proporciona una API más estable, documentada y con mayor cantidad de funcionalidades para la gestión del bot de Telegram.
 
 ## Pasos para Actualizar en Producción
 
@@ -44,25 +36,78 @@ ssh usuario@v3.i-free.com.mx
 cd /var/www/v3.ifree.com.mx
 ```
 
-### 3. Hacer Backup del Controlador Actual
+### 3. Hacer Backup del Proyecto
+
+Antes de realizar cualquier cambio, es importante hacer un backup completo:
 
 ```bash
-cp app/Http/Controllers/TelegramWebhookController.php app/Http/Controllers/TelegramWebhookController.php.bak
+# Respaldar la base de datos
+mysqldump -u [usuario] -p[contraseña] [nombre_base_datos] > respaldo_ifree_$(date +%Y%m%d).sql
+
+# Respaldar archivos del proyecto
+cp -r /var/www/v3.ifree.com.mx /var/www/v3.ifree.com.mx.bak_$(date +%Y%m%d)
 ```
 
-### 4. Actualizar el Código del Controlador
-
-Edita el archivo con tu editor preferido (nano, vim, etc.):
+### 4. Eliminar la Biblioteca Telegraph y Instalar Telegram Bot SDK
 
 ```bash
-nano app/Http/Controllers/TelegramWebhookController.php
+# Eliminar Telegraph
+composer remove defstudio/telegraph
+
+# Instalar Telegram Bot SDK
+composer require irazasyed/telegram-bot-sdk
 ```
 
-> **NOTA IMPORTANTE**: En lugar de editar manualmente el archivo, puede ser más seguro reemplazarlo completamente con la versión actualizada. Si eliges esta opción, asegúrate de mantener cualquier configuración específica del entorno o personalización que pueda existir en el servidor de producción.
+### 5. Publicar la Configuración del SDK
 
-#### 4.1 Corregir el método `handle`
+```bash
+php artisan vendor:publish --provider="Telegram\Bot\Laravel\TelegramServiceProvider"
+```
 
-Busca la definición del método `handle` y reemplázala por:
+### 6. Configurar el Archivo .env
+
+Actualiza las variables de entorno en el archivo `.env`:
+
+```
+# Token del bot de Telegram (mantener el mismo valor)
+TELEGRAM_BOT_TOKEN=tu_token_actual
+
+# Actualizar la URL del webhook
+TELEGRAM_WEBHOOK_URL=https://v3.i-free.com.mx/telegram/webhook
+```
+
+### 7. Actualizar el Archivo de Configuración
+
+Edita el archivo `config/telegram.php` para asegurarte de que tenga la configuración correcta:
+
+```bash
+nano config/telegram.php
+```
+
+Asegúrate de que contiene lo siguiente:
+
+```php
+'bots' => [
+    'ifree' => [
+        'token' => env('TELEGRAM_BOT_TOKEN', 'YOUR-BOT-TOKEN'),
+        'certificate_path' => env('TELEGRAM_CERTIFICATE_PATH', ''),
+        'webhook_url' => env('TELEGRAM_WEBHOOK_URL', 'https://v3.i-free.com.mx/telegram/webhook'),
+        'allowed_updates' => ['message', 'callback_query'],
+    ],
+],
+```
+
+### 8. Reemplazar el Controlador
+
+```bash
+# Hacer backup del controlador antiguo
+mv app/Http/Controllers/TelegramWebhookController.php app/Http/Controllers/TelegramWebhookController.php.bak
+
+# Crear nuevo controlador
+nano app/Http/Controllers/TelegramController.php
+```
+
+Copia el contenido del nuevo controlador (disponible en el repositorio) al nuevo archivo.
 
 ```php
 /**
@@ -194,28 +239,99 @@ public function ayuda(): void
         $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
         $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto
 
-        // Enviar el mensaje utilizando el cliente Telegraph
-        $response = $telegraph->chat($this->chat->chat_id)
-            ->html($message)
-            ->send();
+        ### 9. Actualizar las Rutas
 
-        // Log de respuesta para diagnóstico
-        \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (ayuda)', [
-            'response' => $response,
-            'chat_id' => $this->chat->chat_id,
-            'bot_id' => $this->bot->id,
-            'bot_name' => $this->bot->name
-        ]);
-    } catch (\Exception $e) {
-        // Capturar cualquier error durante el envío con información detallada
-        \Illuminate\Support\Facades\Log::error('Error enviando mensaje ayuda', [
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-            'chat_id' => $this->chat->chat_id ?? 'unknown',
-            'bot_id' => $this->bot->id ?? 'unknown'
-        ]);
-    }
+Edita el archivo `routes/web.php`:
+
+```bash
+nano routes/web.php
+```
+
+Reemplaza el código relacionado con Telegraph:
+
+```php
+// Eliminar o comentar esta sección si existe
+// Usamos la macro de Telegraph para registrar su ruta (si está disponible)
+if (method_exists(\Illuminate\Support\Facades\Route::class, 'telegraph')) {
+    \Illuminate\Support\Facades\Route::telegraph();
 }
+```
+
+Y agrega las nuevas rutas:
+
+```php
+// Rutas para Telegram (nueva implementación con Telegram Bot SDK)
+Route::post('/telegram/webhook', [TelegramController::class, 'webhook'])
+    ->name('telegram.webhook')
+    ->withoutMiddleware(['web'])  // No requerimos CSRF para el webhook
+    ->middleware(['throttle:60,1']); // Protección contra abusos
+
+Route::post('/telegram/enviar-notificacion', [TelegramController::class, 'enviarNotificacion'])
+    ->name('telegram.notificacion')
+    ->middleware(['auth:sanctum']);
+```
+
+Asegúrate de que también se incluya el import correcto al inicio del archivo:
+
+```php
+use App\Http\Controllers\TelegramController;
+```
+
+### 10. Limpiar las Cachés
+
+```bash
+php artisan optimize:clear
+```
+
+### 11. Configurar el Webhook en Telegram
+
+Ejecuta el script para configurar el webhook:
+
+```bash
+php configurar-telegram-webhook-sdk.php
+```
+
+### 12. Verificar la Instalación
+
+#### 12.1 Comprobar las rutas
+
+```bash
+php artisan route:list | grep telegram
+```
+
+Deberías ver las rutas `/telegram/webhook` y `/telegram/enviar-notificacion` listadas.
+
+#### 12.2 Probar el envío de mensajes
+
+```bash
+php test-telegram-bot-sdk.php 123456789 "Migración a Telegram Bot SDK completada exitosamente"
+```
+
+#### 12.3 Verificar los logs
+
+```bash
+tail -f storage/logs/laravel.log
+```
+
+## Solución de Problemas
+
+### Error de SSL Certificate
+
+Si encuentras errores relacionados con certificados SSL durante las pruebas:
+
+```
+cURL error 60: SSL certificate problem: self-signed certificate in certificate chain
+```
+
+Puedes solucionarlo temporalmente en un entorno de desarrollo modificando el archivo `configurar-telegram-webhook-sdk.php` para deshabilitar la verificación SSL:
+
+```php
+// Configurar Guzzle para ignorar verificación SSL (solo para desarrollo)
+$httpClient = new \GuzzleHttp\Client(['verify' => false]);
+$telegram->setHttpClientHandler(new \Telegram\Bot\HttpClients\GuzzleHttpClient($httpClient));
+```
+
+**IMPORTANTE**: Esta modificación NO debe aplicarse en el entorno de producción, ya que compromete la seguridad de las comunicaciones.
 ```
 
 Este cambio asegura que el método `ayuda()` utilice el mismo patrón de envío de mensajes que los otros métodos, lo cual es crítico para la consistencia y correcto funcionamiento.
@@ -288,50 +404,57 @@ if (method_exists(\Illuminate\Support\Facades\Route::class, 'telegraph')) {
 }
 ```
 
-Esta corrección permite que Telegraph gestione correctamente la inyección de dependencias del bot, evitando el problema de `bot_id: null` en los logs.
+## Plan de Rollback
 
-#### 8.2 Verificar la configuración de los bots
+En caso de problemas durante la migración, sigue estos pasos para volver a la implementación anterior:
 
-Para verificar que los bots están correctamente configurados en la base de datos, ejecuta:
+### 1. Restaurar el Código Original
 
 ```bash
-php check-telegraph-bots.php
+# Restaurar el controlador original
+cp app/Http/Controllers/TelegramWebhookController.php.bak app/Http/Controllers/TelegramWebhookController.php
+
+# Eliminar el nuevo controlador
+rm app/Http/Controllers/TelegramController.php
 ```
 
-Este script mostrará información útil sobre los bots registrados y los chats asociados, además de verificar la configuración general de Telegraph.
+### 2. Restaurar las Dependencias
 
-### 9. Limpiar la Caché de Laravel
+```bash
+# Eliminar Telegram Bot SDK
+composer remove irazasyed/telegram-bot-sdk
+
+# Reinstalar Telegraph
+composer require defstudio/telegraph
+```
+
+### 3. Restaurar Rutas
+
+Edita `routes/web.php` y restaura el código original:
+
+```php
+// Usamos la macro de Telegraph para registrar su ruta (si está disponible)
+if (method_exists(\Illuminate\Support\Facades\Route::class, 'telegraph')) {
+    \Illuminate\Support\Facades\Route::telegraph();
+}
+```
+
+### 4. Limpiar Caché
 
 ```bash
 php artisan optimize:clear
 ```
 
-### 10. Verificar la Configuración del Webhook
+### 5. Verificar Funcionamiento
 
 ```bash
-php artisan telegram:test-webhook --verify
+# Enviar mensaje de prueba
+php artisan telegraph:send "Prueba de restauración"
 ```
 
-### 11. Resetear el Webhook (Si es Necesario)
+## Conclusión
 
-```bash
-php artisan telegram:test-webhook --reset
-```
-
-### 12. Verificar los Logs
-
-```bash
-tail -f storage/logs/laravel.log
-```
-
-### 13. Probar los Comandos
-
-Envía los siguientes comandos al bot y verifica los logs para confirmar que se están procesando correctamente:
-
-```bash
-# Monitorear logs mientras pruebas
-tail -f storage/logs/laravel.log | grep Telegram
-```
+Esta migración soluciona los problemas de compatibilidad con el bot de Telegram y proporciona una base más estable para futuras actualizaciones. Si tienes alguna duda o encuentras algún problema durante la implementación, contacta al equipo de desarrollo.
 
 1. `/start` - Debe mostrar el mensaje de bienvenida
 2. `/zonas` - Debe listar las zonas disponibles  

@@ -21,3 +21,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Rutas para campañas
 Route::get('/campanas/activas', [CampanaController::class, 'getCampanasActivas']);
+
+// Rutas para Telegram
+Route::post('/telegram/webhook', [\App\Http\Controllers\TelegramController::class, 'webhook'])
+    ->name('api.telegram.webhook');
+Route::post('/telegram/enviar-notificacion', [\App\Http\Controllers\TelegramController::class, 'enviarNotificacion'])
+    ->middleware(['auth:sanctum'])
+    ->name('api.telegram.notificacion');

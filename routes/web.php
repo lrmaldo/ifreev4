@@ -4,7 +4,7 @@ use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
 use App\Http\Controllers\ZonaLoginController;
-use App\Http\Controllers\TelegramWebhookController;
+use App\Http\Controllers\TelegramController;
 use Illuminate\Support\Facades\Route;
 
 // Ruta para manejar las solicitudes de login del Mikrotik
@@ -251,9 +251,14 @@ if (app()->environment() != 'production') {
       ->withoutMiddleware(['web', 'auth', 'verified', 'throttle']);
 }
 
-// Usamos la macro de Telegraph para registrar su ruta (si está disponible)
-if (method_exists(\Illuminate\Support\Facades\Route::class, 'telegraph')) {
-    \Illuminate\Support\Facades\Route::telegraph();
-}
+// Rutas para Telegram (nueva implementación con Telegram Bot SDK)
+Route::post('/telegram/webhook', [TelegramController::class, 'webhook'])
+    ->name('telegram.webhook')
+    ->withoutMiddleware(['web'])  // No requerimos CSRF para el webhook
+    ->middleware(['throttle:60,1']); // Protección contra abusos
+
+Route::post('/telegram/enviar-notificacion', [TelegramController::class, 'enviarNotificacion'])
+    ->name('telegram.notificacion')
+    ->middleware(['auth:sanctum']);
 
 require __DIR__.'/auth.php';
