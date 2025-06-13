@@ -32,29 +32,59 @@ class TelegramWebhookController extends WebhookHandler
             'method' => $request->method(),
             'ip' => $request->ip(),
             'timestamp' => now()->toDateTimeString(),
+            'webhook_url_configurada' => $bot->webhook_url ?? 'no configurada',
         ]);
 
-        // Si es una solicitud de diagnóstico especial, responder directamente
-        if ($request->has('diagnostic') && $request->get('diagnostic') === 'true') {
-            // No podemos retornar una respuesta directamente debido a la firma del método
-            // Guardaremos un registro para diagnóstico
-            Log::info('Solicitud de diagnóstico recibida', [
-                'status' => 'ok',
-                'message' => 'Webhook endpoint funcional',
-                'timestamp' => now()->toIso8601String(),
-                'handler' => get_class($this)
+        // Marca de tiempo para medir la duración del procesamiento
+        $startTime = microtime(true);
+
+        try {
+            // Si es una solicitud de diagnóstico especial, responder directamente
+            if ($request->has('diagnostic') && $request->get('diagnostic') === 'true') {
+                // No podemos retornar una respuesta directamente debido a la firma del método
+                // Guardaremos un registro para diagnóstico
+                Log::info('Solicitud de diagnóstico recibida', [
+                    'status' => 'ok',
+                    'message' => 'Webhook endpoint funcional',
+                    'timestamp' => now()->toIso8601String(),
+                    'handler' => get_class($this)
+                ]);
+
+                // Detener el procesamiento adicional pero sin retornar respuesta
+                return;
+            }
+
+            if ($this->shouldDebug()) {
+                $this->debugWebhook($request);
+            }
+
+            // Log antes de pasar el webhook al manejador base
+            Log::info('Webhook pasando a manejador base Telegraph', [
+                'handler_class' => get_parent_class($this),
+                'bot_token' => substr($bot->token, 0, 5) . '...' . substr($bot->token, -5),
             ]);
 
-            // Detener el procesamiento adicional pero sin retornar respuesta
-            return;
-        }
+            // Delegar al manejador base de Telegraph
+            parent::handle($request, $bot);
 
-        if ($this->shouldDebug()) {
-            $this->debugWebhook($request);
+            // Log después de procesar el webhook
+            $elapsedTime = microtime(true) - $startTime;
+            Log::info('Webhook procesado con éxito', [
+                'tiempo_procesamiento_ms' => round($elapsedTime * 1000, 2),
+                'timestamp_fin' => now()->toDateTimeString(),
+            ]);
+        } catch (\Exception $e) {
+            // Log detallado en caso de error
+            $elapsedTime = microtime(true) - $startTime;
+            Log::error('Error procesando webhook de Telegram', [
+                'error' => $e->getMessage(),
+                'class' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'tiempo_procesamiento_ms' => round($elapsedTime * 1000, 2),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
-
-        // Delegar al manejador base de Telegraph
-        parent::handle($request, $bot);
     }
 
     /**
@@ -80,6 +110,10 @@ class TelegramWebhookController extends WebhookHandler
                 'ip' => $request->ip(),
                 'method' => $request->method(),
                 'headers' => $request->headers->all(),
+                'query_parameters' => $request->query(),
+                'raw_content' => $request->getContent(),
+                'parsed_content' => $update,
+                'update_id' => $update['update_id'] ?? null,
             ];
 
             // Analizar el tipo de actualización
@@ -87,8 +121,13 @@ class TelegramWebhookController extends WebhookHandler
                 $message = $update['message'];
                 $debugData['update_type'] = 'message';
                 $debugData['chat_id'] = $message['chat']['id'] ?? 'unknown';
+                $debugData['chat_type'] = $message['chat']['type'] ?? 'unknown';
                 $debugData['from_id'] = $message['from']['id'] ?? 'unknown';
+                $debugData['from_username'] = $message['from']['username'] ?? null;
+                $debugData['from_first_name'] = $message['from']['first_name'] ?? null;
                 $debugData['text'] = $message['text'] ?? 'no text';
+                $debugData['date'] = $message['date'] ?? null;
+                $debugData['message_id'] = $message['message_id'] ?? null;
 
                 // Detectar si es un comando
                 if (isset($message['text']) && str_starts_with($message['text'], '/')) {
@@ -101,18 +140,78 @@ class TelegramWebhookController extends WebhookHandler
                     $methodExists = method_exists($this, $command);
                     $debugData['handler_method_exists'] = $methodExists;
                     $debugData['handler_method'] = $methodExists ? get_class($this) . '::' . $command : 'not found';
+
+                    // Verificar la configuración de logs y los métodos disponibles en el controlador
+                    $debugData['available_commands'] = get_class_methods($this);
+                    $debugData['log_channels'] = config('logging.channels');
+                    $debugData['telegraph_config'] = config('telegraph');
+                }
+
+                // Verificar si hay contenido multimedia
+                if (isset($message['photo'])) {
+                    $debugData['media_type'] = 'photo';
+                    $debugData['photo_sizes'] = count($message['photo']);
+                } elseif (isset($message['document'])) {
+                    $debugData['media_type'] = 'document';
+                    $debugData['document_name'] = $message['document']['file_name'] ?? null;
+                    $debugData['document_mime'] = $message['document']['mime_type'] ?? null;
+                } elseif (isset($message['voice'])) {
+                    $debugData['media_type'] = 'voice';
+                } elseif (isset($message['video'])) {
+                    $debugData['media_type'] = 'video';
+                } elseif (isset($message['audio'])) {
+                    $debugData['media_type'] = 'audio';
                 }
             } elseif (isset($update['callback_query'])) {
+                $callbackQuery = $update['callback_query'];
                 $debugData['update_type'] = 'callback_query';
-                $debugData['data'] = $update['callback_query']['data'] ?? 'no data';
+                $debugData['from_id'] = $callbackQuery['from']['id'] ?? 'unknown';
+                $debugData['from_username'] = $callbackQuery['from']['username'] ?? null;
+                $debugData['callback_id'] = $callbackQuery['id'] ?? null;
+                $debugData['data'] = $callbackQuery['data'] ?? 'no data';
+                $debugData['chat_instance'] = $callbackQuery['chat_instance'] ?? null;
+
+                if (isset($callbackQuery['message'])) {
+                    $debugData['message_id'] = $callbackQuery['message']['message_id'] ?? null;
+                    $debugData['chat_id'] = $callbackQuery['message']['chat']['id'] ?? null;
+                }
+            } elseif (isset($update['edited_message'])) {
+                $debugData['update_type'] = 'edited_message';
+            } elseif (isset($update['channel_post'])) {
+                $debugData['update_type'] = 'channel_post';
+            } elseif (isset($update['edited_channel_post'])) {
+                $debugData['update_type'] = 'edited_channel_post';
+            } elseif (isset($update['inline_query'])) {
+                $debugData['update_type'] = 'inline_query';
+            } elseif (isset($update['chosen_inline_result'])) {
+                $debugData['update_type'] = 'chosen_inline_result';
+            } elseif (isset($update['shipping_query'])) {
+                $debugData['update_type'] = 'shipping_query';
+            } elseif (isset($update['pre_checkout_query'])) {
+                $debugData['update_type'] = 'pre_checkout_query';
+            } elseif (isset($update['poll'])) {
+                $debugData['update_type'] = 'poll';
+            } elseif (isset($update['poll_answer'])) {
+                $debugData['update_type'] = 'poll_answer';
+            } elseif (isset($update['my_chat_member'])) {
+                $debugData['update_type'] = 'my_chat_member';
+            } elseif (isset($update['chat_member'])) {
+                $debugData['update_type'] = 'chat_member';
+            } elseif (isset($update['chat_join_request'])) {
+                $debugData['update_type'] = 'chat_join_request';
             } else {
-                $debugData['update_type'] = 'other';
+                $debugData['update_type'] = 'unknown';
             }
 
-            Log::info('Telegram Webhook Debug', $debugData);
+            Log::info('Telegram Webhook Debug Detallado', $debugData);
 
         } catch (\Exception $e) {
-            Log::error('Error depurando webhook', ['exception' => $e]);
+            Log::error('Error depurando webhook', [
+                'exception' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 
@@ -122,6 +221,13 @@ class TelegramWebhookController extends WebhookHandler
     public function start(): void
     {
         try {
+            Log::info('Comando /start recibido', [
+                'chat_id' => $this->chat->chat_id,
+                'from' => $this->message->from()->username ?? $this->message->from()->firstName ?? 'unknown',
+                'timestamp' => now()->toIso8601String(),
+                'mensaje_original' => $this->message->text()
+            ]);
+
             $mensaje = <<<HTML
 🤖 <b>¡Bienvenido al Bot de I-Free!</b>
 
@@ -134,323 +240,80 @@ Este bot te notificará sobre eventos importantes del sistema de hotspots.
 /ayuda - Mostrar ayuda detallada
 
 🔧 Para empezar, usa /zonas para ver las zonas disponibles.
-HTML;            // Log para diagnóstico
-            \Illuminate\Support\Facades\Log::info('Enviando mensaje de start', [
+HTML;
+            // Log para diagnóstico
+            \Illuminate\Support\Facades\Log::info('Preparando envío de mensaje start', [
                 'chat_id' => $this->chat->chat_id,
-                'mensaje' => $mensaje
+                'mensaje' => $mensaje,
+                'bot_id' => $this->bot->id,
+                'bot_token' => substr($this->bot->token, 0, 5) . '...' . substr($this->bot->token, -5)
             ]);
 
             // Definimos la URL explícitamente para diagnóstico
             $telegramUrl = config('telegraph.telegram_api_url', 'https://api.telegram.org/');
             \Illuminate\Support\Facades\Log::debug('Configuración Telegram', [
                 'api_url' => $telegramUrl,
-                'bot_token' => substr($this->bot->token, 0, 5) . '...' . substr($this->bot->token, -5)
+                'bot_token' => substr($this->bot->token, 0, 5) . '...' . substr($this->bot->token, -5),
+                'parse_mode' => config('telegraph.default_parse_mode'),
+                'webhook_url' => $this->bot->webhook_url ?? 'no configurada',
+                'telegraph_version' => $this->getTelegraphVersion()
             ]);
 
-            // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
+            // Obtener la instancia de Telegraph y configurarla
             $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
             $telegraph = $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto y guardamos la instancia
 
+            Log::info('Enviando mensaje con Telegraph', [
+                'método' => 'sendMessage',
+                'chat_id' => $this->chat->chat_id,
+                'texto_longitud' => strlen($mensaje),
+                'parse_mode' => config('telegraph.default_parse_mode'),
+            ]);
+
+            // Preparamos la API URL completa para diagnóstico
+            $apiUrl = $telegramUrl . 'bot' . $this->bot->token . '/sendMessage';
+            Log::debug('API URL para diagnóstico', ['url' => $apiUrl]);
+
+            // Crear un ID único para rastrear esta operación
+            $operationId = uniqid('msg_');
+            Log::info("Inicializando operación: {$operationId}");
+
             // Enviar el mensaje utilizando el cliente Telegraph
+            $startTime = microtime(true);
             $response = $telegraph->chat($this->chat->chat_id)
                 ->html($mensaje)
                 ->send();
+            $elapsedTime = microtime(true) - $startTime;
 
-            // Log de respuesta
+            // Log detallado de la respuesta
             \Illuminate\Support\Facades\Log::info('Respuesta API Telegram', [
+                'operation_id' => $operationId,
+                'tiempo_ms' => round($elapsedTime * 1000, 2),
                 'response' => $response,
+                'response_type' => gettype($response),
+                'response_class' => is_object($response) ? get_class($response) : 'no es objeto',
+                'response_json' => json_encode($response),
                 'chat_id' => $this->chat->chat_id,
                 'bot_id' => $this->bot->id,
-                'bot_name' => $this->bot->name
+                'bot_name' => $this->bot->name,
+                'timestamp' => now()->toIso8601String()
             ]);
         } catch (\Exception $e) {
             // Capturar cualquier error durante el envío
             \Illuminate\Support\Facades\Log::error('Error enviando mensaje start', [
                 'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
         }
 
-        $this->registerChat();
-    }
-
-    /**
-     * Maneja el comando /zonas
-     */
-    public function zonas(): void
-    {
         try {
-            $zonas = Zona::all();
-
-            if ($zonas->isEmpty()) {
-                try {
-                    // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
-                    $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-                    $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
-
-                    $telegraph->chat($this->chat->chat_id)
-                        ->html("❌ No hay zonas configuradas en el sistema.")
-                        ->send();
-                } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error('Error enviando mensaje de zonas vacías', [
-                        'error' => $e->getMessage()
-                    ]);
-                }
-                return;
-            }
-
-            $message = "📍 <b>Zonas disponibles:</b>\n\n";
-
-            foreach ($zonas as $zona) {
-                $message .= "🏷️ <b>ID:</b> {$zona->id}\n";
-                $message .= "📌 <b>Nombre:</b> {$zona->nombre}\n";
-
-                if ($zona->id_personalizado) {
-                    $message .= "🆔 <b>ID Personalizado:</b> {$zona->id_personalizado}\n";
-                }
-
-                $message .= "\n";
-            }
-
-            $message .= "💡 <i>Para asociar este chat con una zona, usa:</i>\n";
-            $message .= "<code>/registrar [zona_id]</code>";            // Log para diagnóstico
-            \Illuminate\Support\Facades\Log::info('Enviando mensaje de zonas', [
-                'chat_id' => $this->chat->chat_id,
-                'mensaje' => $message
-            ]);
-
-            // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
-            $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-            $telegraph = $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto y guardamos la instancia
-
-            $response = $telegraph->chat($this->chat->chat_id)
-                ->html($message)
-                ->send();
-
-            \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (zonas)', [
-                'response' => $response,
-                'chat_id' => $this->chat->chat_id,
-                'bot_id' => $this->bot->id,
-                'bot_name' => $this->bot->name
-            ]);
-        } catch (\Exception $e) {
-            // Capturar cualquier error durante el envío
-            \Illuminate\Support\Facades\Log::error('Error enviando mensaje zonas', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
-    }
-
-    /**
-     * Maneja el comando /registrar
-     */
-    public function registrar(): void
-    {
-        try {
-            $messageText = $this->message->text();
-            $parts = explode(' ', $messageText);
-
-            if (count($parts) < 2) {
-                $mensaje = <<<HTML
-❌ <b>Formato incorrecto</b>
-
-Uso: <code>/registrar [zona_id]</code>
-Ejemplo: <code>/registrar 1</code>
-
-💡 Usa /zonas para ver las zonas disponibles.
-HTML;
-                // Obtener el objeto Telegraph para usar la instancia correcta
-                $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-                $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
-                $telegraph->chat($this->chat->chat_id)->html($mensaje)->send();
-                return;
-            }
-
-            $zonaId = (int) $parts[1];
-            $zona = Zona::find($zonaId);
-
-            if (!$zona) {
-                $mensaje = <<<HTML
-❌ <b>Zona no encontrada</b>
-
-La zona con ID <b>{$zonaId}</b> no existe.
-Usa /zonas para ver las zonas disponibles.
-HTML;
-                // Obtener el objeto Telegraph para usar la instancia correcta
-                $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-                $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
-                $telegraph->chat($this->chat->chat_id)->html($mensaje)->send();
-                return;
-            }
-
-            // Registrar o obtener el chat
-            $telegramChat = $this->registerChat();
-
-            // Verificar si ya está asociado
-            if ($telegramChat->zonas()->where('zona_id', $zonaId)->exists()) {
-                $mensaje = <<<HTML
-⚠️ <b>Ya registrado</b>
-
-Este chat ya está asociado con la zona <b>{$zona->nombre}</b>.
-HTML;
-                // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
-                $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-                $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
-
-                $telegraph->chat($this->chat->chat_id)
-                    ->html($mensaje)
-                    ->send();
-                return;
-            }
-
-            // Asociar chat con zona
-            $telegramChat->zonas()->attach($zonaId);
-
-            $mensaje = <<<HTML
-✅ <b>¡Registro exitoso!</b>
-
-Chat asociado con la zona: <b>{$zona->nombre}</b>
-🔔 Ahora recibirás notificaciones de esta zona.
-HTML;
-
-            \Illuminate\Support\Facades\Log::info('Enviando mensaje de registro exitoso', [
-                'chat_id' => $this->chat->chat_id,
-                'zona_id' => $zonaId,
-                'zona_nombre' => $zona->nombre
-            ]);            // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
-            $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-            $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
-
-            $response = $telegraph->chat($this->chat->chat_id)
-                ->html($mensaje)
-                ->send();
-
-            \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (registro)', [
-                'response' => $response,
-                'chat_id' => $this->chat->chat_id,
-                'bot_id' => $this->bot->id
-            ]);
-
-            Log::info("Chat {$this->chat->chat_id} asociado con zona {$zona->nombre} (ID: {$zonaId})");
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error en comando registrar', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
-    }
-
-    /**
-     * Maneja el comando /ayuda
-     */
-    public function ayuda(): void
-    {
-        try {
-            $telegramChat = TelegramChat::where('chat_id', $this->chat->chat_id)->first();
-            $zonasAsociadas = $telegramChat ? $telegramChat->zonas->count() : 0;
-
-            $message = "📚 <b>Ayuda del Bot I-Free</b>\n\n";
-
-            $message .= "🎯 <b>Propósito:</b>\n";
-            $message .= "Este bot envía notificaciones automáticas cuando se detectan nuevas conexiones en las zonas de hotspot.\n\n";
-
-            $message .= "📋 <b>Comandos disponibles:</b>\n\n";
-
-            $message .= "🚀 <code>/start</code>\n";
-            $message .= "Mostrar mensaje de bienvenida\n\n";
-
-            $message .= "📍 <code>/zonas</code>\n";
-            $message .= "Listar todas las zonas disponibles\n\n";
-
-            $message .= "📝 <code>/registrar [zona_id]</code>\n";
-            $message .= "Asociar este chat con una zona específica\n";
-            $message .= "Ejemplo: <code>/registrar 1</code>\n\n";
-
-            $message .= "❓ <code>/ayuda</code>\n";
-            $message .= "Mostrar esta ayuda\n\n";
-
-            $message .= "📊 <b>Estado actual:</b>\n";
-            $message .= "• Zonas asociadas: <b>{$zonasAsociadas}</b>\n";
-            $message .= "• Chat ID: <code>{$this->chat->chat_id}</code>\n";
-            $message .= "• Tipo de chat: <b>" . $this->getChatType($this->chat) . "</b>\n\n";
-
-            $message .= "💡 <b>Consejos:</b>\n";
-            $message .= "• Puedes asociar este chat con múltiples zonas\n";
-            $message .= "• Las notificaciones incluyen detalles del dispositivo conectado\n";
-            $message .= "• Funciona tanto en grupos como en chats privados";
-
-            // Log para diagnóstico
-            \Illuminate\Support\Facades\Log::info('Enviando mensaje de ayuda', [
-                'chat_id' => $this->chat->chat_id,
-                'mensaje' => $message
-            ]);
-
-            // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
-            $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-            $telegraph = $telegraph->bot($this->bot); // Aseguramos que se use el bot correcto y guardamos la instancia
-
-            // Enviar el mensaje utilizando el cliente Telegraph
-            $response = $telegraph->chat($this->chat->chat_id)
-                ->html($message)
-                ->send();
-
-            // Log de respuesta para diagnóstico
-            \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (ayuda)', [
-                'response' => $response,
-                'chat_id' => $this->chat->chat_id,
-                'bot_id' => $this->bot->id,
-                'bot_name' => $this->bot->name
-            ]);
-        } catch (\Exception $e) {
-            // Capturar cualquier error durante el envío con información detallada
-            \Illuminate\Support\Facades\Log::error('Error enviando mensaje ayuda', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'chat_id' => $this->chat->chat_id ?? 'unknown',
-                'bot_id' => $this->bot->id ?? 'unknown'
-            ]);
-        }
-    }
-
-    /**
-     * Maneja mensajes no reconocidos
-     *
-     * @param \Illuminate\Support\Stringable $text El texto del mensaje
-     * @return void
-     */
-    public function handleChatMessage(\Illuminate\Support\Stringable $text): void
-    {
-        try {
-            // Solo registrar el chat si envía un mensaje directo
+            // Registramos el chat después de enviar el mensaje inicial
+            Log::info('Registrando chat después de comando start');
             $this->registerChat();
-
-            // Responder solo si el mensaje contiene texto específico
-            $textLower = strtolower($text->toString());
-
-            // Log para diagnóstico
-            \Illuminate\Support\Facades\Log::info('Mensaje recibido no comando', [
-                'chat_id' => $this->chat->chat_id,
-                'text' => $textLower
-            ]);
-
-            if (str_contains($textLower, 'hola') || str_contains($textLower, 'ayuda') || str_contains($textLower, 'help')) {
-                // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
-                $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-                $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
-
-                $response = $telegraph->chat($this->chat->chat_id)
-                    ->html("👋 ¡Hola! Usa /start para comenzar o /ayuda para ver los comandos disponibles.")
-                    ->send();
-
-                \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (chat message)', [
-                    'response' => $response,
-                    'chat_id' => $this->chat->chat_id,
-                    'bot_id' => $this->bot->id
-                ]);
-            }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error al manejar mensaje de chat', [
+            Log::error('Error registrando chat después de comando start', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -458,141 +321,25 @@ HTML;
     }
 
     /**
-     * Registra o actualiza el chat en la base de datos
+     * Obtiene la versión de Telegraph instalada
+     *
+     * @return string
      */
-    protected function registerChat(): TelegramChat
+    protected function getTelegraphVersion(): string
     {
         try {
-            $chatData = [
-                'chat_id' => $this->chat->chat_id,
-                'nombre' => $this->getChatName($this->chat),
-                'tipo' => $this->getChatType($this->chat),
-                'activo' => true
-            ];
+            $composerLock = json_decode(file_get_contents(base_path('composer.lock')), true);
 
-            \Illuminate\Support\Facades\Log::info('Registrando chat', [
-                'chat_id' => $this->chat->chat_id,
-                'data' => $chatData
-            ]);
-
-            $telegramChat = TelegramChat::updateOrCreate(
-                ['chat_id' => $this->chat->chat_id],
-                $chatData
-            );
-
-            if ($telegramChat->wasRecentlyCreated) {
-                Log::info("Nuevo chat registrado: {$telegramChat->nombre} (ID: {$telegramChat->chat_id})");
-
-                $mensaje = <<<HTML
-✅ <b>Chat registrado correctamente</b>
-
-Tu chat ha sido añadido a nuestro sistema.
-Usa /zonas para ver las zonas disponibles.
-HTML;                try {
-                    // Obtener el objeto Telegraph para asegurar que se usa la instancia correcta
-                    $telegraph = app(\DefStudio\Telegraph\Telegraph::class);
-                    $telegraph = $telegraph->bot($this->bot); // Guardamos la instancia que devuelve
-
-                    $response = $telegraph->chat($this->chat->chat_id)
-                        ->html($mensaje)
-                        ->send();
-
-                    \Illuminate\Support\Facades\Log::info('Respuesta API Telegram (registro chat)', [
-                        'response' => $response,
-                        'chat_id' => $this->chat->chat_id,
-                        'bot_id' => $this->bot->id,
-                        'bot_name' => $this->bot->name
-                    ]);
-                } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error('Error enviando mensaje de registro', [
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
+            if (is_array($composerLock) && isset($composerLock['packages'])) {
+                foreach ($composerLock['packages'] as $package) {
+                    if ($package['name'] === 'defstudio/telegraph') {
+                        return $package['version'] ?? 'desconocida';
+                    }
                 }
             }
 
-            return $telegramChat;
+            return 'no encontrada';
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error en registerChat', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            // Crear un registro mínimo para poder continuar
-            return TelegramChat::firstOrCreate(
-                ['chat_id' => $this->chat->chat_id],
-                [
-                    'chat_id' => $this->chat->chat_id,
-                    'nombre' => 'Chat sin registrar',
-                    'tipo' => 'unknown',
-                    'activo' => true
-                ]
-            );
+            return 'error: ' . $e->getMessage();
         }
     }
-
-    /**
-     * Obtiene el nombre del chat
-     *
-     * @param \DefStudio\Telegraph\DTO\Chat $chat
-     * @return string
-     */
-    protected function getChatName(\DefStudio\Telegraph\DTO\Chat $chat): string
-    {
-        $update = $this->data;
-
-        // Primero utilizamos la información del objeto $chat si está disponible
-        if ($chat && !empty($chat->title)) {
-            return $chat->title;
-        }
-
-        // Fallback a nuestra implementación original
-        if (isset($update['message']['chat']['title'])) {
-            // Es un grupo
-            return $update['message']['chat']['title'];
-        }
-
-        if (isset($update['message']['from'])) {
-            // Es un chat privado
-            $from = $update['message']['from'];
-            $name = $from['first_name'] ?? '';
-
-            if (isset($from['last_name'])) {
-                $name .= ' ' . $from['last_name'];
-            }
-
-            if (isset($from['username'])) {
-                $name .= ' (@' . $from['username'] . ')';
-            }
-
-            return trim($name) ?: 'Usuario desconocido';
-        }
-
-        // Si no hay información, devolvemos lo que la clase padre habría devuelto
-        return parent::getChatName($chat);
-    }
-
-    /**
-     * Obtiene el tipo de chat
-     *
-     * @param \DefStudio\Telegraph\DTO\Chat $chat
-     * @return string
-     */
-    protected function getChatType(\DefStudio\Telegraph\DTO\Chat $chat): string
-    {
-        // Primero utilizamos la información del objeto $chat si está disponible
-        if ($chat && !empty($chat->type)) {
-            return $chat->type;
-        }
-
-        // Fallback a nuestra implementación original
-        $update = $this->data;
-
-        if (isset($update['message']['chat']['type'])) {
-            return $update['message']['chat']['type'];
-        }
-
-        // Si no hay información, devolvemos lo que la clase padre habría devuelto
-        return parent::getChatType($chat);
-    }
-}
