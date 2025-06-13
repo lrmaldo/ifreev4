@@ -343,3 +343,4 @@ HTML;
             return 'error: ' . $e->getMessage();
         }
     }
+}
