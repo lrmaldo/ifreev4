@@ -22,12 +22,16 @@ class TelegramWebhookController extends WebhookHandler
      */
     public function handle(Request $request, \DefStudio\Telegraph\Models\TelegraphBot $bot): void
     {
-        // Registrar recepción del webhook para diagnóstico
-        Log::info('Webhook recibido', [
+        // Registrar recepción del webhook para diagnóstico con información detallada
+        Log::info('Webhook recibido - INICIO PROCESAMIENTO', [
             'content' => $request->getContent(),
             'headers' => $request->headers->all(),
             'bot_id' => $bot->id,
             'bot_name' => $bot->name,
+            'path' => $request->path(),
+            'method' => $request->method(),
+            'ip' => $request->ip(),
+            'timestamp' => now()->toDateTimeString(),
         ]);
 
         // Si es una solicitud de diagnóstico especial, responder directamente
