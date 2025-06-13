@@ -434,8 +434,9 @@ HTML;
                     'bot_id' => $this->bot->id
                 ]);
 
-                // Obtener nombre del chat
-                $chatName = $this->getChatName();
+                // Obtener nombre del chat - utilizando el objeto chat del mensaje actual
+                $chatObj = $this->message ? $this->message->chat() : null;
+                $chatName = $this->getChatName($chatObj);
 
                 // Crear el chat en la base de datos
                 $telegraphChat = \DefStudio\Telegraph\Models\TelegraphChat::create([
@@ -465,7 +466,9 @@ HTML;
                     'chat_id' => $chatId
                 ]);
 
-                $tipo = $this->getChatType();
+                // Obtener el objeto chat para determinar el tipo
+                $chatObj = $this->message ? $this->message->chat() : null;
+                $tipo = $this->getChatType($chatObj);
 
                 // Crear el registro en la tabla personalizada
                 $customChat = TelegramChat::create([
@@ -494,23 +497,44 @@ HTML;
     /**
      * Obtiene el nombre del chat basado en su tipo
      *
+     * @param \DefStudio\Telegraph\DTO\Chat|null $chat El objeto chat de Telegraph
      * @return string
      */
-    protected function getChatName(): string
+    protected function getChatName(\DefStudio\Telegraph\DTO\Chat $chat = null): string
     {
         try {
-            $chat = $this->message->chat();
+            // Si no se proporcionó un chat, intentar obtenerlo del mensaje actual
+            if (!$chat && $this->message) {
+                $chat = $this->message->chat();
+            }
+
+            // Si aún no hay chat, devolver un nombre genérico
+            if (!$chat) {
+                Log::warning('No se pudo determinar el chat en getChatName');
+                return 'Chat sin identificar';
+            }
 
             if ($chat->type() === 'private') {
-                $firstName = $this->message->from()->firstName() ?? '';
-                $lastName = $this->message->from()->lastName() ?? '';
-                $username = $this->message->from()->username() ?? '';
+                // En chats privados, intentamos obtener el nombre del remitente
+                $from = null;
 
-                if ($username) {
-                    return "@{$username} ({$firstName} {$lastName})";
+                if ($this->message) {
+                    $from = $this->message->from();
                 }
 
-                return trim("{$firstName} {$lastName}");
+                if ($from) {
+                    $firstName = $from->firstName() ?? '';
+                    $lastName = $from->lastName() ?? '';
+                    $username = $from->username() ?? '';
+
+                    if ($username) {
+                        return "@{$username} ({$firstName} {$lastName})";
+                    }
+
+                    return trim("{$firstName} {$lastName}");
+                }
+
+                return 'Chat privado #' . $chat->id();
             }
 
             if ($chat->type() === 'group' || $chat->type() === 'supergroup') {
@@ -524,7 +548,8 @@ HTML;
             return 'Chat #' . $chat->id();
         } catch (\Exception $e) {
             Log::error('Error obteniendo nombre de chat', [
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return 'Chat sin nombre';
@@ -534,12 +559,24 @@ HTML;
     /**
      * Obtiene el tipo de chat
      *
+     * @param \DefStudio\Telegraph\DTO\Chat|null $chat El objeto chat de Telegraph
      * @return string
      */
-    protected function getChatType(): string
+    protected function getChatType(\DefStudio\Telegraph\DTO\Chat $chat = null): string
     {
         try {
-            $type = $this->message->chat()->type();
+            // Si no se proporcionó un chat, intentar obtenerlo del mensaje actual
+            if (!$chat && $this->message) {
+                $chat = $this->message->chat();
+            }
+
+            // Si aún no hay chat, devolver un tipo desconocido
+            if (!$chat) {
+                Log::warning('No se pudo determinar el chat en getChatType');
+                return 'desconocido';
+            }
+
+            $type = $chat->type();
 
             // Mapear el tipo de chat de Telegram a nuestros tipos personalizados
             switch ($type) {
@@ -555,7 +592,8 @@ HTML;
             }
         } catch (\Exception $e) {
             Log::error('Error obteniendo tipo de chat', [
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return 'desconocido';
@@ -657,6 +695,9 @@ HTML;
     /**
      * Sobrescribe el método setupChat de Telegraph para asegurarse de que siempre existe un chat
      * Este método es llamado directamente por WebhookHandler y puede causar NotFoundHttpException
+     *
+     * El método original en WebhookHandler espera un chatId de Telegram o un update_id
+     * Pero nosotros usamos registerChat para mayor robustez
      */
     protected function setupChat(): void
     {
