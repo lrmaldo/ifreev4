@@ -142,11 +142,35 @@ try {
                 if (isset($response['ok']) && $response['ok'] === true) {
                     echo "   ✅ Webhook configurado con éxito\n";
 
-                    // Actualizar la URL del webhook en la base de datos
-                    $bot->webhook_url = $webhookUrl;
-                    $bot->save();
+                    // Verificar si la columna webhook_url existe antes de intentar guardarla
+                    try {
+                        $hasWebhookUrlColumn = \Illuminate\Support\Facades\Schema::hasColumn('telegraph_bots', 'webhook_url');
 
-                    echo "   ✓ URL de webhook guardada en la base de datos\n";
+                        if ($hasWebhookUrlColumn) {
+                            // La columna existe, podemos guardar la URL
+                            $bot->webhook_url = $webhookUrl;
+                            $bot->save();
+                            echo "   ✓ URL de webhook guardada en la base de datos\n";
+                        } else {
+                            echo "   ⚠️ La columna 'webhook_url' no existe en la tabla telegraph_bots\n";
+                            echo "      La URL no se guardará en la base de datos, pero el webhook está configurado correctamente\n";
+
+                            // Crear un archivo con la información de configuración para referencia
+                            $configFile = __DIR__ . '/storage/app/telegram_webhook_config.json';
+                            $configData = json_decode(file_exists($configFile) ? file_get_contents($configFile) : '[]') ?? [];
+                            $configData[] = [
+                                'bot_id' => $bot->id,
+                                'bot_name' => $bot->name,
+                                'webhook_url' => $webhookUrl,
+                                'configured_at' => date('Y-m-d H:i:s')
+                            ];
+                            @file_put_contents($configFile, json_encode($configData, JSON_PRETTY_PRINT));
+                            echo "      Información guardada en: storage/app/telegram_webhook_config.json\n";
+                        }
+                    } catch (\Exception $schemaException) {
+                        echo "   ❌ Error al verificar esquema de la base de datos: " . $schemaException->getMessage() . "\n";
+                        echo "      La URL de webhook no se guardará, pero el webhook está configurado correctamente\n";
+                    }
                 } else {
                     echo "   ❌ Error al configurar webhook: " . json_encode($response) . "\n";
                 }
