@@ -28,7 +28,8 @@ class TelegramController extends Controller
      */
     public function __construct(Api $telegram)
     {
-        $this->telegram = $telegram;
+        // Especificamos el bot 'ifree' que está configurado en config/telegram.php
+        $this->telegram = new Api(config('telegram.bots.ifree.token'));
     }
 
     /**
