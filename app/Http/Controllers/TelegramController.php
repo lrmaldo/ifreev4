@@ -265,7 +265,7 @@ class TelegramController extends Controller
     }
 
     /**
-     * Mapea el tipo de chat de Telegram a nuestros tipos personalizados
+     * Mapea el tipo de chat de Telegram a los valores permitidos en el ENUM de la base de datos
      *
      * @param string $telegramType
      * @return string
@@ -274,14 +274,15 @@ class TelegramController extends Controller
     {
         switch ($telegramType) {
             case 'private':
-                return 'personal';
+                return 'private';
             case 'group':
+                return 'group';
             case 'supergroup':
-                return 'grupo';
+                return 'supergroup';
             case 'channel':
-                return 'canal';
+                return 'channel';
             default:
-                return 'otro';
+                return 'private'; // Valor por defecto si no coincide con ninguno
         }
     }
 
