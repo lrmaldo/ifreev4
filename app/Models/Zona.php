@@ -44,6 +44,24 @@ class Zona extends Model
         'seleccion_campanas' => 'string',
         'tiempo_visualizacion' => 'integer',
     ];
+
+    /**
+     * Valores permitidos para seleccion_campanas:
+     * - aleatorio: Alterna automáticamente entre videos e imágenes
+     * - prioridad: Selecciona campañas basado en el valor numérico de prioridad (menor = mayor prioridad)
+     * - video: Muestra solo videos (si hay disponibles)
+     * - imagen: Muestra solo imágenes (si hay disponibles)
+     */
+    public function getOptionsSeleccionCampanas()
+    {
+        return [
+            'aleatorio' => 'Alternancia automática',
+            'prioridad' => 'Por prioridad',
+            'video' => 'Solo videos',
+            'imagen' => 'Solo imágenes',
+        ];
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

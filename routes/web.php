@@ -25,6 +25,40 @@ Route::get('/portal-cautivo/{zonaId}/campanas', [\App\Http\Controllers\PortalCau
     ->withoutMiddleware(['web'])  // No requerimos CSRF para esta ruta ya que puede ser accedida desde el portal cautivo
     ->middleware(['throttle:60,1']); // Protección contra abusos
 
+// Ruta de diagnóstico para probar la alternancia de campañas
+Route::get('/diagnostico/alternancia/{zonaId}', function($zonaId) {
+    // Solo disponible en entornos no productivos
+    if (config('app.env') === 'production') {
+        abort(403, 'Esta ruta solo está disponible en entornos de desarrollo y pruebas');
+    }
+
+    $zona = \App\Models\Zona::findOrFail($zonaId);
+
+    // Datos simulados para diagnóstico
+    $mikrotikData = [
+        'mac' => '00:11:22:33:44:55',
+        'link-login-only' => '/portal',
+        'link-orig' => 'http://example.com',
+        'link-orig-esc' => 'http%3A%2F%2Fexample.com'
+    ];
+
+    // Preparar información básica de métrica
+    $metricaInfo = [
+        'zona_id' => $zona->id,
+        'mac_address' => $mikrotikData['mac'],
+        'dispositivo' => 'Diagnóstico',
+        'navegador' => 'Herramienta de diagnóstico',
+        'tipo_visual' => 'diagnostico_alternancia',
+        'tiempo_inicio' => now()
+    ];
+
+    // Usar el método existente para mostrar el portal
+    $controller = new \App\Http\Controllers\ZonaLoginController();
+    return $controller->mostrarPortalCautivo($zona, $mikrotikData, $metricaInfo);
+})
+->name('diagnostico.alternancia')
+->middleware(['auth']); // Solo usuarios autenticados
+
 // Ruta para obtener todas las campañas activas
 Route::get('/portal-cautivo/{zonaId}/todas-campanas', [\App\Http\Controllers\PortalCautivoController::class, 'obtenerTodasCampanas'])
     ->name('portal.todas.campanas')

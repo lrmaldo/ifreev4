@@ -77,6 +77,29 @@
             font-weight: 500;
             letter-spacing: 0.025em;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        /* Indicadores de tipo de contenido */
+        .content-type-indicator {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 3px 6px;
+            font-size: 10px;
+            border-radius: 0 0 0 5px;
+            font-weight: bold;
+            opacity: 0.85;
+        }
+
+        .video-indicator {
+            background-color: #3b82f6; /* azul */
+            display: {{ !empty($videoUrl) ? 'block' : 'none' }};
+        }
+
+        .image-indicator {
+            background-color: #10b981; /* verde */
+            display: {{ !empty($imagenes) && empty($videoUrl) ? 'block' : 'none' }};
         }
 
         .portal-content {
@@ -658,9 +681,29 @@
     {!! $zona->script_head ?? '' !!}
 </head>
 <body>
+    <!-- Panel de debug para diagnóstico (Se mostrará solo en entorno no productivo) -->
+    @if(config('app.env') !== 'production')
+        @include('portal.debug-info')
+    @endif
+
     <div class="portal-container">
         <div class="portal-header">
             {{ $zona->nombre }} - Portal WiFi
+
+            <!-- Indicadores visuales mejorados del tipo de contenido -->
+            <div class="content-type-indicator video-indicator">
+                📹 Video
+            </div>
+            <div class="content-type-indicator image-indicator">
+                🖼️ Imágenes ({{ count($imagenes ?? []) }})
+            </div>
+
+            <!-- Indicador simple en el título -->
+            @if(!empty($videoUrl))
+                <span class="debug-badge video-badge" style="display:inline-block; padding:3px 6px; font-size:10px; background:rgba(59,130,246,0.7); color:white; border-radius:4px; margin-left:5px;">Video</span>
+            @elseif(!empty($imagenes))
+                <span class="debug-badge image-badge" style="display:inline-block; padding:3px 6px; font-size:10px; background:rgba(16,185,129,0.7); color:white; border-radius:4px; margin-left:5px;">Imágenes ({{ count($imagenes) }})</span>
+            @endif
         </div>
 
         <div class="portal-content">

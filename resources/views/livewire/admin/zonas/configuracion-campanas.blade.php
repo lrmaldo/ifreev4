@@ -76,9 +76,7 @@
                             @elseif ($seleccion_campanas === 'imagen')
                                 Se mostrarán solo imágenes, si están disponibles. Si no hay imágenes, se mostrarán videos.
                             @endif
-                        </p>
-                    </div>
-
+                        </p>                    </div>
                     <!-- Tiempo de visualización -->
                     <div class="sm:col-span-3">
                         <label for="tiempo_visualizacion" class="block text-sm font-medium text-gray-700">
@@ -99,6 +97,21 @@
                         </p>
                         @error('tiempo_visualizacion')
                             <span class="text-red-500 text-xs">{{ $message }}</span>
+                        @enderror
+
+                        <!-- Herramienta de diagnóstico de alternancia (solo en entornos no productivos) -->
+                        @if(config('app.env') !== 'production')
+                            <div class="mt-4">
+                                <a href="{{ route('diagnostico.alternancia', ['zonaId' => $zona->id]) }}"
+                                   target="_blank"
+                                   class="inline-flex items-center px-3 py-1.5 border border-amber-400 text-xs font-medium rounded-md text-amber-700 bg-amber-50 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
+                                    <svg class="mr-1.5 h-4 w-4 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" />
+                                    </svg>
+                                    Diagnosticar Alternancia
+                                </a>
+                            </div>
+                        @endif
                         @enderror
                     </div>
 

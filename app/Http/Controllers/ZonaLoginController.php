@@ -76,6 +76,9 @@ class ZonaLoginController extends Controller
      */
     protected function mostrarPortalCautivo($zona, $mikrotikData, $metricaInfo)
     {
+        // Registrar la entrada al método para depuración
+        \Log::info("Entrando a mostrarPortalCautivo para zona: {$zona->id}, MAC: " . ($mikrotikData['mac'] ?? 'no-mac'));
+
         $macAddress = $mikrotikData['mac'] ?? '';
 
         // Verificar si la MAC ya tiene respuesta de formulario
@@ -128,7 +131,30 @@ class ZonaLoginController extends Controller
 
             // Verificar la configuración de la zona y la sesión para alternar entre video e imagen
             $tipoPreferido = $zona->seleccion_campanas ?? 'aleatorio';
-            $ultimoTipoMostrado = session('ultimo_tipo_mostrado_' . $zona->id, '');
+
+            // Implementar un sistema robusto de cookies + sesión para controlar la alternancia
+            $cookieKey = 'ultimo_tipo_zona_' . $zona->id;
+            $ultimoTipoMostradoCookie = request()->cookie($cookieKey);
+            $ultimoTipoMostradoSesion = session('ultimo_tipo_mostrado_' . $zona->id, '');
+            $ultimoTipoMostrado = '';
+
+            // Estrategia de prioridad: 1° Cookie, 2° Sesión, 3° Nada (se trata como primera vez)
+            if ($ultimoTipoMostradoCookie && in_array($ultimoTipoMostradoCookie, ['video', 'imagen'])) {
+                $ultimoTipoMostrado = $ultimoTipoMostradoCookie;
+                \Log::info("Usando valor de COOKIE para alternar: {$ultimoTipoMostradoCookie}");
+
+                // Si la sesión está vacía o es diferente, actualizamos la sesión para sincronizarla
+                if ($ultimoTipoMostradoSesion !== $ultimoTipoMostrado) {
+                    session(['ultimo_tipo_mostrado_' . $zona->id => $ultimoTipoMostrado]);
+                    session()->save();
+                    \Log::info("Sincronizando sesión con cookie: {$ultimoTipoMostrado}");
+                }
+            } else if ($ultimoTipoMostradoSesion && in_array($ultimoTipoMostradoSesion, ['video', 'imagen'])) {
+                $ultimoTipoMostrado = $ultimoTipoMostradoSesion;
+                \Log::info("No se encontró cookie, usando valor de SESIÓN: {$ultimoTipoMostradoSesion}");
+            } else {
+                \Log::info("No se encontró cookie ni sesión para alternar, se tratará como primera visita");
+            }
 
             // Registrar en log el método de selección para depuración
             \Log::info("Método de selección de campañas: {$tipoPreferido} para zona: {$zona->id}. Último tipo mostrado: {$ultimoTipoMostrado}");
@@ -143,6 +169,12 @@ class ZonaLoginController extends Controller
             if ($tipoPreferido === 'aleatorio') {
                 // En modo aleatorio, garantizamos alternancia estricta
                 if (!$videos->isEmpty() && !$imagenesCollection->isEmpty()) {
+                    // Antes de decidir, vamos a registrar detalladamente el valor de la sesión
+                    $sessionId = session()->getId();
+                    $sessionKey = 'ultimo_tipo_mostrado_' . $zona->id;
+                    $sessionValue = session($sessionKey, '');
+                    \Log::info("SESIÓN ID: {$sessionId}, CLAVE: {$sessionKey}, VALOR ACTUAL: '{$sessionValue}'");
+
                     // Si hay ambos tipos de contenido disponibles
                     if ($ultimoTipoMostrado === 'video') {
                         $mostrarVideo = false;
@@ -151,10 +183,10 @@ class ZonaLoginController extends Controller
                         $mostrarVideo = true;
                         \Log::info("Alternancia estricta: último fue imagen, ahora mostramos video");
                     } else {
-                        // Si es primera visualización, seleccionar aleatoriamente entre video e imagen
-                        $mostrarVideo = (rand(0, 1) === 1);
-                        $tipoSeleccionado = $mostrarVideo ? "video" : "imagen";
-                        \Log::info("Primera visualización: selección aleatoria, mostramos {$tipoSeleccionado}");
+                        // Si es primera visualización o sesión vacía, implementamos verdadera selección aleatoria
+                        $mostrarVideo = (mt_rand(0, 1) === 1);
+                        $tipoInicial = $mostrarVideo ? "VIDEO" : "IMAGEN";
+                        \Log::info("Primera visualización o sesión vacía: selección aleatoria = {$tipoInicial}");
                     }
                 } else {
                     // Si solo hay un tipo disponible, usamos lo que haya
@@ -246,13 +278,45 @@ class ZonaLoginController extends Controller
                 }
 
                 $videoUrl = \Storage::url($campanaSeleccionada->archivo_path);
-                session(['ultimo_tipo_mostrado_' . $zona->id => 'video']);
+
+                // Guardar en sesión para persistencia robusta
+                $sessionKey = 'ultimo_tipo_mostrado_' . $zona->id;
+                session([$sessionKey => 'video']);
+                session()->save();
+
+                // Verificar que la sesión se haya guardado correctamente
+                $sessionValueVerificacion = session($sessionKey);
+                if ($sessionValueVerificacion !== 'video') {
+                    \Log::warning("⚠️ Posible problema al guardar sesión - Esperado: 'video', Actual: '{$sessionValueVerificacion}'");
+                }
+
+                // Preparar cookie para respuesta final
+                $cookieKey = 'ultimo_tipo_zona_' . $zona->id;
+                $cookieValue = 'video';
+                \Log::info("VIDEO MOSTRADO - Se establecerá cookie {$cookieKey}={$cookieValue}");
+                \Log::info("VIDEO MOSTRADO - Guardada sesión '{$sessionValueVerificacion}' para zona {$zona->id}");
                 \Log::info("Seleccionado video: ID {$campanaSeleccionada->id}, '{$campanaSeleccionada->nombre}'");
+
                 // Actualizar tipo_visual en la métrica
                 $metricaInfo['tipo_visual'] = 'video';
             } else if (!$imagenesCollection->isEmpty()) {
                 // Si no hay videos o toca mostrar imágenes
-                session(['ultimo_tipo_mostrado_' . $zona->id => 'imagen']);
+                // Guardar en sesión para persistencia robusta
+                $sessionKey = 'ultimo_tipo_mostrado_' . $zona->id;
+                session([$sessionKey => 'imagen']);
+                session()->save();
+
+                // Verificar que la sesión se haya guardado correctamente
+                $sessionValueVerificacion = session($sessionKey);
+                if ($sessionValueVerificacion !== 'imagen') {
+                    \Log::warning("⚠️ Posible problema al guardar sesión - Esperado: 'imagen', Actual: '{$sessionValueVerificacion}'");
+                }
+
+                // Preparar cookie para respuesta final
+                $cookieKey = 'ultimo_tipo_zona_' . $zona->id;
+                $cookieValue = 'imagen';
+                \Log::info("IMAGEN MOSTRADA - Se establecerá cookie {$cookieKey}={$cookieValue}");
+                \Log::info("IMAGEN MOSTRADA - Guardada sesión '{$sessionValueVerificacion}' para zona {$zona->id}");
 
                 // Para imágenes, procedemos diferente según el método de selección
                 if ($tipoPreferido === 'prioridad') {
@@ -287,7 +351,8 @@ class ZonaLoginController extends Controller
         // Tiempo de visualización
         $tiempoVisualizacion = $zona->tiempo_visualizacion ?? 15;
 
-        return view('portal.formulario-cautivo', compact(
+        // Preparar la vista
+        $view = view('portal.formulario-cautivo', compact(
             'zona',
             'mikrotikData',
             'metricaInfo',
@@ -300,6 +365,45 @@ class ZonaLoginController extends Controller
             'tiempoVisualizacion',
             'respuestaExistente'
         ));
+
+        // Prepara los datos para la vista de depuración
+        $viewData = compact(
+            'zona',
+            'mikrotikData',
+            'metricaInfo',
+            'formFields',
+            'camposHtml',
+            'imagenes',
+            'videoUrl',
+            'campanaSeleccionada',
+            'mostrarFormulario',
+            'tiempoVisualizacion',
+            'respuestaExistente'
+        );
+
+        // Verificar si necesitamos establecer la cookie
+        if (isset($cookieKey) && isset($cookieValue)) {
+            // Crear una cookie que dure 24 horas con configuración robusta
+            $cookie = cookie(
+                $cookieKey,                // nombre
+                $cookieValue,              // valor
+                60 * 24,                   // duración en minutos (24 horas)
+                '/',                       // path
+                null,                      // dominio (null = dominio actual)
+                request()->secure(),       // secure - solo HTTPS si la solicitud actual es HTTPS
+                false,                     // httpOnly - false para permitir acceso desde JS
+                false,                     // raw
+                'lax'                      // sameSite
+            );
+            \Log::info("Estableciendo cookie {$cookieKey}={$cookieValue} en la respuesta (duración: 24 horas)");
+
+            // Usa compact para generar la vista con datos consistentes
+            $view = view('portal.formulario-cautivo', $viewData);
+            return response($view)->withCookie($cookie);
+        }
+
+        // Si no hay cookie, simplemente devuelve la vista con todos los datos
+        return view('portal.formulario-cautivo', $viewData);
     }
 
     /**
