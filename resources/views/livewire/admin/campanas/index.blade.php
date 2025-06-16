@@ -349,30 +349,75 @@
 
                                     <!-- Zonas -->
                                     <div>
-                                        <label for="zonas_select" class="block text-sm font-medium text-gray-700">Zonas donde mostrar esta campaña</label>
-                                        <div wire:ignore>
-                                            <select id="zonas_select"
-                                                    class="select2 mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
-                                                    multiple
-                                                    wire:model.live.debounce.500ms="zonas_ids"
-                                                    data-livewire-values="{{ json_encode($zonas_ids ?? []) }}">
-                                                @foreach($zonas as $zona)
-                                                    <option value="{{ $zona->id }}"
-                                                        @if(in_array($zona->id, $zonas_ids ?? [])) selected @endif>
-                                                        {{ $zona->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <small class="mt-1 text-xs text-gray-500">
-                                                <strong>Estado:</strong>
-                                                @if(!empty($zonas_ids))
-                                                    {{ count($zonas_ids) }} zonas seleccionadas
-                                                    <span class="text-green-600">({{ collect($zonas)->whereIn('id', $zonas_ids)->pluck('nombre')->join(', ') }})</span>
+                                        <label for="zonas_search" class="block text-sm font-medium text-gray-700">Zonas donde mostrar esta campaña</label>
+
+                                        <!-- Buscador de zonas con checkboxes -->
+                                        <div class="relative">
+                                            <div class="flex">
+                                                <div class="relative flex-grow">
+                                                    <input type="text"
+                                                        wire:model.live="zonaSearch"
+                                                        wire:click="$set('mostrarDropdownZonas', true)"
+                                                        id="zonas_search"
+                                                        placeholder="Buscar zonas..."
+                                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10">
+
+                                                    <!-- Icono de búsqueda -->
+                                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 mt-1 pointer-events-none">
+                                                        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Dropdown con checkboxes -->
+                                            @if($mostrarDropdownZonas)
+                                            <div
+                                                data-zonas-dropdown
+                                                class="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-sm border border-gray-300 max-h-60 overflow-y-auto"
+                                                x-data
+                                                @click.outside="$wire.cerrarDropdownZonas()"
+                                            >
+                                                @if($zonasFiltradas->count() > 0)
+                                                    @foreach($zonasFiltradas as $zona)
+                                                        <div class="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer" wire:click="toggleZona({{ $zona->id }})">
+                                                            <input
+                                                                type="checkbox"
+                                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-2"
+                                                                @if(in_array($zona->id, $zonas_ids ?? [])) checked @endif
+                                                            >
+                                                            <span>{{ $zona->nombre }}</span>
+                                                        </div>
+                                                    @endforeach
                                                 @else
-                                                    <span class="text-gray-600">Ninguna zona seleccionada</span>
+                                                    <div class="px-3 py-2 text-gray-500">No hay resultados para "{{ $zonaSearch }}"</div>
                                                 @endif
-                                            </small>
+                                            </div>
+                                            @endif
                                         </div>
+
+                                        <!-- Resumen de las zonas seleccionadas -->
+                                        <div class="mt-2">
+                                            <p class="text-sm font-medium text-gray-700">Zonas seleccionadas ({{ count($zonas_ids) }})</p>
+                                            <div class="mt-1 flex flex-wrap gap-2">
+                                                @if(!empty($zonas_ids))
+                                                    @foreach(collect($zonas)->whereIn('id', $zonas_ids) as $zonaSeleccionada)
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                                                            {{ $zonaSeleccionada->nombre }}
+                                                            <button type="button" wire:click="toggleZona({{ $zonaSeleccionada->id }})" class="ml-1 inline-flex items-center">
+                                                                <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                                </svg>
+                                                            </button>
+                                                        </span>
+                                                    @endforeach
+                                                @else
+                                                    <span class="text-xs text-gray-500">Ninguna zona seleccionada</span>
+                                                @endif
+                                            </div>
+                                        </div>
+
                                         @error('zonas_ids') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
@@ -399,6 +444,40 @@
         </div>
     @endif
 </div>
+
+@push('scripts')
+<script src="{{ asset('js/zonas-selector.js') }}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Script para manejar el cambio de tipo de archivo
+        document.addEventListener('livewire:initialized', function() {
+            Livewire.on('tipo-changed', function(data) {
+                // Limpiamos el input file para que refleje el nuevo tipo
+                const tipoActual = data.tipo;
+                console.log('Tipo cambiado a:', tipoActual);
+
+                setTimeout(() => {
+                    // Usamos el ID fijo ahora
+                    const inputFile = document.getElementById('archivo-input');
+                    if (inputFile) {
+                        console.log('Limpiando el input file');
+                        inputFile.value = '';
+
+                        // Actualizar el atributo accept según el tipo
+                        if (tipoActual === 'imagen') {
+                            inputFile.setAttribute('accept', 'image/*');
+                        } else {
+                            inputFile.setAttribute('accept', '.mp4,.mov,.ogg,.qt,.webm,.mpeg,.avi,video/*');
+                        }
+                    } else {
+                        console.error('No se encontró el input file');
+                    }
+                }, 100);
+            });
+        });
+    });
+</script>
+@endpush
 
 @push('scripts')
 <!-- jQuery y Select2 desde CDN (temporal hasta resolver Vite) -->

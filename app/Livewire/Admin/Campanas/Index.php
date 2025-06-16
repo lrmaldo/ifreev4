@@ -33,6 +33,11 @@ class Index extends Component
     public $zonas_ids = [];
     public $prioridad = 10;
 
+    // Propiedades para búsqueda de zonas
+    public $zonaSearch = '';
+    public $zonasFiltradas = [];
+    public $mostrarDropdownZonas = false;
+
     // Propiedades para edición
     public $campana_id;
     public $editando = false;
@@ -45,9 +50,6 @@ class Index extends Component
 
     // Modal
     public $showModal = false;
-
-    // Listeners para eventos de JavaScript
-    protected $listeners = ['zonasActualizadas' => 'actualizarZonasJavaScript'];
 
     // Reglas de validación
     protected function rules()
@@ -112,7 +114,7 @@ class Index extends Component
             'titulo', 'descripcion', 'enlace', 'fecha_inicio', 'fecha_fin',
             'visible', 'siempre_visible', 'dias_visibles', 'tipo', 'archivo',
             'cliente_id', 'campana_id', 'editando', 'archivo_actual', 'zonas_ids',
-            'prioridad'
+            'prioridad', 'zonaSearch', 'mostrarDropdownZonas'
         ]);
 
         // Valores por defecto
@@ -123,6 +125,7 @@ class Index extends Component
         $this->prioridad = 10;
         $this->fecha_inicio = now()->format('Y-m-d');
         $this->fecha_fin = now()->addDays(30)->format('Y-m-d');
+        $this->zonasFiltradas = $this->getZonasDisponibles();
     }
 
     #[On('openCampanaModal')]
@@ -317,13 +320,10 @@ class Index extends Component
             'total_zonas' => count($this->zonas_ids)
         ]);
 
-        $this->showModal = true;
+        // Inicializar zonas filtradas para el componente de selección
+        $this->zonasFiltradas = $this->getZonasDisponibles();
 
-        // Despachar evento simplificado para Select2
-        $this->dispatch('campanEditLoaded', [
-            'zonasIds' => $this->zonas_ids,
-            'campanaTitulo' => $this->titulo
-        ]);
+        $this->showModal = true;
     }
 
     // Eliminar una campaña
@@ -372,6 +372,7 @@ class Index extends Component
     {
         $this->fecha_inicio = now()->format('Y-m-d');
         $this->fecha_fin = now()->addDays(30)->format('Y-m-d');
+        $this->zonasFiltradas = $this->getZonasDisponibles();
     }
 
     public function render()
@@ -403,48 +404,18 @@ class Index extends Component
     }
 
     /**
-     * Método público para sincronizar zonas desde JavaScript/Select2
+     * Actualiza el contador y resumen de zonas seleccionadas
      */
-    public function sincronizarZonas($zonasIds)
-    {
-        // Filtrar valores vacíos y asegurarse que son enteros
-        $this->zonas_ids = array_map('intval', array_filter($zonasIds));
-
-        // Log para debugging
-        \Log::info('sincronizarZonas llamado', [
-            'zonasIds_recibidas' => $zonasIds,
-            'zonas_ids_procesadas' => $this->zonas_ids,
-            'editando' => $this->editando,
-            'campana_id' => $this->campana_id
-        ]);
-
-        // Despachar evento para actualizar el JavaScript con los nuevos valores
-        $this->dispatch('zonasActualizadas', $this->zonas_ids);
-
-        // No renderizar de nuevo para evitar perder la selección
-        $this->skipRender();
-    }
-
-    /**
-     * Actualiza el atributo data-livewire-values en el elemento select del JavaScript
-     */
-    public function actualizarZonasJavaScript()
+    public function actualizarContadorZonas()
     {
         // Asegurar que zonas_ids es un array y convertir a enteros
-        $zonas_ids = array_map('intval', array_filter($this->zonas_ids ?? []));
-
-        // Despachar evento para actualizar el atributo en el select
-        $this->dispatch('updateLivewireAttribute', [
-            'elementId' => 'zonas_select',
-            'attribute' => 'data-livewire-values',
-            'value' => json_encode($zonas_ids)
-        ]);
+        $this->zonas_ids = array_map('intval', array_filter($this->zonas_ids ?? []));
 
         // Para debugging
-        $this->dispatch('consolelog', 'Zonas actualizadas: ' . implode(', ', $zonas_ids));
-
-        // No renderizar de nuevo
-        $this->skipRender();
+        \Log::info('Zonas actualizadas', [
+            'total_zonas' => count($this->zonas_ids),
+            'zonas_ids' => $this->zonas_ids
+        ]);
     }
 
     /**
@@ -666,5 +637,50 @@ class Index extends Component
 
             session()->flash('error', 'Error durante la reparación: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Filtra zonas basado en la búsqueda
+     */
+    public function updatedZonaSearch()
+    {
+        $zonas = $this->getZonasDisponibles();
+
+        if (empty($this->zonaSearch)) {
+            $this->zonasFiltradas = $zonas;
+        } else {
+            $this->zonasFiltradas = $zonas->filter(function ($zona) {
+                return stripos($zona->nombre, $this->zonaSearch) !== false;
+            });
+        }
+
+        $this->mostrarDropdownZonas = true;
+    }
+
+    /**
+     * Alterna la selección de una zona
+     */
+    public function toggleZona($zonaId)
+    {
+        $zonaId = (int) $zonaId;
+
+        // Si ya está seleccionada, la eliminamos
+        if (in_array($zonaId, $this->zonas_ids ?? [])) {
+            $this->zonas_ids = array_values(array_diff($this->zonas_ids, [$zonaId]));
+        } else {
+            // Si no está seleccionada, la agregamos
+            $this->zonas_ids[] = $zonaId;
+        }
+
+        // Convertir todos los elementos a enteros para consistencia
+        $this->zonas_ids = array_map('intval', array_unique($this->zonas_ids));
+    }
+
+    /**
+     * Método para cerrar el dropdown
+     */
+    public function cerrarDropdownZonas()
+    {
+        $this->mostrarDropdownZonas = false;
     }
 }
