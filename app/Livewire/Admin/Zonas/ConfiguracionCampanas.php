@@ -14,7 +14,7 @@ class ConfiguracionCampanas extends Component
     public $tiempo_visualizacion;
 
     protected $rules = [
-        'seleccion_campanas' => 'required|in:aleatorio,prioridad',
+        'seleccion_campanas' => 'required|in:aleatorio,prioridad,video,imagen',
         'tiempo_visualizacion' => 'required|integer|min:5|max:120'
     ];
 

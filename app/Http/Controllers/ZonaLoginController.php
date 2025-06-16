@@ -52,12 +52,13 @@ class ZonaLoginController extends Controller
         // Por ejemplo, guardarlos en una base de datos, verificar si el usuario está autorizado, etc.
 
         // Preparar información de métrica
+        // Preparar información básica de métrica
         $metricaInfo = [
             'zona_id' => $zona->id,
             'mac_address' => $mikrotikData['mac'] ?? 'unknown',
             'dispositivo' => (new \Jenssegers\Agent\Agent())->device() ?: 'Desconocido',
             'navegador' => (new \Jenssegers\Agent\Agent())->browser() . ' ' . (new \Jenssegers\Agent\Agent())->version((new \Jenssegers\Agent\Agent())->browser()),
-            'tipo_visual' => 'portal_cautivo',
+            'tipo_visual' => 'portal_cautivo', // Valor predeterminado que se actualizará según contenido
             'tiempo_inicio' => now()
         ];
 
@@ -132,6 +133,9 @@ class ZonaLoginController extends Controller
             // Registrar en log el método de selección para depuración
             \Log::info("Método de selección de campañas: {$tipoPreferido} para zona: {$zona->id}. Último tipo mostrado: {$ultimoTipoMostrado}");
 
+            // Contar campañas disponibles por tipo para diagnóstico
+            \Log::info("Videos disponibles: " . $videos->count() . ", Imágenes disponibles: " . $imagenesCollection->count());
+
             // Decisión de mostrar video o imagen
             $mostrarVideo = false;
 
@@ -139,7 +143,7 @@ class ZonaLoginController extends Controller
             if ($tipoPreferido === 'aleatorio') {
                 // En modo aleatorio, garantizamos alternancia estricta
                 if (!$videos->isEmpty() && !$imagenesCollection->isEmpty()) {
-                    // Si hay ambos tipos de contenido disponibles, alternamos estrictamente
+                    // Si hay ambos tipos de contenido disponibles
                     if ($ultimoTipoMostrado === 'video') {
                         $mostrarVideo = false;
                         \Log::info("Alternancia estricta: último fue video, ahora mostramos imagen");
@@ -147,9 +151,10 @@ class ZonaLoginController extends Controller
                         $mostrarVideo = true;
                         \Log::info("Alternancia estricta: último fue imagen, ahora mostramos video");
                     } else {
-                        // Si es primera visualización, comenzamos con video (si hay disponible)
-                        $mostrarVideo = true;
-                        \Log::info("Primera visualización: comenzamos con video");
+                        // Si es primera visualización, seleccionar aleatoriamente entre video e imagen
+                        $mostrarVideo = (rand(0, 1) === 1);
+                        $tipoSeleccionado = $mostrarVideo ? "video" : "imagen";
+                        \Log::info("Primera visualización: selección aleatoria, mostramos {$tipoSeleccionado}");
                     }
                 } else {
                     // Si solo hay un tipo disponible, usamos lo que haya
@@ -188,14 +193,28 @@ class ZonaLoginController extends Controller
                     $mostrarVideo = !$videos->isEmpty();
                     \Log::info("Solo hay un tipo disponible en modo prioridad: " . ($mostrarVideo ? "videos" : "imágenes"));
                 }
-            } else if ($tipoPreferido === 'video' && !$videos->isEmpty()) {
-                // Si la preferencia explícita es video y hay videos, mostrar video
-                $mostrarVideo = true;
-                \Log::info("Seleccionando video por preferencia explícita");
-            } else if ($tipoPreferido === 'imagen' && !$imagenesCollection->isEmpty()) {
-                // Si la preferencia explícita es imagen y hay imágenes, mostrar imagen
-                $mostrarVideo = false;
-                \Log::info("Seleccionando imagen por preferencia explícita");
+            } else if ($tipoPreferido === 'video') {
+                // Si la preferencia explícita es video
+                if (!$videos->isEmpty()) {
+                    // Si hay videos disponibles, mostrar video
+                    $mostrarVideo = true;
+                    \Log::info("Seleccionando video por preferencia explícita de configuración");
+                } else if (!$imagenesCollection->isEmpty()) {
+                    // Si no hay videos pero hay imágenes, mostrar imágenes como fallback
+                    $mostrarVideo = false;
+                    \Log::info("No hay videos disponibles, mostrando imágenes como fallback");
+                }
+            } else if ($tipoPreferido === 'imagen') {
+                // Si la preferencia explícita es imagen
+                if (!$imagenesCollection->isEmpty()) {
+                    // Si hay imágenes disponibles, mostrar imágenes
+                    $mostrarVideo = false;
+                    \Log::info("Seleccionando imagen por preferencia explícita de configuración");
+                } else if (!$videos->isEmpty()) {
+                    // Si no hay imágenes pero hay videos, mostrar videos como fallback
+                    $mostrarVideo = true;
+                    \Log::info("No hay imágenes disponibles, mostrando videos como fallback");
+                }
             } else {
                 // Cualquier otro caso, intentar alternar lo mejor posible
                 if (!$videos->isEmpty() && !$imagenesCollection->isEmpty()) {
@@ -229,6 +248,8 @@ class ZonaLoginController extends Controller
                 $videoUrl = \Storage::url($campanaSeleccionada->archivo_path);
                 session(['ultimo_tipo_mostrado_' . $zona->id => 'video']);
                 \Log::info("Seleccionado video: ID {$campanaSeleccionada->id}, '{$campanaSeleccionada->nombre}'");
+                // Actualizar tipo_visual en la métrica
+                $metricaInfo['tipo_visual'] = 'video';
             } else if (!$imagenesCollection->isEmpty()) {
                 // Si no hay videos o toca mostrar imágenes
                 session(['ultimo_tipo_mostrado_' . $zona->id => 'imagen']);
@@ -244,11 +265,15 @@ class ZonaLoginController extends Controller
                         $imagenes[] = \Storage::url($campana->archivo_path);
                     }
                     $campanaSeleccionada = $imagenesConMejorPrioridad->first();
+                    // Actualizar tipo_visual en la métrica
+                    $metricaInfo['tipo_visual'] = 'imagen';
                 } else {
                     // En modo aleatorio, mostramos todas las imágenes
                     foreach ($imagenesCollection as $campana) {
                         $imagenes[] = \Storage::url($campana->archivo_path);
                     }
+                    // Actualizar tipo_visual en la métrica
+                    $metricaInfo['tipo_visual'] = 'imagen';
                     $campanaSeleccionada = $imagenesCollection->first();
                 }
 

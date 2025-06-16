@@ -743,8 +743,30 @@
                                 <div class="flex flex-col space-y-1">
                                     <div class="flex items-center">
                                         <span class="mr-1 text-xs font-semibold">Campañas:</span>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $zona->seleccion_campanas === 'aleatorio' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800' }}">
-                                            {{ $zona->seleccion_campanas === 'aleatorio' ? 'Alternancia auto' : 'Por prioridad' }}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            @if ($zona->seleccion_campanas === 'aleatorio')
+                                                bg-green-100 text-green-800
+                                            @elseif ($zona->seleccion_campanas === 'prioridad')
+                                                bg-orange-100 text-orange-800
+                                            @elseif ($zona->seleccion_campanas === 'video')
+                                                bg-blue-100 text-blue-800
+                                            @elseif ($zona->seleccion_campanas === 'imagen')
+                                                bg-purple-100 text-purple-800
+                                            @else
+                                                bg-gray-100 text-gray-800
+                                            @endif
+                                        ">
+                                            @if ($zona->seleccion_campanas === 'aleatorio')
+                                                Alternancia auto
+                                            @elseif ($zona->seleccion_campanas === 'prioridad')
+                                                Por prioridad
+                                            @elseif ($zona->seleccion_campanas === 'video')
+                                                Solo videos
+                                            @elseif ($zona->seleccion_campanas === 'imagen')
+                                                Solo imágenes
+                                            @else
+                                                {{ ucfirst($zona->seleccion_campanas) }}
+                                            @endif
                                         </span>
                                         <a href="{{ route('admin.zonas.configuracion-campanas', ['zonaId' => $zona->id]) }}"
                                            class="ml-1 text-xs text-indigo-600 hover:text-indigo-900 flex items-center"

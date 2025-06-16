@@ -62,13 +62,19 @@
                             >
                                 <option value="aleatorio">Alternancia automática (recomendado)</option>
                                 <option value="prioridad">Por prioridad</option>
+                                <option value="video">Solo videos</option>
+                                <option value="imagen">Solo imágenes</option>
                             </select>
                         </div>
                         <p class="mt-2 text-sm text-gray-500">
                             @if ($seleccion_campanas === 'aleatorio')
                                 El sistema alternará automáticamente entre videos e imágenes para una mejor experiencia.
-                            @else
+                            @elseif ($seleccion_campanas === 'prioridad')
                                 Se mostrará la campaña activa con el número de prioridad más bajo (mayor prioridad).
+                            @elseif ($seleccion_campanas === 'video')
+                                Se mostrarán solo videos, si están disponibles. Si no hay videos, se mostrarán imágenes.
+                            @elseif ($seleccion_campanas === 'imagen')
+                                Se mostrarán solo imágenes, si están disponibles. Si no hay imágenes, se mostrarán videos.
                             @endif
                         </p>
                     </div>
