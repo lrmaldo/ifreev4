@@ -501,14 +501,23 @@ class ZonaLoginController extends Controller
     public function actualizarMetrica(\Illuminate\Http\Request $request)
     {
         try {
-            $request->validate([
+            $validador = \Validator::make($request->all(), [
                 'zona_id' => 'required|integer',
                 'mac_address' => 'required|string',
-                'duracion_visual' => 'nullable|integer',
+                'duracion_visual' => 'nullable', // Quitamos la validación integer para procesarla manualmente
                 'clic_boton' => 'nullable|boolean',
                 'tipo_visual' => 'nullable|string',
                 'detalle' => 'nullable|string'
             ]);
+
+            if ($validador->fails()) {
+                \Log::warning('Validación fallida en actualizarMetrica: ' . json_encode($validador->errors()));
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Datos de entrada inválidos',
+                    'errors' => $validador->errors()
+                ], 422);
+            }
 
             // Registrar detalles adicionales en log para análisis
             if ($request->has('detalle')) {
@@ -543,7 +552,14 @@ class ZonaLoginController extends Controller
                 $datosActualizar = [];
 
                 if ($request->has('duracion_visual')) {
-                    $datosActualizar['duracion_visual'] = $request->duracion_visual;
+                    // Asegurarse de que duracion_visual sea un entero válido
+                    $duracionVisual = $request->duracion_visual;
+                    if ($duracionVisual === null || $duracionVisual === '' || !is_numeric($duracionVisual)) {
+                        $duracionVisual = 0; // Valor predeterminado si está vacío o no es numérico
+                    } else {
+                        $duracionVisual = (int)$duracionVisual; // Convertir a entero
+                    }
+                    $datosActualizar['duracion_visual'] = $duracionVisual;
                 }
 
                 if ($request->has('clic_boton')) {
@@ -576,7 +592,7 @@ class ZonaLoginController extends Controller
                     'dispositivo' => $request->dispositivo ?? 'Desconocido',
                     'navegador' => $request->navegador ?? 'Desconocido',
                     'tipo_visual' => $tipoVisual ?? 'formulario',
-                    'duracion_visual' => $request->duracion_visual ?? 0,
+                    'duracion_visual' => $this->procesarDuracionVisual($request->duracion_visual),
                     'clic_boton' => $request->clic_boton ?? false,
                     'veces_entradas' => 1
                 ]);
@@ -605,5 +621,19 @@ class ZonaLoginController extends Controller
                 'message' => 'Error al actualizar métrica'
             ], 500);
         }
+    }
+
+    /**
+     * Procesa el valor de duración visual para asegurar que sea un entero
+     *
+     * @param mixed $duracionVisual
+     * @return int
+     */
+    protected function procesarDuracionVisual($duracionVisual)
+    {
+        if ($duracionVisual === null || $duracionVisual === '' || !is_numeric($duracionVisual)) {
+            return 0; // Valor predeterminado si está vacío o no es numérico
+        }
+        return (int)$duracionVisual; // Convertir a entero
     }
 }

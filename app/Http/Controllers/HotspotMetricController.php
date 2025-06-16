@@ -446,6 +446,14 @@ class HotspotMetricController extends Controller
                 }
             }
 
+            // Asegurarse de que duracion_visual sea un entero válido
+            $duracionVisual = $request->duracion_visual;
+            if ($duracionVisual === null || $duracionVisual === '' || !is_numeric($duracionVisual)) {
+                $duracionVisual = 0; // Valor predeterminado si está vacío o no es numérico
+            } else {
+                $duracionVisual = (int)$duracionVisual; // Convertir a entero
+            }
+
             // Usar valores detectados o los proporcionados en la solicitud, o valores por defecto
             $data = [
                 'zona_id' => $request->zona_id,
@@ -454,7 +462,7 @@ class HotspotMetricController extends Controller
                 'dispositivo' => $dispositivo ?: 'Desconocido',
                 'navegador' => $navegador ?: 'Desconocido',
                 'tipo_visual' => $request->tipo_visual ?? 'formulario',
-                'duracion_visual' => $request->duracion_visual ?? 0,
+                'duracion_visual' => $duracionVisual,
                 'clic_boton' => $request->boolean('clic_boton', false),
                 'sistema_operativo' => $sistemaOperativo ?: 'Desconocido',
             ];

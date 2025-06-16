@@ -994,7 +994,7 @@
                     video.lastLoggedTime = Math.floor(video.currentTime);
                     actualizarMetrica({
                         tipo_visual: 'video',
-                        duracion_visual: video.currentTime,
+                        duracion_visual: Math.floor(video.currentTime),
                         detalle: 'video_progreso_' + Math.round(video.currentTime)
                     });
                 }
@@ -1015,7 +1015,7 @@
                 // Registrar métrica de finalización
                 actualizarMetrica({
                     tipo_visual: 'video',
-                    duracion_visual: video.duration,
+                    duracion_visual: Math.floor(video.duration),
                     detalle: 'video_completado'
                 });
             });
@@ -1262,7 +1262,7 @@
                 // Registrar métrica de visualización completa
                 registrarMetrica({
                     tipo_visual: @if($videoUrl) 'video' @else 'carrusel' @endif,
-                    duracion_visual: (Date.now() - tiempoInicio) / 1000,
+                    duracion_visual: Math.floor((Date.now() - tiempoInicio) / 1000),
                     detalle: 'visualizacion_completa'
                 });
             }
@@ -1399,7 +1399,7 @@
                 actualizarMetrica({
                     clic_boton: true,
                     tipo_visual: tipoVisual,
-                    duracion_visual: tiempoActual,
+                    duracion_visual: Math.floor(tiempoActual),
                     detalle: botonInfo || tipoBoton // Conservamos el tipo original en el detalle para análisis
                 });
                 console.log(`Registro de clic en botón: ${tipoBoton} (guardado como ${tipoVisual}) ${botonInfo ? '(' + botonInfo + ')' : ''}`);
@@ -1409,7 +1409,7 @@
             setInterval(function() {
                 const tiempoActual = Math.floor((Date.now() - tiempoInicio) / 1000);
                 actualizarMetrica({
-                    duracion_visual: tiempoActual
+                    duracion_visual: Math.floor(tiempoActual)
                 });
 
                 // Actualizar contador visible en la página si existe
@@ -1645,7 +1645,7 @@
                     actualizarMetrica({
                         tipo_visual: 'video',
                         detalle: 'intento_saltar_video',
-                        duracion_visual: video.currentTime
+                        duracion_visual: Math.floor(video.currentTime)
                     });
 
                     // Mostrar mensaje de alerta
@@ -1658,7 +1658,7 @@
                     actualizarMetrica({
                         tipo_visual: 'video',
                         detalle: 'conexion_post_video',
-                        duracion_visual: video.duration
+                        duracion_visual: Math.floor(video.duration)
                     });
                 }
                 @endif
