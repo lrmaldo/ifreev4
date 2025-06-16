@@ -112,7 +112,6 @@
                                 </a>
                             </div>
                         @endif
-                        @enderror
                     </div>
 
                     <!-- Información sobre el comportamiento -->
