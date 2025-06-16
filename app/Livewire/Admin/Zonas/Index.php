@@ -137,6 +137,11 @@ class Index extends Component
         }
         $this->validate($rules);
 
+        // Si el id_personalizado está vacío, establecerlo a NULL para evitar problemas de unicidad
+        if (empty(trim($this->zona['id_personalizado']))) {
+            $this->zona['id_personalizado'] = null;
+        }
+
         if ($this->isEditing && $this->activeZona) {
             $this->activeZona->update($this->zona);
             session()->flash('message', 'Zona actualizada correctamente.');
