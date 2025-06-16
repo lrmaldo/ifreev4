@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Event;
 use App\Events\HotspotMetricCreated;
 use App\Listeners\SendTelegramNotification;
+use App\Listeners\SendTelegramFormMetricNotification;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,6 +30,12 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(
             HotspotMetricCreated::class,
             SendTelegramNotification::class
+        );
+
+        // Registrar listener para notificaciones de métricas con formulario
+        Event::listen(
+            HotspotMetricCreated::class,
+            SendTelegramFormMetricNotification::class
         );
     }
 }
