@@ -224,6 +224,9 @@ Route::middleware(['auth'])->group(function () {
             ->middleware(['permission:gestionar metricas hotspot'])
             ->name('hotspot-metrics.export');
     });
+    Route::get('/zonas/{zona}/form-responses/export', [\App\Http\Controllers\FormResponseExportController::class, 'export'])
+            ->name('form-responses.export');
+
 });
 
 // Rutas para el webhook de Telegram

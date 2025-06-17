@@ -133,4 +133,17 @@ class FormResponsesList extends Component
 
         return 'Escritorio';
     }
+
+    /**
+     * Exportar respuestas a Excel
+     */
+    public function exportToExcel()
+    {
+        return redirect()->route('form-responses.export', [
+            'zona' => $this->zona->id,
+            'mac_address' => $this->searchMac,
+            'fecha_inicio' => $this->fechaInicio,
+            'fecha_fin' => $this->fechaFin
+        ]);
+    }
 }
