@@ -44,10 +44,12 @@ class FormResponseExportController extends Controller
         $sheet->setCellValue('C1', 'Dispositivo');
         $sheet->setCellValue('D1', 'Tiempo Activo');
         $sheet->setCellValue('E1', 'Estado');
+        $sheet->setCellValue('F1', 'Nombre');
+        $sheet->setCellValue('G1', 'Teléfono');
 
         // Obtener campos dinámicos del formulario
         $campos = $zona->campos;
-        $columnaActual = 'F';
+        $columnaActual = 'H';
 
         foreach ($campos as $campo) {
             $sheet->setCellValue($columnaActual . '1', $campo->etiqueta);
@@ -59,7 +61,29 @@ class FormResponseExportController extends Controller
         foreach ($respuestas as $respuesta) {
             $sheet->setCellValue('A' . $row, $respuesta->created_at->format('d/m/Y H:i:s'));
             $sheet->setCellValue('B' . $row, $respuesta->mac_address);
-            $sheet->setCellValue('C' . $row, $respuesta->device_type ?: 'No detectado');
+
+            // Intentar obtener el tipo de dispositivo
+            $dispositivo = 'No detectado';
+            if (!empty($respuesta->dispositivo)) {
+                if (strlen($respuesta->dispositivo) > 30) {
+                    // Si es una cadena larga (user agent), extraer información relevante
+                    if (strpos(strtolower($respuesta->dispositivo), 'iphone') !== false) {
+                        $dispositivo = 'iPhone';
+                    } elseif (strpos(strtolower($respuesta->dispositivo), 'android') !== false) {
+                        $dispositivo = 'Android';
+                    } elseif (strpos(strtolower($respuesta->dispositivo), 'windows') !== false) {
+                        $dispositivo = 'Windows';
+                    } elseif (strpos(strtolower($respuesta->dispositivo), 'mac') !== false) {
+                        $dispositivo = 'Mac';
+                    } else {
+                        // Tomar solo los primeros 30 caracteres
+                        $dispositivo = substr($respuesta->dispositivo, 0, 30) . '...';
+                    }
+                } else {
+                    $dispositivo = $respuesta->dispositivo;
+                }
+            }
+            $sheet->setCellValue('C' . $row, $dispositivo);
 
             // Formatear tiempo activo
             $tiempoActivo = $this->formatearTiempo($respuesta->active_time);
@@ -69,12 +93,66 @@ class FormResponseExportController extends Controller
             $estado = $respuesta->disconnected_at ? 'Desconectado' : 'Activo';
             $sheet->setCellValue('E' . $row, $estado);
 
+            // Asegurarnos de que respuestas sea un array
+            $detalles = [];
+            if (is_string($respuesta->respuestas)) {
+                // Si es una cadena JSON, decodificamos
+                $detalles = json_decode($respuesta->respuestas, true) ?: [];
+            } elseif (is_array($respuesta->respuestas)) {
+                // Si ya es un array, lo usamos directamente
+                $detalles = $respuesta->respuestas;
+            }
+
+            // Nombre y teléfono (columnas fijas)
+            $nombre = $detalles['nombre'] ?? '-';
+            $telefono = $detalles['Telefono'] ?? $detalles['telefono'] ?? '-';
+
+            $sheet->setCellValue('F' . $row, $nombre);
+            $sheet->setCellValue('G' . $row, $telefono);
+
             // Respuestas dinámicas
-            $detalles = $respuesta->respuestas ?: [];
+            // Asegurarnos de que respuestas sea un array
+            $detalles = [];
+            if (is_string($respuesta->respuestas)) {
+                // Si es una cadena JSON, decodificamos
+                $detalles = json_decode($respuesta->respuestas, true) ?: [];
+            } elseif (is_array($respuesta->respuestas)) {
+                // Si ya es un array, lo usamos directamente
+                $detalles = $respuesta->respuestas;
+            }
+
             $columnaActual = 'F';
+            $columnasDisponibles = ['nombre', 'Telefono', 'telefono', 'email', 'correo'];
 
             foreach ($campos as $campo) {
-                $valor = $detalles[$campo->id] ?? '-';
+                // Intentar con el ID del campo
+                $valor = $detalles[$campo->id] ?? null;
+
+                // Si no se encontró por ID, intentar por el nombre del campo
+                if ($valor === null) {
+                    $campoNombre = strtolower($campo->campo);
+                    foreach ($detalles as $clave => $val) {
+                        if (strtolower($clave) == $campoNombre) {
+                            $valor = $val;
+                            break;
+                        }
+                    }
+                }
+
+                // Si aún es null, intentar con nombres comunes
+                if ($valor === null) {
+                    foreach ($columnasDisponibles as $columnaComun) {
+                        if (isset($detalles[$columnaComun]) && strtolower($campo->etiqueta) == strtolower($columnaComun)) {
+                            $valor = $detalles[$columnaComun];
+                            break;
+                        }
+                    }
+                }
+
+                // Si sigue siendo null, usar un valor predeterminado
+                if ($valor === null) {
+                    $valor = '-';
+                }
 
                 // Manejar valores de arrays (checkboxes)
                 if (is_array($valor)) {
