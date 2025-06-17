@@ -86,7 +86,7 @@ class FormResponseExportController extends Controller
             $sheet->setCellValue('C' . $row, $dispositivo);
 
             // Formatear tiempo activo
-            $tiempoActivo = $this->formatearTiempo($respuesta->active_time);
+            $tiempoActivo = $this->formatearTiempo($respuesta->tiempo_activo ?: 0);
             $sheet->setCellValue('D' . $row, $tiempoActivo);
 
             // Estado
