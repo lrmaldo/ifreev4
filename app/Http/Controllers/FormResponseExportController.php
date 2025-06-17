@@ -44,12 +44,10 @@ class FormResponseExportController extends Controller
         $sheet->setCellValue('C1', 'Dispositivo');
         $sheet->setCellValue('D1', 'Tiempo Activo');
         $sheet->setCellValue('E1', 'Estado');
-        $sheet->setCellValue('F1', 'Nombre');
-        $sheet->setCellValue('G1', 'Teléfono');
 
         // Obtener campos dinámicos del formulario
         $campos = $zona->campos;
-        $columnaActual = 'H';
+        $columnaActual = 'F';
 
         foreach ($campos as $campo) {
             $sheet->setCellValue($columnaActual . '1', $campo->etiqueta);
@@ -103,26 +101,8 @@ class FormResponseExportController extends Controller
                 $detalles = $respuesta->respuestas;
             }
 
-            // Nombre y teléfono (columnas fijas)
-            $nombre = $detalles['nombre'] ?? '-';
-            $telefono = $detalles['Telefono'] ?? $detalles['telefono'] ?? '-';
-
-            $sheet->setCellValue('F' . $row, $nombre);
-            $sheet->setCellValue('G' . $row, $telefono);
-
-            // Respuestas dinámicas
-            // Asegurarnos de que respuestas sea un array
-            $detalles = [];
-            if (is_string($respuesta->respuestas)) {
-                // Si es una cadena JSON, decodificamos
-                $detalles = json_decode($respuesta->respuestas, true) ?: [];
-            } elseif (is_array($respuesta->respuestas)) {
-                // Si ya es un array, lo usamos directamente
-                $detalles = $respuesta->respuestas;
-            }
-
+            // Respuestas dinámicas de los campos del formulario
             $columnaActual = 'F';
-            $columnasDisponibles = ['nombre', 'Telefono', 'telefono', 'email', 'correo'];
 
             foreach ($campos as $campo) {
                 // Intentar con el ID del campo
@@ -139,11 +119,12 @@ class FormResponseExportController extends Controller
                     }
                 }
 
-                // Si aún es null, intentar con nombres comunes
+                // Si aún es null, intentar con la etiqueta del campo
                 if ($valor === null) {
-                    foreach ($columnasDisponibles as $columnaComun) {
-                        if (isset($detalles[$columnaComun]) && strtolower($campo->etiqueta) == strtolower($columnaComun)) {
-                            $valor = $detalles[$columnaComun];
+                    $etiquetaLower = strtolower($campo->etiqueta);
+                    foreach ($detalles as $clave => $val) {
+                        if (strtolower($clave) == $etiquetaLower) {
+                            $valor = $val;
                             break;
                         }
                     }
