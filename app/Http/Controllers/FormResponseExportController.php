@@ -70,7 +70,7 @@ class FormResponseExportController extends Controller
             $sheet->setCellValue('E' . $row, $estado);
 
             // Respuestas dinámicas
-            $detalles = json_decode($respuesta->respuestas, true) ?: [];
+            $detalles = $respuesta->respuestas ?: [];
             $columnaActual = 'F';
 
             foreach ($campos as $campo) {
