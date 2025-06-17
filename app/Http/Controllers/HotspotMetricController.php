@@ -7,6 +7,7 @@ use App\Models\MetricaDetalle;
 use App\Models\Zona;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
 use Karmendra\LaravelAgentDetector\AgentDetector;
 
@@ -496,7 +497,7 @@ class HotspotMetricController extends Controller
      */
     public function export(Request $request)
     {
-        $this->authorize('gestionar metricas hotspot');
+        Gate::authorize('gestionar metricas hotspot');
 
         $query = HotspotMetric::with(['zona', 'formulario'])
             ->byZona($request->zona_id)
