@@ -625,7 +625,8 @@
         };
     </script>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Contenedor más amplio para escritorio -->
+    <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
 
         <!-- Mensajes flash -->
         @if (session()->has('message'))
@@ -685,36 +686,53 @@
             </div>
         </div>
 
-        <!-- Tabla de zonas -->
+        <!-- Tabla de zonas con mejor diseño para escritorio -->
         <div class="overflow-x-auto bg-white shadow overflow-hidden sm:rounded-lg">
             <div class="text-sm text-gray-500 px-4 py-2 bg-gray-100 md:hidden">
                 Desliza horizontalmente para ver toda la tabla →
             </div>
-            <table class="min-w-full divide-y divide-gray-200">
+            <style>
+                /* Estilos adicionales para mejorar la tabla en escritorio */
+                @media (min-width: 1024px) {
+                    .zona-table {
+                        table-layout: fixed;
+                    }
+                    .zona-table th,
+                    .zona-table td {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .zona-table .acciones-col {
+                        width: 200px;
+                        min-width: 200px;
+                    }
+                }
+            </style>
+            <table class="min-w-full divide-y divide-gray-200 zona-table">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
                             Nombre
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell w-36">
                             Tipo de Registro
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell w-32">
                             Cuenta regresiva (Segundos)
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell w-36">
                             Auth Mikrotik
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell w-64">
                             Selec. Campañas
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell w-40">
                             Propietario
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                             Campos
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider acciones-col">
                             Acciones
                         </th>
                     </tr>
@@ -728,6 +746,21 @@
                                     <div>Tipo: {{ $zona->getTipoRegistroLabelAttribute() }}</div>
                                     <div class="md:hidden">Segundos: {{ $zona->segundos }}</div>
                                     <div class="md:hidden">Auth: {{ $zona->getTipoAutenticacionMikrotikLabelAttribute() }}</div>
+                                    <div class="md:hidden">Propietario: {{ $zona->user->name }}</div>
+                                    <div class="md:hidden">
+                                        Campañas:
+                                        @if ($zona->seleccion_campanas === 'aleatorio')
+                                            Alternancia auto
+                                        @elseif ($zona->seleccion_campanas === 'prioridad')
+                                            Por prioridad
+                                        @elseif ($zona->seleccion_campanas === 'video')
+                                            Solo videos
+                                        @elseif ($zona->seleccion_campanas === 'imagen')
+                                            Solo imágenes
+                                        @else
+                                            {{ ucfirst($zona->seleccion_campanas) }}
+                                        @endif
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
@@ -739,7 +772,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
                                 {{ $zona->getTipoAutenticacionMikrotikLabelAttribute() }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
                                 <div class="flex flex-col space-y-1">
                                     <div class="flex items-center">
                                         <span class="mr-1 text-xs font-semibold">Campañas:</span>
@@ -782,7 +815,7 @@
                                     </span>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
                                 {{ $zona->user->name }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -800,9 +833,9 @@
                                     <span class="italic text-gray-400">No aplica</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium acciones-col">
                                 <flux:dropdown placement="bottom-end">
-                                    <flux:button size="sm" icon:trailing="chevron-down">Opciones</flux:button>
+                                    <flux:button size="sm" icon:trailing="chevron-down" class="w-full min-w-[120px]">Opciones</flux:button>
 
                                     <flux:menu>
                                         <!-- Opciones principales -->
@@ -877,7 +910,7 @@
                         <!-- Lista de campos por zona -->
                         @if ($zona->campos->count() > 0 && $zona->tipo_registro != 'sin_registro')
                             <tr class="bg-gray-50">
-                                <td colspan="7" class="px-6 py-2">
+                                <td colspan="8" class="px-6 py-2">
                                     <div class="border rounded-md divide-y">
                                         <div class="px-4 py-2 bg-gray-100 text-sm font-medium">
                                             Campos de "{{ $zona->nombre }}"
@@ -924,7 +957,7 @@
                         @endif
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                            <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                 No hay zonas disponibles.
                             </td>
                         </tr>
