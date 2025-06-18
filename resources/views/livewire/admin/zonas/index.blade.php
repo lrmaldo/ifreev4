@@ -627,7 +627,7 @@
     </script>
 
     <!-- Contenedor más amplio para escritorio -->
-    <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+    <div class="w-full mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 2xl:px-12">
 
         <!-- Mensajes flash -->
         @if (session()->has('message'))
@@ -688,7 +688,7 @@
         </div>
 
         <!-- Tabla de zonas con mejor diseño para escritorio -->
-        <div class="overflow-x-auto bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="w-full overflow-x-auto bg-white shadow overflow-hidden sm:rounded-lg">
             <div class="text-sm text-gray-500 px-4 py-2 bg-gray-100 md:hidden">
                 Desliza horizontalmente para ver toda la tabla →
             </div>
@@ -697,6 +697,7 @@
                 @media (min-width: 1024px) {
                     .zona-table {
                         table-layout: fixed;
+                        width: 100%;
                     }
                     .zona-table th,
                     .zona-table td {
@@ -704,40 +705,75 @@
                         text-overflow: ellipsis;
                     }
                     .zona-table .acciones-col {
+                        width: 220px;
+                        min-width: 220px;
+                    }
+                    .zona-table .nombre-col {
                         width: 200px;
                         min-width: 200px;
                     }
+                    .zona-table .tipo-col {
+                        width: 150px;
+                        min-width: 150px;
+                    }
+                    .zona-table .segundos-col {
+                        width: 120px;
+                        min-width: 120px;
+                    }
+                    .zona-table .auth-col {
+                        width: 160px;
+                        min-width: 160px;
+                    }
+                    .zona-table .campanas-col {
+                        width: 280px;
+                        min-width: 280px;
+                    }
+                    .zona-table .propietario-col {
+                        width: 150px;
+                        min-width: 150px;
+                    }
+                    .zona-table .campos-col {
+                        width: 100px;
+                        min-width: 100px;
+                    }
+                }
+
+                /* Asegurar que el contenedor de la tabla use todo el ancho */
+                .tabla-container {
+                    width: 100% !important;
+                    max-width: none !important;
                 }
             </style>
-            <table class="min-w-full divide-y divide-gray-200 zona-table">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
-                            Nombre
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell w-36">
-                            Tipo de Registro
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell w-32">
-                            Cuenta regresiva (Segundos)
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell w-36">
-                            Auth Mikrotik
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell w-64">
-                            Selec. Campañas
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell w-40">
-                            Propietario
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
-                            Campos
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider acciones-col">
-                            Acciones
-                        </th>
-                    </tr>
-                </thead>
+            <div class="tabla-container">
+                <table class="w-full divide-y divide-gray-200 zona-table">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider nombre-col">
+                                Nombre
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell tipo-col">
+                                Tipo de Registro
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell segundos-col">
+                                Cuenta regresiva (Segundos)
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell auth-col">
+                                Auth Mikrotik
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell campanas-col">
+                                Selec. Campañas
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell propietario-col">
+                                Propietario
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider campos-col">
+                                Campos
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider acciones-col">
+                                Acciones
+                            </th>
+                        </tr>
+                    </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse ($zonas as $zona)
                         <tr>
@@ -836,7 +872,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium acciones-col">
                                 <flux:dropdown placement="bottom-end">
-                                    <flux:button size="sm" icon:trailing="chevron-down" class="w-full min-w-[120px]">Opciones</flux:button>
+                                    <flux:button size="sm" icon:trailing="chevron-down" class="w-full min-w-[140px] justify-center">Opciones</flux:button>
 
                                     <flux:menu>
                                         <!-- Opciones principales -->
@@ -965,6 +1001,7 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
 
         <!-- Paginación -->

@@ -10,7 +10,7 @@
     </x-layouts.module-header>
 
     <div class="py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
             <!-- Contenido del componente Livewire -->
             @livewire('admin.zonas.index')
         </div>
