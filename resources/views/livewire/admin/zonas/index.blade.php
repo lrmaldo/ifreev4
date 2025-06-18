@@ -1,6 +1,7 @@
 <div>
     <script>
-        // Fix para Alpine.js en dispositivos móviles - asegura que x-show funcione correctamente        document.addEventListener('alpine:init', function() {
+        // Fix para Alpine.js en dispositivos móviles - asegura que x-show funcione correctamente
+        document.addEventListener('alpine:init', function() {
             Alpine.directive('touchout', (el, { expression }, { evaluate }) => {
                 // Tiempo mínimo necesario para considerar un toque como válido (ms)
                 const touchTimeThreshold = 120;
