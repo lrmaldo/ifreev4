@@ -681,10 +681,7 @@
     {!! $zona->script_head ?? '' !!}
 </head>
 <body>
-    <!-- Panel de debug para diagnóstico (Se mostrará solo en entorno no productivo) -->
-    @if(config('app.env') !== 'production')
-        @include('portal.debug-info')
-    @endif
+
 
     <div class="portal-container">
         <div class="portal-header">
@@ -697,13 +694,6 @@
             <div class="content-type-indicator image-indicator">
                 🖼️ Imágenes ({{ count($imagenes ?? []) }})
             </div>
-
-            <!-- Indicador simple en el título -->
-            @if(!empty($videoUrl))
-                <span class="debug-badge video-badge" style="display:inline-block; padding:3px 6px; font-size:10px; background:rgba(59,130,246,0.7); color:white; border-radius:4px; margin-left:5px;">Video</span>
-            @elseif(!empty($imagenes))
-                <span class="debug-badge image-badge" style="display:inline-block; padding:3px 6px; font-size:10px; background:rgba(16,185,129,0.7); color:white; border-radius:4px; margin-left:5px;">Imágenes ({{ count($imagenes) }})</span>
-            @endif
         </div>
 
         <div class="portal-content">
@@ -1641,39 +1631,11 @@
             })
             .then(response => response.json())
             .then(data => {
-                // Mostrar componente de estadísticas en tiempo real si se encuentra el contenedor
-                if (data.success && data.metric_id) {
-                    const statsContainer = document.getElementById('stats-container');
-                    if (statsContainer) {
-                        statsContainer.innerHTML = `
-                            <div class="bg-white rounded-lg shadow-md p-3 mt-4">
-                                <h4 class="text-sm font-medium text-gray-700 mb-2">Estadísticas de sesión</h4>
-                                <div class="grid grid-cols-2 gap-2 text-sm">
-                                    <div>
-                                        <span class="text-gray-500">Tiempo de sesión:</span>
-                                        <span id="tiempo-sesion" class="font-medium">00:00</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-500">Visitas:</span>
-                                        <span class="font-medium">${data.veces_entradas || 1}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        statsContainer.classList.remove('hidden');
-                    }
-                }
+                // Se ha eliminado el componente de estadísticas en tiempo real
             })
             .catch(error => console.log('Error registrando métrica:', error));
 
-            // Crear contenedor para estadísticas si no existe
-            if (!document.getElementById('stats-container')) {
-                const mainContent = document.querySelector('.container') || document.body;
-                const statsDiv = document.createElement('div');
-                statsDiv.id = 'stats-container';
-                statsDiv.className = 'px-4 py-2 hidden';
-                mainContent.appendChild(statsDiv);
-            }
+            // Se eliminó el código para crear el contenedor de estadísticas
 
             // Función global para acceso gratuito
             window.doTrial = function() {
