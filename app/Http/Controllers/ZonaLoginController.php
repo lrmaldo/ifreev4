@@ -351,6 +351,21 @@ class ZonaLoginController extends Controller
         // Tiempo de visualización
         $tiempoVisualizacion = $zona->tiempo_visualizacion ?? 15;
 
+        // DEBUG: Logs para depurar el problema del modal
+        \Log::info("=== DEBUG MODAL ENLACE ===");
+        \Log::info("Zona ID: {$zona->id}");
+        \Log::info("Campaña seleccionada existe: " . ($campanaSeleccionada ? 'SÍ' : 'NO'));
+        if ($campanaSeleccionada) {
+            \Log::info("Campaña ID: " . ($campanaSeleccionada->id ?? 'N/A'));
+            \Log::info("Campaña título: " . ($campanaSeleccionada->titulo ?? 'N/A'));
+            \Log::info("Campaña enlace: " . ($campanaSeleccionada->enlace ?? 'VACÍO'));
+            \Log::info("Campaña tipo: " . ($campanaSeleccionada->tipo ?? 'N/A'));
+        }
+        \Log::info("Video URL: " . ($videoUrl ? 'SÍ' : 'NO'));
+        \Log::info("Imágenes count: " . count($imagenes));
+        \Log::info("Mostrar formulario: " . ($mostrarFormulario ? 'SÍ' : 'NO'));
+        \Log::info("=== FIN DEBUG MODAL ===");
+
         // Preparar la vista
         $view = view('portal.formulario-cautivo', compact(
             'zona',

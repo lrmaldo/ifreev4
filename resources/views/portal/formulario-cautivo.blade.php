@@ -912,6 +912,20 @@
                     @endif
                 </p>
 
+                <!-- DEBUG: Información de campaña (temporal) -->
+                @if(config('app.debug'))
+                    <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; font-size: 12px; border-radius: 4px;">
+                        <strong>DEBUG - Información de campaña:</strong><br>
+                        Campaña seleccionada: {{ $campanaSeleccionada ? 'SÍ' : 'NO' }}<br>
+                        @if($campanaSeleccionada)
+                            ID: {{ $campanaSeleccionada->id ?? 'N/A' }}<br>
+                            Título: {{ $campanaSeleccionada->titulo ?? 'N/A' }}<br>
+                            Enlace: {{ $campanaSeleccionada->enlace ?? 'NO HAY ENLACE' }}<br>
+                            Tipo: {{ $campanaSeleccionada->tipo ?? 'N/A' }}<br>
+                        @endif
+                    </div>
+                @endif
+
                 <!-- Enlace de la campaña en formulario -->
                 @if($campanaSeleccionada && $campanaSeleccionada->enlace)
                     <div class="text-center mb-6">
@@ -926,6 +940,20 @@
                             Ver más información
                         </button>
                     </div>
+                @else
+                    <!-- DEBUG: Mostrar por qué no aparece el botón -->
+                    @if(config('app.debug'))
+                        <div style="background: #ffebee; padding: 10px; margin: 10px 0; font-size: 12px; border-radius: 4px; color: #c62828;">
+                            <strong>DEBUG - ¿Por qué no aparece el botón?</strong><br>
+                            @if(!$campanaSeleccionada)
+                                ❌ No hay campaña seleccionada
+                            @elseif(!$campanaSeleccionada->enlace)
+                                ❌ La campaña no tiene enlace configurado
+                            @else
+                                ❓ Razón desconocida
+                            @endif
+                        </div>
+                    @endif
                 @endif
 
                 <form id="portal-form" class="space-y-4">
@@ -959,6 +987,20 @@
                         @endif
                     </p>
 
+                    <!-- DEBUG: Información de campaña (temporal) -->
+                    @if(config('app.debug'))
+                        <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; font-size: 12px; border-radius: 4px;">
+                            <strong>DEBUG - Información de campaña (sin formulario):</strong><br>
+                            Campaña seleccionada: {{ $campanaSeleccionada ? 'SÍ' : 'NO' }}<br>
+                            @if($campanaSeleccionada)
+                                ID: {{ $campanaSeleccionada->id ?? 'N/A' }}<br>
+                                Título: {{ $campanaSeleccionada->titulo ?? 'N/A' }}<br>
+                                Enlace: {{ $campanaSeleccionada->enlace ?? 'NO HAY ENLACE' }}<br>
+                                Tipo: {{ $campanaSeleccionada->tipo ?? 'N/A' }}<br>
+                            @endif
+                        </div>
+                    @endif
+
                     <!-- Enlace de la campaña -->
                     @if($campanaSeleccionada && $campanaSeleccionada->enlace)
                         <div class="text-center mb-4">
@@ -973,7 +1015,39 @@
                                 Ver más información
                             </button>
                         </div>
+                    @else
+                        <!-- DEBUG: Mostrar por qué no aparece el botón -->
+                        @if(config('app.debug'))
+                            <div style="background: #ffebee; padding: 10px; margin: 10px 0; font-size: 12px; border-radius: 4px; color: #c62828;">
+                                <strong>DEBUG - ¿Por qué no aparece el botón? (sin formulario)</strong><br>
+                                @if(!$campanaSeleccionada)
+                                    ❌ No hay campaña seleccionada
+                                @elseif(!$campanaSeleccionada->enlace)
+                                    ❌ La campaña no tiene enlace configurado
+                                @else
+                                    ❓ Razón desconocida
+                                @endif
+                            </div>
+                        @endif
                     @endif
+                @endif
+
+                <!-- BOTÓN DE PRUEBA TEMPORAL (solo en modo debug) -->
+                @if(config('app.debug'))
+                    <div class="text-center mb-6" style="background: #e3f2fd; padding: 15px; border-radius: 8px;">
+                        <strong>🧪 PRUEBA TEMPORAL - Modal de Enlace</strong><br>
+                        <button
+                            onclick="abrirModalEnlace('https://www.google.com', 'Google - Prueba Modal')"
+                            class="btn-enlace-campana"
+                            type="button"
+                            style="margin-top: 10px;"
+                        >
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            🧪 Probar Modal (Google)
+                        </button>
+                    </div>
                 @endif
 
                 @if($videoUrl)
