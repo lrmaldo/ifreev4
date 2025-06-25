@@ -665,6 +665,9 @@ class ZonaLoginController extends Controller
                 // Si es un botón de trial o login, lo mapeamos a 'login'
                 if (in_array($tipoVisual, ['trial', 'login'])) {
                     $tipoVisual = 'login';
+                } elseif (in_array($tipoVisual, ['enlace_campana', 'enlace', 'link_campana'])) {
+                    // Los enlaces de campaña los mapeamos a 'carrusel' ya que están relacionados con las campañas
+                    $tipoVisual = 'carrusel';
                 } else {
                     // Cualquier otro valor no reconocido lo mapeamos a 'formulario'
                     $tipoVisual = 'formulario';

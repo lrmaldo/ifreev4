@@ -305,6 +305,53 @@
             cursor: not-allowed;
         }
 
+        /* Botón para enlace de campaña */
+        .btn-enlace-campana {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: white;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border: none;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            transition: all var(--animation-speed) ease;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-enlace-campana:hover {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-enlace-campana:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-enlace-campana svg {
+            transition: transform var(--animation-speed) ease;
+        }
+
+        .btn-enlace-campana:hover svg {
+            transform: translateX(2px);
+        }
+
+        /* Responsive para botón de enlace */
+        @media (max-width: 480px) {
+            .btn-enlace-campana {
+                font-size: 0.8rem;
+                padding: 0.625rem 0.875rem;
+            }
+        }
+
         /* Carrusel de contenido */
         .content-carousel {
             width: 100%;
@@ -641,6 +688,162 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Estilos para modal de enlace */
+        .modal-enlace {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            animation: fadeInModal 0.3s ease-out;
+        }
+
+        .modal-enlace-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .modal-enlace-content {
+            position: relative;
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            margin: 5vh auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            animation: slideInModal 0.3s ease-out;
+        }
+
+        .modal-enlace-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-enlace-titulo {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 0;
+            flex: 1;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-enlace-cerrar {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 1rem;
+        }
+
+        .modal-enlace-cerrar:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+
+        .modal-enlace-cerrar:active {
+            transform: scale(0.95);
+        }
+
+        .modal-enlace-body {
+            height: calc(100% - 73px); /* Altura total menos header */
+            position: relative;
+        }
+
+        .modal-enlace-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* Animaciones del modal */
+        @keyframes fadeInModal {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInModal {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* Responsive para el modal */
+        @media (max-width: 768px) {
+            .modal-enlace-content {
+                width: 98%;
+                height: 95vh;
+                margin: 2.5vh auto;
+                border-radius: 8px;
+            }
+
+            .modal-enlace-header {
+                padding: 0.75rem 1rem;
+            }
+
+            .modal-enlace-titulo {
+                font-size: 1rem;
+            }
+
+            .modal-enlace-cerrar {
+                padding: 0.25rem;
+            }
+
+            .modal-enlace-body {
+                height: calc(100% - 60px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .modal-enlace-content {
+                width: 100%;
+                height: 100vh;
+                margin: 0;
+                border-radius: 0;
+            }
+
+            .modal-enlace-header {
+                padding: 0.5rem 0.75rem;
+            }
+
+            .modal-enlace-titulo {
+                font-size: 0.9rem;
+            }
+
+            .modal-enlace-body {
+                height: calc(100% - 55px);
+            }
+        }
+
         /* Responsive */
         @media (max-width: 640px) {
             .portal-container {
@@ -709,6 +912,22 @@
                     @endif
                 </p>
 
+                <!-- Enlace de la campaña en formulario -->
+                @if($campanaSeleccionada && $campanaSeleccionada->enlace)
+                    <div class="text-center mb-6">
+                        <button
+                            onclick="abrirModalEnlace('{{ $campanaSeleccionada->enlace }}', '{{ $campanaSeleccionada->titulo ?? $campanaSeleccionada->nombre }}')"
+                            class="btn-enlace-campana"
+                            type="button"
+                        >
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            Ver más información
+                        </button>
+                    </div>
+                @endif
+
                 <form id="portal-form" class="space-y-4">
                     <input type="hidden" id="zona_id" value="{{ $zona->id }}">
                     <input type="hidden" id="mac_address" value="{{ $mikrotikData['mac'] ?? '' }}">
@@ -739,6 +958,22 @@
                             Preparando tu conexión WiFi...
                         @endif
                     </p>
+
+                    <!-- Enlace de la campaña -->
+                    @if($campanaSeleccionada && $campanaSeleccionada->enlace)
+                        <div class="text-center mb-4">
+                            <button
+                                onclick="abrirModalEnlace('{{ $campanaSeleccionada->enlace }}', '{{ $campanaSeleccionada->titulo ?? $campanaSeleccionada->nombre }}')"
+                                class="btn-enlace-campana"
+                                type="button"
+                            >
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                                Ver más información
+                            </button>
+                        </div>
+                    @endif
                 @endif
 
                 @if($videoUrl)
@@ -873,6 +1108,24 @@
                         </form>
                     </div>
                 @endif
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para mostrar enlace de campaña -->
+    <div id="modalEnlace" class="modal-enlace" style="display: none;">
+        <div class="modal-enlace-overlay" onclick="cerrarModalEnlace()"></div>
+        <div class="modal-enlace-content">
+            <div class="modal-enlace-header">
+                <h3 id="modalEnlaceTitulo" class="modal-enlace-titulo"></h3>
+                <button onclick="cerrarModalEnlace()" class="modal-enlace-cerrar" aria-label="Cerrar">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-enlace-body">
+                <iframe id="modalEnlaceIframe" src="" frameborder="0" class="modal-enlace-iframe"></iframe>
             </div>
         </div>
     </div>
@@ -1691,6 +1944,122 @@
                 }
             }
         });
+
+        /**
+         * Funciones para el modal de enlace de campaña
+         */
+        function abrirModalEnlace(url, titulo) {
+            logDebug('Abriendo modal de enlace: ' + url);
+
+            const modal = document.getElementById('modalEnlace');
+            const iframe = document.getElementById('modalEnlaceIframe');
+            const tituloElement = document.getElementById('modalEnlaceTitulo');
+
+            // Establecer el título
+            tituloElement.textContent = titulo || 'Información adicional';
+
+            // Limpiar iframe antes de cargar nueva URL
+            iframe.src = 'about:blank';
+
+            // Mostrar modal
+            modal.style.display = 'block';
+
+            // Prevenir scroll del body
+            document.body.style.overflow = 'hidden';
+
+            // Cargar la URL después de un pequeño delay para mejorar la experiencia
+            setTimeout(() => {
+                iframe.src = url;
+                logDebug('URL cargada en iframe: ' + url);
+            }, 100);
+
+            // Registrar métrica de interacción
+            registrarInteraccionEnlace();
+        }
+
+        function cerrarModalEnlace() {
+            logDebug('Cerrando modal de enlace');
+
+            const modal = document.getElementById('modalEnlace');
+            const iframe = document.getElementById('modalEnlaceIframe');
+
+            // Ocultar modal
+            modal.style.display = 'none';
+
+            // Restaurar scroll del body
+            document.body.style.overflow = '';
+
+            // Limpiar iframe para liberar recursos
+            iframe.src = 'about:blank';
+        }
+
+        function registrarInteraccionEnlace() {
+            // Registrar que el usuario interactuó con el enlace de la campaña
+            const zonaId = document.getElementById('zona_id')?.value;
+            const macAddress = document.getElementById('mac_address')?.value;
+
+            if (zonaId && macAddress) {
+                logDebug('Registrando interacción con enlace de campaña');
+
+                fetch('/portal/actualizar-metrica', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        zona_id: parseInt(zonaId),
+                        mac_address: macAddress,
+                        clic_boton: true,
+                        tipo_visual: 'enlace_campana',
+                        detalle: 'Usuario abrió enlace de campaña'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    logDebug('Métrica de enlace registrada correctamente');
+                })
+                .catch(error => {
+                    logDebug('Error al registrar métrica de enlace: ' + error.message, 'error');
+                });
+            }
+        }
+
+        // Cerrar modal con tecla Escape
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('modalEnlace');
+                if (modal && modal.style.display === 'block') {
+                    cerrarModalEnlace();
+                }
+            }
+        });
+
+        // Manejar errores del iframe
+        const iframe = document.getElementById('modalEnlaceIframe');
+        if (iframe) {
+            iframe.addEventListener('error', function() {
+                logDebug('Error al cargar contenido en iframe', 'error');
+                // Mostrar mensaje de error al usuario
+                iframe.style.display = 'none';
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'iframe-error';
+                errorDiv.innerHTML = `
+                    <div style="padding: 2rem; text-align: center; color: #666;">
+                        <svg style="width: 48px; height: 48px; margin: 0 auto 1rem; display: block;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h3 style="margin-bottom: 0.5rem;">No se pudo cargar el contenido</h3>
+                        <p style="margin-bottom: 1rem;">Es posible que el sitio web no permita ser mostrado en un iframe.</p>
+                        <button onclick="window.open(iframe.src, '_blank')" style="padding: 0.5rem 1rem; background: var(--color-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Abrir en nueva ventana
+                        </button>
+                    </div>
+                `;
+                iframe.parentNode.appendChild(errorDiv);
+            });
+        }
     </script>
 
     <!-- Scripts de configuración adicionales -->

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modal Enlace Campaña</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-test {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .btn-test:hover {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+        }
+
+        .btn-test svg {
+            margin-right: 8px;
+        }
+
+        /* Estilos del modal copiados del archivo principal */
+        .modal-enlace {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            animation: fadeInModal 0.3s ease-out;
+        }
+
+        .modal-enlace-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .modal-enlace-content {
+            position: relative;
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            margin: 5vh auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            animation: slideInModal 0.3s ease-out;
+        }
+
+        .modal-enlace-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(90deg, #ff5e2c, #ff8159);
+            color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-enlace-titulo {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 0;
+            flex: 1;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-enlace-cerrar {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 1rem;
+        }
+
+        .modal-enlace-cerrar:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+
+        .modal-enlace-body {
+            height: calc(100% - 73px);
+            position: relative;
+        }
+
+        .modal-enlace-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        @keyframes fadeInModal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInModal {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .modal-enlace-content {
+                width: 98%;
+                height: 95vh;
+                margin: 2.5vh auto;
+                border-radius: 8px;
+            }
+
+            .modal-enlace-header {
+                padding: 0.75rem 1rem;
+            }
+
+            .modal-enlace-titulo {
+                font-size: 1rem;
+            }
+
+            .modal-enlace-body {
+                height: calc(100% - 60px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .modal-enlace-content {
+                width: 100%;
+                height: 100vh;
+                margin: 0;
+                border-radius: 0;
+            }
+
+            .modal-enlace-header {
+                padding: 0.5rem 0.75rem;
+            }
+
+            .modal-enlace-titulo {
+                font-size: 0.9rem;
+            }
+
+            .modal-enlace-body {
+                height: calc(100% - 55px);
+            }
+        }
+
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Modal Enlace Campaña</h1>
+        <p>Este test permite probar la funcionalidad del modal que muestra enlaces de campaña en un iframe.</p>
+
+        <div class="test-section">
+            <h3>📱 Tests de URLs</h3>
+            <p>Haz clic en los botones para probar diferentes URLs:</p>
+
+            <button class="btn-test" onclick="abrirModalEnlace('https://www.google.com', 'Google - Motor de búsqueda')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                </svg>
+                Google
+            </button>
+
+            <button class="btn-test" onclick="abrirModalEnlace('https://www.wikipedia.org', 'Wikipedia - Enciclopedia libre')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                </svg>
+                Wikipedia
+            </button>
+
+            <button class="btn-test" onclick="abrirModalEnlace('https://www.youtube.com/embed/dQw4w9WgXcQ', 'Video de demostración')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                YouTube Embed
+            </button>
+
+            <button class="btn-test" onclick="abrirModalEnlace('data:text/html,<h1>Contenido HTML</h1><p>Este es contenido HTML directo</p>', 'Contenido HTML')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                HTML Directo
+            </button>
+        </div>
+
+        <div class="test-section">
+            <h3>⌨️ Controles de Test</h3>
+            <p>Funcionalidades para probar:</p>
+            <ul>
+                <li>✅ Botón X para cerrar</li>
+                <li>✅ Clic fuera del modal para cerrar</li>
+                <li>✅ Tecla ESC para cerrar</li>
+                <li>✅ Responsive en móviles</li>
+                <li>✅ Manejo de errores de iframe</li>
+            </ul>
+
+            <button class="btn-test" onclick="cerrarModalEnlace()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Cerrar Modal
+            </button>
+
+            <button class="btn-test" onclick="clearLog()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                Limpiar Log
+            </button>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Log de Eventos</h3>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <!-- Modal HTML -->
+    <div id="modalEnlace" class="modal-enlace" style="display: none;">
+        <div class="modal-enlace-overlay" onclick="cerrarModalEnlace()"></div>
+        <div class="modal-enlace-content">
+            <div class="modal-enlace-header">
+                <h3 id="modalEnlaceTitulo" class="modal-enlace-titulo"></h3>
+                <button onclick="cerrarModalEnlace()" class="modal-enlace-cerrar" aria-label="Cerrar">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-enlace-body">
+                <iframe id="modalEnlaceIframe" src="" frameborder="0" class="modal-enlace-iframe"></iframe>
+                <div id="iframe-error" style="display: none; padding: 2rem; text-align: center; color: #666;">
+                    <svg style="width: 48px; height: 48px; margin: 0 auto 1rem; display: block;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3 style="margin-bottom: 0.5rem;">No se pudo cargar el contenido</h3>
+                    <p style="margin-bottom: 1rem;">Es posible que el sitio web no permita ser mostrado en un iframe.</p>
+                    <button onclick="abrirEnNuevaVentana()" style="padding: 0.5rem 1rem; background: #ff5e2c; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Abrir en nueva ventana
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUrl = '';
+
+        function logEvent(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[Modal Test] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            logEvent('Log limpiado');
+        }
+
+        function abrirModalEnlace(url, titulo) {
+            logEvent(`Abriendo modal: ${titulo} - ${url}`);
+            currentUrl = url;
+
+            const modal = document.getElementById('modalEnlace');
+            const iframe = document.getElementById('modalEnlaceIframe');
+            const tituloElement = document.getElementById('modalEnlaceTitulo');
+            const errorDiv = document.getElementById('iframe-error');
+
+            // Establecer el título
+            tituloElement.textContent = titulo || 'Información adicional';
+
+            // Limpiar iframe y ocultar error
+            iframe.src = 'about:blank';
+            iframe.style.display = 'block';
+            errorDiv.style.display = 'none';
+
+            // Mostrar modal
+            modal.style.display = 'block';
+
+            // Prevenir scroll del body
+            document.body.style.overflow = 'hidden';
+
+            // Cargar la URL después de un pequeño delay
+            setTimeout(() => {
+                iframe.src = url;
+                logEvent(`URL cargada en iframe: ${url}`);
+            }, 100);
+        }
+
+        function cerrarModalEnlace() {
+            logEvent('Cerrando modal');
+
+            const modal = document.getElementById('modalEnlace');
+            const iframe = document.getElementById('modalEnlaceIframe');
+
+            // Ocultar modal
+            modal.style.display = 'none';
+
+            // Restaurar scroll del body
+            document.body.style.overflow = '';
+
+            // Limpiar iframe
+            iframe.src = 'about:blank';
+            currentUrl = '';
+        }
+
+        function abrirEnNuevaVentana() {
+            if (currentUrl) {
+                logEvent(`Abriendo en nueva ventana: ${currentUrl}`);
+                window.open(currentUrl, '_blank');
+            }
+        }
+
+        // Eventos del DOM
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('modalEnlace');
+                if (modal && modal.style.display === 'block') {
+                    logEvent('Modal cerrado con tecla ESC');
+                    cerrarModalEnlace();
+                }
+            }
+        });
+
+        // Manejar errores del iframe
+        document.addEventListener('DOMContentLoaded', function() {
+            const iframe = document.getElementById('modalEnlaceIframe');
+            if (iframe) {
+                iframe.addEventListener('error', function() {
+                    logEvent('Error al cargar contenido en iframe');
+                    iframe.style.display = 'none';
+                    document.getElementById('iframe-error').style.display = 'block';
+                });
+
+                iframe.addEventListener('load', function() {
+                    if (iframe.src !== 'about:blank') {
+                        logEvent('Contenido cargado exitosamente en iframe');
+                    }
+                });
+            }
+        });
+
+        // Log inicial
+        logEvent('Test modal inicializado correctamente');
+        logEvent('Prueba los botones para abrir diferentes URLs');
+    </script>
+</body>
+</html>
