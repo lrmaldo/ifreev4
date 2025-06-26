@@ -968,35 +968,7 @@
                     </div>
                 @endif
 
-                <!-- Enlace de la campaña en formulario -->
-                @if($campanaSeleccionada && $campanaSeleccionada->enlace)
-                    <div class="text-center mb-6">
-                        <button
-                            onclick="abrirModalEnlace('{{ $campanaSeleccionada->enlace }}', '{{ $campanaSeleccionada->titulo ?? $campanaSeleccionada->nombre }}')"
-                            class="btn-enlace-campana"
-                            type="button"
-                        >
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                            </svg>
-                            Ver más información
-                        </button>
-                    </div>
-                @else
-                    <!-- DEBUG: Mostrar por qué no aparece el botón -->
-                    @if(config('app.debug'))
-                        <div style="background: #ffebee; padding: 10px; margin: 10px 0; font-size: 12px; border-radius: 4px; color: #c62828;">
-                            <strong>DEBUG - ¿Por qué no aparece el botón?</strong><br>
-                            @if(!$campanaSeleccionada)
-                                ❌ No hay campaña seleccionada
-                            @elseif(!$campanaSeleccionada->enlace)
-                                ❌ La campaña no tiene enlace configurado
-                            @else
-                                ❓ Razón desconocida
-                            @endif
-                        </div>
-                    @endif
-                @endif
+
 
                 <form id="portal-form" class="space-y-4">
                     <input type="hidden" id="zona_id" value="{{ $zona->id }}">
@@ -1043,82 +1015,7 @@
                         </div>
                     @endif
 
-                    <!-- Enlace de la campaña -->
-                    @if($campanaSeleccionada && $campanaSeleccionada->enlace)
-                        <div class="text-center mb-4">
-                            <button
-                                onclick="abrirModalEnlace('{{ $campanaSeleccionada->enlace }}', '{{ $campanaSeleccionada->titulo ?? $campanaSeleccionada->nombre }}')"
-                                class="btn-enlace-campana"
-                                type="button"
-                            >
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                </svg>
-                                Ver más información
-                            </button>
-                        </div>
-                    @else
-                        <!-- DEBUG: Mostrar por qué no aparece el botón -->
-                        @if(config('app.debug'))
-                            <div style="background: #ffebee; padding: 10px; margin: 10px 0; font-size: 12px; border-radius: 4px; color: #c62828;">
-                                <strong>DEBUG - ¿Por qué no aparece el botón? (sin formulario)</strong><br>
-                                @if(!$campanaSeleccionada)
-                                    ❌ No hay campaña seleccionada
-                                @elseif(!$campanaSeleccionada->enlace)
-                                    ❌ La campaña no tiene enlace configurado
-                                @else
-                                    ❓ Razón desconocida
-                                @endif
-                            </div>
-                        @endif
-                    @endif
-                @endif
 
-                <!-- BOTÓN DE PRUEBA TEMPORAL (solo en modo debug) -->
-                @if(config('app.debug'))
-                    <div class="text-center mb-6" style="background: #e3f2fd; padding: 15px; border-radius: 8px;">
-                        <strong>🧪 PRUEBA TEMPORAL - Modal de Enlace</strong><br>
-                        <div class="flex flex-wrap gap-2 justify-center mt-2">
-                            <button
-                                onclick="abrirModalEnlace('https://www.google.com', 'Google - Prueba Modal')"
-                                class="btn-enlace-campana"
-                                type="button"
-                                style="margin: 5px;"
-                            >
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                </svg>
-                                🧪 Google
-                            </button>
-
-                            <button
-                                onclick="abrirModalEnlace('https://example.com', 'Example.com - Prueba Modal')"
-                                class="btn-enlace-campana"
-                                type="button"
-                                style="margin: 5px;"
-                            >
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                </svg>
-                                🧪 Example.com
-                            </button>
-
-                            <button
-                                onclick="abrirModalEnlace('http://sattlink.com/', 'Sattlink - Prueba')"
-                                class="btn-enlace-campana"
-                                type="button"
-                                style="margin: 5px; background-color: #ff5e2c;"
-                            >
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                </svg>
-                                🧪 Sattlink
-                            </button>
-                        </div>
-                        <div class="text-sm text-gray-600 mt-2">
-                            Botones de prueba para verificar el comportamiento del modal con diferentes URLs
-                        </div>
-                    </div>
                 @endif
 
                 @if($videoUrl)
