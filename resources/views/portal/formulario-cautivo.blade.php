@@ -1002,7 +1002,7 @@
                     </p>
 
                     <!-- DEBUG: Información de campaña (temporal) -->
-                    @if(config('app.debug'))
+                   {{--  @if(config('app.debug'))
                         <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; font-size: 12px; border-radius: 4px;">
                             <strong>DEBUG - Información de campaña (sin formulario):</strong><br>
                             Campaña seleccionada: {{ $campanaSeleccionada ? 'SÍ' : 'NO' }}<br>
@@ -1013,7 +1013,7 @@
                                 Tipo: {{ $campanaSeleccionada->tipo ?? 'N/A' }}<br>
                             @endif
                         </div>
-                    @endif
+                    @endif --}}
 
 
                 @endif
