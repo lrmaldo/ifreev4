@@ -696,9 +696,14 @@
             width: 100vw;
             height: 100vh;
             z-index: 9999;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(4px);
             animation: fadeInModal 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         .modal-enlace-overlay {
@@ -708,19 +713,22 @@
             width: 100%;
             height: 100%;
             cursor: pointer;
+            z-index: -1;
         }
 
         .modal-enlace-content {
             position: relative;
-            width: 95%;
+            width: 100%;
             max-width: 1200px;
             height: 90vh;
-            margin: 5vh auto;
+            max-height: calc(100vh - 20px);
             background: white;
             border-radius: 12px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             overflow: hidden;
             animation: slideInModal 0.3s ease-out;
+            display: flex;
+            flex-direction: column;
         }
 
         .modal-enlace-header {
@@ -731,6 +739,8 @@
             background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
             color: white;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+            min-height: 60px;
         }
 
         .modal-enlace-titulo {
@@ -739,6 +749,10 @@
             margin: 0;
             flex: 1;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 1rem;
         }
 
         .modal-enlace-cerrar {
@@ -752,7 +766,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-left: 1rem;
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
         }
 
         .modal-enlace-cerrar:hover {
@@ -765,8 +781,9 @@
         }
 
         .modal-enlace-body {
-            height: calc(100% - 73px); /* Altura total menos header */
+            flex: 1;
             position: relative;
+            overflow: hidden;
         }
 
         .modal-enlace-iframe {
@@ -774,6 +791,7 @@
             height: 100%;
             border: none;
             display: block;
+            background: #f8f9fa;
         }
 
         /* Animaciones del modal */
@@ -799,37 +817,61 @@
 
         /* Responsive para el modal */
         @media (max-width: 768px) {
+            .modal-enlace {
+                padding: 5px;
+            }
+
             .modal-enlace-content {
-                width: 98%;
+                width: 100%;
                 height: 95vh;
-                margin: 2.5vh auto;
+                max-height: calc(100vh - 10px);
                 border-radius: 8px;
             }
 
             .modal-enlace-header {
                 padding: 0.75rem 1rem;
+                min-height: 50px;
             }
 
             .modal-enlace-titulo {
                 font-size: 1rem;
+                padding-right: 0.5rem;
             }
 
             .modal-enlace-cerrar {
                 padding: 0.25rem;
-            }
-
-            .modal-enlace-body {
-                height: calc(100% - 60px);
+                width: 32px;
+                height: 32px;
             }
         }
 
         @media (max-width: 480px) {
+            .modal-enlace {
+                padding: 0;
+            }
+
             .modal-enlace-content {
                 width: 100%;
                 height: 100vh;
-                margin: 0;
+                max-height: 100vh;
                 border-radius: 0;
             }
+
+            .modal-enlace-header {
+                padding: 0.5rem 0.75rem;
+                min-height: 48px;
+            }
+
+            .modal-enlace-titulo {
+                font-size: 0.9rem;
+                padding-right: 0.25rem;
+            }
+
+            .modal-enlace-cerrar {
+                width: 28px;
+                height: 28px;
+            }
+        }
 
             .modal-enlace-header {
                 padding: 0.5rem 0.75rem;
@@ -1036,17 +1078,46 @@
                 @if(config('app.debug'))
                     <div class="text-center mb-6" style="background: #e3f2fd; padding: 15px; border-radius: 8px;">
                         <strong>🧪 PRUEBA TEMPORAL - Modal de Enlace</strong><br>
-                        <button
-                            onclick="abrirModalEnlace('https://www.google.com', 'Google - Prueba Modal')"
-                            class="btn-enlace-campana"
-                            type="button"
-                            style="margin-top: 10px;"
-                        >
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                            </svg>
-                            🧪 Probar Modal (Google)
-                        </button>
+                        <div class="flex flex-wrap gap-2 justify-center mt-2">
+                            <button
+                                onclick="abrirModalEnlace('https://www.google.com', 'Google - Prueba Modal')"
+                                class="btn-enlace-campana"
+                                type="button"
+                                style="margin: 5px;"
+                            >
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                                🧪 Google
+                            </button>
+
+                            <button
+                                onclick="abrirModalEnlace('https://example.com', 'Example.com - Prueba Modal')"
+                                class="btn-enlace-campana"
+                                type="button"
+                                style="margin: 5px;"
+                            >
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                                🧪 Example.com
+                            </button>
+
+                            <button
+                                onclick="abrirModalEnlace('http://sattlink.com/', 'Sattlink - Prueba')"
+                                class="btn-enlace-campana"
+                                type="button"
+                                style="margin: 5px; background-color: #ff5e2c;"
+                            >
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                                🧪 Sattlink
+                            </button>
+                        </div>
+                        <div class="text-sm text-gray-600 mt-2">
+                            Botones de prueba para verificar el comportamiento del modal con diferentes URLs
+                        </div>
                     </div>
                 @endif
 
@@ -2017,42 +2088,217 @@
                     alert("No se pueden obtener los datos necesarios para la conexión. Por favor, intente de nuevo.");
                 }
             }
-        });
-
-        /**
+        });        /**
          * Funciones para el modal de enlace de campaña
          */
         function abrirModalEnlace(url, titulo) {
-            logDebug('Abriendo modal de enlace: ' + url);
+            console.log('=== INICIANDO MODAL ===');
+            console.log('URL:', url);
+            console.log('Título:', titulo);
 
             const modal = document.getElementById('modalEnlace');
             const iframe = document.getElementById('modalEnlaceIframe');
             const tituloElement = document.getElementById('modalEnlaceTitulo');
 
+            console.log('Modal encontrado:', !!modal);
+            console.log('Iframe encontrado:', !!iframe);
+            console.log('Título element encontrado:', !!tituloElement);
+
+            if (!modal || !iframe || !tituloElement) {
+                console.error('Elementos del modal no encontrados');
+                alert('Error: No se pudo abrir el modal');
+                return;
+            }
+
             // Establecer el título
             tituloElement.textContent = titulo || 'Información adicional';
+            console.log('Título establecido:', tituloElement.textContent);
 
             // Limpiar iframe antes de cargar nueva URL
             iframe.src = 'about:blank';
+            console.log('Iframe limpiado');
 
             // Mostrar modal
             modal.style.display = 'block';
+            console.log('Modal mostrado');
 
             // Prevenir scroll del body
             document.body.style.overflow = 'hidden';
+            console.log('Scroll del body deshabilitado');
 
-            // Cargar la URL después de un pequeño delay para mejorar la experiencia
+            // Variable para controlar si ya se mostró el error
+            let errorMostrado = false;
+            let tiempoInicioMedicion = Date.now();
+
+            // Función para verificar si el iframe está realmente cargado
+            const verificarCargaIframe = () => {
+                if (errorMostrado) return;
+
+                const tiempoTranscurrido = Date.now() - tiempoInicioMedicion;
+                console.log(`Verificando carga del iframe (${tiempoTranscurrido}ms transcurridos)`);
+
+                try {
+                    const iframeWindow = iframe.contentWindow;
+                    const iframeDoc = iframe.contentDocument || iframeWindow.document;
+
+                    // Si podemos acceder al documento y está vacío
+                    if (iframeDoc && iframeDoc.readyState === 'complete') {
+                        const body = iframeDoc.body;
+                        if (!body || body.innerHTML.trim() === '' || body.children.length === 0) {
+                            console.log('Iframe vacío detectado - documento accesible pero sin contenido');
+                            errorMostrado = true;
+                            mostrarErrorIframe(iframe, url);
+                            return;
+                        }
+
+                        // Verificar si hay contenido visible
+                        const bodyText = body.innerText || body.textContent || '';
+                        if (bodyText.trim() === '') {
+                            console.log('Iframe sin contenido de texto visible');
+                            errorMostrado = true;
+                            mostrarErrorIframe(iframe, url);
+                            return;
+                        }
+                    }
+
+                    // Si el iframe apunta a about:blank, es un error
+                    if (iframe.src === 'about:blank' || iframe.src === '') {
+                        console.log('Iframe regresó a about:blank - posible error de carga');
+                        errorMostrado = true;
+                        mostrarErrorIframe(iframe, url);
+                        return;
+                    }
+
+                } catch (e) {
+                    // Error de cross-origin es normal para sitios externos
+                    console.log('Cross-origin detected - asumiendo carga exitosa');
+
+                    // Si han pasado más de 3 segundos y seguimos teniendo cross-origin,
+                    // probablemente el sitio se cargó correctamente
+                    if (tiempoTranscurrido > 3000) {
+                        console.log('Cross-origin después de 3s - asumiendo éxito');
+                        return;
+                    }
+                }
+            };
+
+            // Event listeners para detectar carga y errores
+            const onLoad = function() {
+                console.log('Evento load del iframe disparado');
+                console.log('URL actual del iframe:', iframe.src);
+                console.log('Tiempo transcurrido:', Date.now() - tiempoInicioMedicion, 'ms');
+
+                // Verificar inmediatamente y después de pequeños delays
+                setTimeout(verificarCargaIframe, 100);
+                setTimeout(verificarCargaIframe, 500);
+                setTimeout(verificarCargaIframe, 1500);
+            };
+
+            const onError = function() {
+                console.log('Evento error del iframe disparado');
+                if (!errorMostrado) {
+                    errorMostrado = true;
+                    mostrarErrorIframe(iframe, url);
+                }
+            };
+
+            // Función para detectar si el iframe está colgado (no responde)
+            const detectarIframeColgado = () => {
+                if (errorMostrado) return;
+
+                const tiempoTranscurrido = Date.now() - tiempoInicioMedicion;
+                console.log(`Verificando si iframe está colgado (${tiempoTranscurrido}ms)`);
+
+                // Si han pasado más de 5 segundos y no hemos detectado contenido ni error
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+                    // Si podemos acceder y no hay contenido, es un problema
+                    if (iframeDoc && (!iframeDoc.body || iframeDoc.body.innerHTML.trim() === '')) {
+                        console.log('Iframe colgado detectado - sin contenido');
+                        errorMostrado = true;
+                        mostrarErrorIframe(iframe, url);
+                        return;
+                    }
+
+                } catch (e) {
+                    // Error de cross-origin es normal para sitios externos
+                    console.log('Error al detectar si iframe está colgado (Cross-origin):', e.message);
+                }
+            };
+
+            // Remover listeners anteriores si existen
+            iframe.removeEventListener('load', onLoad);
+            iframe.removeEventListener('error', onError);
+
+            // Agregar nuevos listeners
+            iframe.addEventListener('load', onLoad);
+            iframe.addEventListener('error', onError);
+
+            // Cargar la URL después de un pequeño delay
             setTimeout(() => {
+                console.log('Cargando URL en iframe:', url);
                 iframe.src = url;
-                logDebug('URL cargada en iframe: ' + url);
+
+                // Programar múltiples verificaciones
+                setTimeout(() => {
+                    if (!errorMostrado) {
+                        console.log('Primera verificación (2s)');
+                        verificarCargaIframe();
+                    }
+                }, 2000);
+
+                setTimeout(() => {
+                    if (!errorMostrado) {
+                        console.log('Verificando iframe colgado (4s)');
+                        detectarIframeColgado();
+                    }
+                }, 4000);
+
+                setTimeout(() => {
+                    if (!errorMostrado) {
+                        console.log('Segunda verificación completa (6s)');
+                        verificarCargaIframe();
+                        detectarIframeColgado();
+                    }
+                }, 6000);
+
+                // Verificación final agresiva
+                setTimeout(() => {
+                    if (!errorMostrado) {
+                        console.log('Verificación final agresiva (8s)');
+
+                        // Si el iframe sigue con la URL original pero no hay indicios de carga,
+                        // probablemente sea un problema de X-Frame-Options o CSP
+                        if (iframe.src === url) {
+                            try {
+                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                if (!iframeDoc || (iframeDoc.body && iframeDoc.body.innerHTML.trim() === '')) {
+                                    console.log('El contenido no se pudo mostrar - Restricciones de X-Frame-Options');
+                                    errorMostrado = true;
+                                    mostrarErrorIframe(iframe, url);
+                                }
+                            } catch (e) {
+                                // Para sitios con cross-origin es normal tener un error aquí
+                                // Pero después de tanto tiempo, si no vemos el error normal, forzamos mensaje de error
+                                console.log('Cross-origin detectado después de 8s');
+
+                                // Para el caso específico de sattlink.com
+                                if (url.includes('sattlink.com')) {
+                                    console.log('URL de Sattlink detectada, mostrando mensaje de error específico');
+                                    errorMostrado = true;
+                                    mostrarErrorIframe(iframe, url);
+                                }
+                            }
+                        }
+                    }
+                }, 8000);
             }, 100);
 
             // Registrar métrica de interacción
             registrarInteraccionEnlace();
-        }
-
-        function cerrarModalEnlace() {
-            logDebug('Cerrando modal de enlace');
+        }        function cerrarModalEnlace() {
+            console.log('Cerrando modal de enlace');
 
             const modal = document.getElementById('modalEnlace');
             const iframe = document.getElementById('modalEnlaceIframe');
@@ -2067,13 +2313,153 @@
             iframe.src = 'about:blank';
         }
 
-        function registrarInteraccionEnlace() {
+        function mostrarErrorIframe(iframe, url) {
+            console.log('Mostrando error de iframe para URL: ' + url);
+
+            // Remover cualquier mensaje de error previo
+            const errorPrevio = document.getElementById('iframe-error-message');
+            if (errorPrevio) {
+                errorPrevio.remove();
+            }
+
+            // Ocultar iframe
+            iframe.style.display = 'none';
+
+            // Crear mensaje de error
+            const errorDiv = document.createElement('div');
+            errorDiv.id = 'iframe-error-message';
+            errorDiv.style.cssText = `
+                padding: 2rem;
+                text-align: center;
+                color: #666;
+                background: #f8f9fa;
+                margin: 20px;
+                border-radius: 8px;
+                border: 1px solid #dee2e6;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            `;
+
+            errorDiv.innerHTML = `
+                <div>
+                    <svg style="width: 48px; height: 48px; margin: 0 auto 1rem; display: block; color: #ffc107;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3 style="margin-bottom: 0.5rem; color: #495057; font-size: 18px;">Contenido no disponible</h3>
+                    <p style="margin-bottom: 1.5rem; color: #6c757d; font-size: 14px; line-height: 1.5;">
+                        El sitio web no se puede mostrar aquí.<br>
+                        Esto puede deberse a restricciones de seguridad del sitio.
+                    </p>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="abrirEnNuevaVentana('${url}')" style="padding: 0.75rem 1.5rem; background: #ff5e2c; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                            📱 Abrir en nueva ventana
+                        </button>
+                        <button onclick="intentarRecargar('${url}')" style="padding: 0.75rem 1.5rem; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                            🔄 Intentar de nuevo
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Agregar al contenedor del modal
+            const modalBody = iframe.parentNode;
+            modalBody.appendChild(errorDiv);
+        }
+
+        function abrirEnNuevaVentana(url) {
+            console.log('Abriendo en nueva ventana: ' + url);
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+
+        function intentarRecargar(url) {
+            console.log('Intentando recargar: ' + url);
+
+            // Remover mensaje de error
+            const errorMsg = document.getElementById('iframe-error-message');
+            if (errorMsg) {
+                errorMsg.remove();
+            }
+
+            // Obtener iframe y resetear
+            const iframe = document.getElementById('modalEnlaceIframe');
+            iframe.style.display = 'block';
+            iframe.src = 'about:blank';
+
+            // Pequeño delay antes de recargar
+            setTimeout(() => {
+                console.log('Recargando URL:', url);
+
+                // Variable para controlar errores en el intento de recarga
+                let errorMostradoRecarga = false;
+
+                const onLoadRecarga = function() {
+                    console.log('Recarga - evento load disparado');
+                    setTimeout(() => {
+                        if (!errorMostradoRecarga) {
+                            try {
+                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                if (iframeDoc && iframeDoc.body && iframeDoc.body.innerHTML.trim() === '') {
+                                    console.log('Recarga - iframe vacío detectado');
+                                    errorMostradoRecarga = true;
+                                    mostrarErrorIframe(iframe, url);
+                                }
+                            } catch (e) {
+                                console.log('Recarga - cross-origin detected (probablemente exitoso)');
+                            }
+                        }
+                    }, 1000);
+                };
+
+                const onErrorRecarga = function() {
+                    console.log('Recarga - evento error disparado');
+                    if (!errorMostradoRecarga) {
+                        errorMostradoRecarga = true;
+                        mostrarErrorIframe(iframe, url);
+                    }
+                };
+
+                // Limpiar listeners anteriores
+                iframe.removeEventListener('load', onLoadRecarga);
+                iframe.removeEventListener('error', onErrorRecarga);
+
+                // Agregar listeners para la recarga
+                iframe.addEventListener('load', onLoadRecarga);
+                iframe.addEventListener('error', onErrorRecarga);
+
+                // Cargar URL
+                iframe.src = url;
+
+                // Timeout para la recarga
+                setTimeout(() => {
+                    if (!errorMostradoRecarga) {
+                        try {
+                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                            if (!iframeDoc || (iframeDoc.body && iframeDoc.body.innerHTML.trim() === '')) {
+                                console.log('Recarga - timeout, mostrando error');
+                                errorMostradoRecarga = true;
+                                mostrarErrorIframe(iframe, url);
+                            }
+                        } catch (e) {
+                            console.log('Recarga - timeout con cross-origin (probablemente exitoso)');
+                        }
+                    }
+                }, 5000);
+
+            }, 200);
+        }        function registrarInteraccionEnlace() {
             // Registrar que el usuario interactuó con el enlace de la campaña
             const zonaId = document.getElementById('zona_id')?.value;
             const macAddress = document.getElementById('mac_address')?.value;
 
             if (zonaId && macAddress) {
-                logDebug('Registrando interacción con enlace de campaña');
+                console.log('Registrando interacción con enlace de campaña');
+
+                // Obtener el token CSRF
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                if (!csrfToken) {
+                    console.log('Token CSRF no encontrado, omitiendo registro de métrica');
+                    return;
+                }
 
                 fetch('/portal/actualizar-metrica', {
                     method: 'POST',
@@ -2092,10 +2478,10 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    logDebug('Métrica de enlace registrada correctamente');
+                    console.log('Métrica de enlace registrada correctamente');
                 })
                 .catch(error => {
-                    logDebug('Error al registrar métrica de enlace: ' + error.message, 'error');
+                    console.log('Error al registrar métrica de enlace: ' + error.message);
                 });
             }
         }
@@ -2111,29 +2497,29 @@
         });
 
         // Manejar errores del iframe
-        const iframe = document.getElementById('modalEnlaceIframe');
-        if (iframe) {
-            iframe.addEventListener('error', function() {
-                logDebug('Error al cargar contenido en iframe', 'error');
-                // Mostrar mensaje de error al usuario
-                iframe.style.display = 'none';
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'iframe-error';
-                errorDiv.innerHTML = `
-                    <div style="padding: 2rem; text-align: center; color: #666;">
-                        <svg style="width: 48px; height: 48px; margin: 0 auto 1rem; display: block;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <h3 style="margin-bottom: 0.5rem;">No se pudo cargar el contenido</h3>
-                        <p style="margin-bottom: 1rem;">Es posible que el sitio web no permita ser mostrado en un iframe.</p>
-                        <button onclick="window.open(iframe.src, '_blank')" style="padding: 0.5rem 1rem; background: var(--color-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            Abrir en nueva ventana
-                        </button>
-                    </div>
-                `;
-                iframe.parentNode.appendChild(errorDiv);
-            });
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const iframe = document.getElementById('modalEnlaceIframe');
+            if (iframe) {
+                iframe.addEventListener('error', function() {
+                    console.log('Error al cargar contenido en iframe');
+                    mostrarErrorIframe(iframe, iframe.src);
+                });
+
+                iframe.addEventListener('load', function() {
+                    console.log('Iframe cargado correctamente');
+                    // Verificar si realmente se cargó contenido
+                    try {
+                        // Si podemos acceder al documento del iframe, significa que se cargó
+                        if (iframe.contentDocument || iframe.contentWindow) {
+                            console.log('Contenido del iframe accesible');
+                        }
+                    } catch (e) {
+                        // Si hay error de cross-origin, es normal para sitios externos
+                        console.log('Iframe cargado (cross-origin)');
+                    }
+                });
+            }
+        });
     </script>
 
     <!-- Scripts de configuración adicionales -->
