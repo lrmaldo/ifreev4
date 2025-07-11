@@ -229,6 +229,11 @@ Route::middleware(['auth'])->group(function () {
 
 });
 
+// Ruta de prueba para mostrar el dashboard de administración con Tailwind
+Route::get('/test-dashboard', function() {
+    return view('test-dashboard');
+})->name('test.dashboard');
+
 // Rutas para el webhook de Telegram
 // Nota: La ruta principal del webhook es manejada por Telegraph::telegraph() más abajo en este archivo
 // Se comenta esta ruta para evitar conflictos con el enrutamiento automático de Telegraph
