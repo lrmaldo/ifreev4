@@ -783,4 +783,156 @@ class ZonaLoginController extends Controller
         }
         return (int)$duracionVisual; // Convertir a entero
     }
+
+    /**
+     * Extrae información del dispositivo desde el user agent
+     *
+     * @param string $ua User Agent
+     * @return string Información del dispositivo
+     */
+    protected function extraerInformacionDispositivo($ua)
+    {
+        $dispositivo = 'Desconocido';
+
+        // Extraer modelo de dispositivo móvil Android
+        $regexModelo = '/Android[\s\d\.]+;\s([^;)]+)/i';
+        preg_match($regexModelo, $ua, $modeloMatch);
+
+        if (!empty($modeloMatch[1])) {
+            $modelo = trim($modeloMatch[1]);
+            $dispositivo = $modelo;
+
+            // Detectar y formatear dispositivos Xiaomi/POCO
+            if (preg_match('/(M2\d{3}|22\d{6}|21\d{6}|SM-[A-Za-z0-9]+)/', $modelo)) {
+                if (stripos($ua, 'poco') !== false) {
+                    $dispositivo = "POCO $modelo";
+                } elseif (stripos($ua, 'redmi') !== false) {
+                    $dispositivo = "Redmi $modelo";
+                } elseif (stripos($ua, 'samsung') !== false || str_starts_with($modelo, 'SM-')) {
+                    $dispositivo = "Samsung $modelo";
+                } elseif (stripos($ua, 'xiaomi') !== false) {
+                    $dispositivo = "Xiaomi $modelo";
+                }
+            }
+        }
+        // Si es iPhone/iPad
+        elseif (str_contains($ua, 'iPhone')) {
+            $dispositivo = 'iPhone';
+        }
+        elseif (str_contains($ua, 'iPad')) {
+            $dispositivo = 'iPad';
+        }
+        // Si es un dispositivo Windows
+        elseif (str_contains($ua, 'Windows')) {
+            $dispositivo = 'PC Windows';
+        }
+        // Si es un dispositivo Mac
+        elseif (str_contains($ua, 'Macintosh')) {
+            $dispositivo = 'Mac';
+        }
+
+        return $dispositivo;
+    }
+
+    /**
+     * Extrae información del navegador desde el user agent
+     *
+     * @param string $ua User Agent
+     * @return string Información del navegador
+     */
+    protected function extraerInformacionNavegador($ua)
+    {
+        $navegador = 'Desconocido';
+        $version = '';
+
+        if (str_contains($ua, 'Chrome') && !str_contains($ua, 'Edg') && !str_contains($ua, 'OPR')) {
+            $navegador = 'Chrome';
+            preg_match('/Chrome\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[1])) $version = $match[1];
+        } elseif (str_contains($ua, 'Firefox')) {
+            $navegador = 'Firefox';
+            preg_match('/Firefox\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[1])) $version = $match[1];
+        } elseif (str_contains($ua, 'Safari') && !str_contains($ua, 'Chrome')) {
+            $navegador = 'Safari';
+            preg_match('/Version\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[1])) $version = $match[1];
+        } elseif (str_contains($ua, 'Edg')) {
+            $navegador = 'Edge';
+            preg_match('/Edg\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[1])) $version = $match[1];
+        } elseif (str_contains($ua, 'OPR') || str_contains($ua, 'Opera')) {
+            $navegador = 'Opera';
+            preg_match('/(OPR|Opera)\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[2])) $version = $match[2];
+        } elseif (str_contains($ua, 'MIUI')) {
+            $navegador = 'Navegador MIUI';
+            preg_match('/MiuiBrowser\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[1])) $version = $match[1];
+        } elseif (str_contains($ua, 'SamsungBrowser')) {
+            $navegador = 'Samsung Internet';
+            preg_match('/SamsungBrowser\/(\d+(\.\d+)?)/', $ua, $match);
+            if (!empty($match[1])) $version = $match[1];
+        }
+
+        if (!empty($version)) {
+            $navegador .= ' ' . $version;
+        }
+
+        return $navegador;
+    }
+
+    /**
+     * Extrae información del sistema operativo desde el user agent
+     *
+     * @param string $ua User Agent
+     * @return string Información del sistema operativo
+     */
+    protected function extraerSistemaOperativo($ua)
+    {
+        $sistemaOperativo = 'Desconocido';
+
+        if (str_contains($ua, 'Android')) {
+            preg_match('/Android\s([0-9\.]+)/', $ua, $match);
+            $sistemaOperativo = 'Android ' . (!empty($match[1]) ? $match[1] : '');
+        } elseif (str_contains($ua, 'iPhone') || str_contains($ua, 'iPad') || str_contains($ua, 'iPod')) {
+            preg_match('/OS\s([0-9_]+)/', $ua, $match);
+            $version = !empty($match[1]) ? str_replace('_', '.', $match[1]) : '';
+            $sistemaOperativo = 'iOS ' . $version;
+        } elseif (str_contains($ua, 'Windows')) {
+            preg_match('/Windows NT\s([0-9\.]+)/', $ua, $match);
+            if (!empty($match[1])) {
+                // Mapeo de versiones de Windows NT a nombres comerciales
+                $windowsVersions = [
+                    '10.0' => 'Windows 10/11',
+                    '6.3' => 'Windows 8.1',
+                    '6.2' => 'Windows 8',
+                    '6.1' => 'Windows 7',
+                    '6.0' => 'Windows Vista',
+                    '5.2' => 'Windows XP x64',
+                    '5.1' => 'Windows XP',
+                    '5.0' => 'Windows 2000'
+                ];
+                $sistemaOperativo = isset($windowsVersions[$match[1]]) ? $windowsVersions[$match[1]] : 'Windows ' . $match[1];
+            } else {
+                $sistemaOperativo = 'Windows';
+            }
+        } elseif (str_contains($ua, 'Mac OS X') || str_contains($ua, 'Macintosh')) {
+            preg_match('/Mac OS X\s?([0-9_\.]+)?/', $ua, $match);
+            $version = !empty($match[1]) ? str_replace('_', '.', $match[1]) : '';
+            $sistemaOperativo = 'macOS ' . $version;
+        } elseif (str_contains($ua, 'Linux')) {
+            if (str_contains($ua, 'Ubuntu')) {
+                $sistemaOperativo = 'Ubuntu Linux';
+            } else if (str_contains($ua, 'Fedora')) {
+                $sistemaOperativo = 'Fedora Linux';
+            } else if (str_contains($ua, 'Debian')) {
+                $sistemaOperativo = 'Debian Linux';
+            } else {
+                $sistemaOperativo = 'Linux';
+            }
+        }
+
+        return $sistemaOperativo;
+    }
 }
