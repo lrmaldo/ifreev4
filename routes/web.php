@@ -7,6 +7,23 @@ use App\Http\Controllers\ZonaLoginController;
 use App\Http\Controllers\TelegramController;
 use Illuminate\Support\Facades\Route;
 
+
+ // Rutas para previsualizar el portal cautivo de una zona
+        Route::get('/zonas/{id}/preview', [\App\Http\Controllers\ZonaController::class, 'preview'])
+            ->name('cliente.zona.preview');
+
+        // Ruta para previsualizar portal cautivo con carrusel de imágenes
+        Route::get('/zonas/{id}/preview/carrusel', [\App\Http\Controllers\ZonaController::class, 'previewCarrusel'])
+            ->name('cliente.zona.preview.carrusel');
+
+        // Ruta para previsualizar portal cautivo con reproducción de video
+        Route::get('/zonas/{id}/preview/video', [\App\Http\Controllers\ZonaController::class, 'previewVideo'])
+            ->name('cliente.zona.preview.video');
+
+        // Ruta para previsualizar portal cautivo con contenido dinámico de campañas
+        Route::get('/zonas/{id}/preview/campana', [\App\Http\Controllers\ZonaController::class, 'previewCampana'])
+            ->name('cliente.zona.preview.campana');
+
 // Ruta para manejar las solicitudes de login del Mikrotik
 Route::post('/login_formulario/{id}', [ZonaLoginController::class, 'handle'])
     ->name('zona.login.mikrotik')
@@ -191,21 +208,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/zonas/{zonaId}/formulario', \App\Livewire\FormularioDinamico::class)
             ->name('cliente.zona.formulario');
 
-        // Rutas para previsualizar el portal cautivo de una zona
-        Route::get('/zonas/{id}/preview', [\App\Http\Controllers\ZonaController::class, 'preview'])
-            ->name('cliente.zona.preview');
 
-        // Ruta para previsualizar portal cautivo con carrusel de imágenes
-        Route::get('/zonas/{id}/preview/carrusel', [\App\Http\Controllers\ZonaController::class, 'previewCarrusel'])
-            ->name('cliente.zona.preview.carrusel');
-
-        // Ruta para previsualizar portal cautivo con reproducción de video
-        Route::get('/zonas/{id}/preview/video', [\App\Http\Controllers\ZonaController::class, 'previewVideo'])
-            ->name('cliente.zona.preview.video');
-
-        // Ruta para previsualizar portal cautivo con contenido dinámico de campañas
-        Route::get('/zonas/{id}/preview/campana', [\App\Http\Controllers\ZonaController::class, 'previewCampana'])
-            ->name('cliente.zona.preview.campana');
 
         // Rutas para ver respuestas de formularios (cliente y admin ven solo sus zonas)
         Route::get('/zonas/{zonaId}/form-responses', [\App\Http\Controllers\FormResponseController::class, 'index'])

@@ -24,11 +24,9 @@
         <header class="fixed w-full top-0 z-50 bg-[#FDFDFC]/95 dark:bg-[#0a0a0a]/95 backdrop-blur-sm shadow-sm">
             <div class="container mx-auto px-4 py-3">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <svg class="h-10 w-10 text-[#ff3f00]" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 16h-2v-6h2v6zm4 0h-2v-6h2v6zm1-9.5C16 9.33 15.33 10 14.5 10h-5C8.67 10 8 9.33 8 8.5V8c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5v.5z"/>
-                        </svg>
-                        <span class="ml-3 text-2xl font-bold text-[#ff3f00]">Ifree Hotspot</span>
+                    <div class="flex items-center gap-3">
+                        <img src="/img/Logo-i-Free.png" alt="Ifree Hotspot" class="h-12 w-auto">
+                        <span class="text-2xl font-bold text-[#ff3f00]">Ifree Hotspot</span>
                     </div>
                     @if (Route::has('login'))
                         <nav class="flex items-center gap-4">
@@ -375,11 +373,9 @@
         <footer class="bg-gray-100 dark:bg-gray-900 py-8">
             <div class="container mx-auto px-4">
                 <div class="flex flex-col md:flex-row justify-between items-center">
-                    <div class="flex items-center mb-4 md:mb-0">
-                        <svg class="h-8 w-8 text-[#ff3f00]" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 16h-2v-6h2v6zm4 0h-2v-6h2v6zm1-9.5C16 9.33 15.33 10 14.5 10h-5C8.67 10 8 9.33 8 8.5V8c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5v.5z"/>
-                        </svg>
-                        <span class="ml-2 font-bold text-gray-800 dark:text-white">Ifree Hotspot</span>
+                    <div class="flex items-center gap-3 mb-4 md:mb-0">
+                        <img src="/img/Logo-i-Free.png" alt="Ifree Hotspot" class="h-10 w-auto">
+                        <span class="font-bold text-gray-800 dark:text-white">Ifree Hotspot</span>
                     </div>
 
                     <div class="text-sm text-gray-600 dark:text-gray-400">
