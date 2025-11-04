@@ -1195,6 +1195,11 @@
             }
         }
 
+        // Detectar Mixed Content y advertir al usuario
+        @if(request()->secure() && !empty($mikrotikData['link-login-only']) && strpos($mikrotikData['link-login-only'], 'http:') === 0)
+        logDebug('Advertencia: Detectado Mixed Content. El portal está en HTTPS pero Mikrotik usa HTTP. Esto es normal en portales cautivos pero puede causar warnings en el navegador.', 'warn');
+        @endif
+
         document.addEventListener('DOMContentLoaded', function() {
             // Configuración inicial
             const stepForm = document.getElementById('step-form');
@@ -1608,7 +1613,7 @@
 
                 logDebug('Registrando métrica:', metricaData);
 
-                fetch('/actualizar-metrica', {
+                fetch('/hotspot-metrics/update', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1616,12 +1621,18 @@
                     },
                     body: JSON.stringify(metricaData)
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     logDebug('Respuesta de métrica:', data);
                 })
                 .catch(error => {
-                    console.error('Error registrando métrica:', error);
+                    logDebug('Error registrando métrica: ' + error.message, 'error');
+                    // No bloquear la funcionalidad por errores de métricas
                 });
             }
 
@@ -1701,7 +1712,12 @@
                         ...datos
                     })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         console.log('Métrica actualizada:', data.message);
@@ -1709,7 +1725,10 @@
                         console.error('Error en métrica:', data.message);
                     }
                 })
-                .catch(error => console.log('Error actualizando métrica:', error));
+                .catch(error => {
+                    logDebug('Error actualizando métrica: ' + error.message, 'error');
+                    // No bloquear la funcionalidad por errores de métricas
+                });
             }
 
             // Función para registrar clics en botones con información detallada
@@ -1924,11 +1943,19 @@
                 },
                 body: JSON.stringify(metricaData)
             })
-            .then(response => response.json())
-            .then(data => {
-                // Se ha eliminado el componente de estadísticas en tiempo real
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                }
+                return response.json();
             })
-            .catch(error => console.log('Error registrando métrica:', error));
+            .then(data => {
+                logDebug('Métrica de entrada registrada correctamente');
+            })
+            .catch(error => {
+                logDebug('Error registrando métrica inicial: ' + error.message, 'error');
+                // No bloquear la funcionalidad por errores de métricas
+            });
 
             // Se eliminó el código para crear el contenedor de estadísticas
 
@@ -2358,7 +2385,7 @@
                     return;
                 }
 
-                fetch('/portal/actualizar-metrica', {
+                fetch('/hotspot-metrics/update', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2373,12 +2400,18 @@
                         detalle: 'Usuario abrió enlace de campaña'
                     })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     console.log('Métrica de enlace registrada correctamente');
                 })
                 .catch(error => {
                     console.log('Error al registrar métrica de enlace: ' + error.message);
+                    // No bloquear la funcionalidad por errores de métricas
                 });
             }
         }
