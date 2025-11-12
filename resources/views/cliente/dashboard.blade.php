@@ -80,7 +80,11 @@
                 <div>
                     <p class="text-sm text-zinc-600 dark:text-zinc-400">Campañas Activas</p>
                     <p class="text-3xl font-bold text-zinc-900 dark:text-white">
-                        {{ auth()->user()->campanas()->where('visible', true)->count() }}
+                        {{
+                            \App\Models\Campana::whereIn('zona_id', auth()->user()->zonas->pluck('id'))
+                                ->where('visible', true)
+                                ->count()
+                        }}
                     </p>
                 </div>
                 <div class="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
@@ -196,9 +200,16 @@
                     @endcan
                 </div>
 
-                @if(auth()->user()->campanas->count() > 0)
+                @php
+                    $campanasActivas = \App\Models\Campana::whereIn('zona_id', auth()->user()->zonas->pluck('id'))
+                        ->where('visible', true)
+                        ->take(3)
+                        ->get();
+                @endphp
+
+                @if($campanasActivas->count() > 0)
                     <div class="space-y-3">
-                        @foreach(auth()->user()->campanas()->where('visible', true)->take(3)->get() as $campana)
+                        @foreach($campanasActivas as $campana)
                         <div class="p-3 bg-zinc-50 dark:bg-zinc-700 rounded-lg">
                             <h4 class="font-medium text-zinc-900 dark:text-white text-sm">{{ $campana->nombre }}</h4>
                             <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{{ $campana->tipo }}</p>

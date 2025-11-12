@@ -1,4 +1,3 @@
-<?php
 <div {{ $attributes->merge(['class' => 'app-logo-container']) }}>
     <img
         src="{{ asset('img/Logo i-Free.png') }}"

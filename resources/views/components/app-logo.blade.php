@@ -1,4 +1,3 @@
-<?php
 @props([
     'size' => 'md', // sm, md, lg, xl
     'variant' => 'default', // default, dark, light
