@@ -361,7 +361,7 @@
                 <a href="javascript:history.back()" class="btn btn-primary">
                     ← Volver atrás
                 </a>
-                
+
                 <a href="javascript:location.reload()" class="btn btn-secondary">
                     🔄 Intentar nuevamente
                 </a>

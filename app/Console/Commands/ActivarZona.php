@@ -17,7 +17,7 @@ class ActivarZona extends Command
         }
 
         $id = $this->argument('id');
-        
+
         try {
             // Buscar zona por ID o ID personalizado
             $zona = Zona::where('id', $id)
