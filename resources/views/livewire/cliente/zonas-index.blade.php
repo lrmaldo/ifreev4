@@ -435,113 +435,145 @@
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-                    <div>
-                        <div class="mt-3 text-center sm:mt-5">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                {{ $editMode ? 'Editar Zona' : 'Nueva Zona' }}
-                            </h3>
-                            <div class="mt-4 space-y-4">
-                                <!-- Nombre -->
-                                <div>
-                                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
-                                    <input wire:model="nombre" type="text" id="nombre" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    @error('nombre') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-
-                                <!-- Descripción -->
-                                <div>
-                                    <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción (opcional)</label>
-                                    <textarea wire:model="descripcion" id="descripcion" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
-                                    @error('descripcion') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-
-                                <!-- ID Personalizado -->
-                                <div>
-                                    <label for="id_personalizado" class="block text-sm font-medium text-gray-700">ID Personalizado (opcional)</label>
-                                    <input wire:model="id_personalizado" type="text" id="id_personalizado" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    <p class="mt-1 text-sm text-gray-500">Si se especifica, se usará en la URL en lugar del ID numérico</p>
-                                    @error('id_personalizado') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-
-                                <!-- Tipo de Registro -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Tipo de Registro</label>
-                                    <div class="mt-2 space-y-2">
-                                        <div class="flex items-center">
-                                            <input wire:model="tipo_registro" id="sin_registro" name="tipo_registro" type="radio" value="sin_registro" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                            <label for="sin_registro" class="ml-3 block text-sm font-medium text-gray-700">Sin registro</label>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <input wire:model="tipo_registro" id="registro_simple" name="tipo_registro" type="radio" value="registro_simple" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                            <label for="registro_simple" class="ml-3 block text-sm font-medium text-gray-700">Registro simple</label>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <input wire:model="tipo_registro" id="registro_completo" name="tipo_registro" type="radio" value="registro_completo" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                            <label for="registro_completo" class="ml-3 block text-sm font-medium text-gray-700">Registro completo</label>
-                                        </div>
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                    {{ $editMode ? 'Editar Zona' : 'Nueva Zona' }}
+                                </h3>
+                                <div class="mt-4 space-y-4">
+                                    <!-- Nombre -->
+                                    <div>
+                                        <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
+                                        <input wire:model="nombre" type="text" id="nombre" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        @error('nombre') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
-                                    @error('tipo_registro') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
 
-                                <!-- Segundos -->
-                                <div>
-                                    <label for="segundos" class="block text-sm font-medium text-gray-700">Segundos de cuenta regresiva</label>
-                                    <input wire:model="segundos" type="number" id="segundos" min="1" max="300" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    @error('segundos') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-
-                                <!-- Selección de Campañas -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Selección de Campañas</label>
-                                    <div class="mt-2 space-y-2">
-                                        <div class="flex items-center">
-                                            <input wire:model="seleccion_campanas" id="aleatorio" name="seleccion_campanas" type="radio" value="aleatorio" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                            <label for="aleatorio" class="ml-3 block text-sm font-medium text-gray-700">Alternancia automática</label>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <input wire:model="seleccion_campanas" id="prioridad" name="seleccion_campanas" type="radio" value="prioridad" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                            <label for="prioridad" class="ml-3 block text-sm font-medium text-gray-700">Por prioridad</label>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <input wire:model="seleccion_campanas" id="video" name="seleccion_campanas" type="radio" value="video" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                            <label for="video" class="ml-3 block text-sm font-medium text-gray-700">Solo videos</label>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <input wire:model="seleccion_campanas" id="imagen" name="seleccion_campanas" type="radio" value="imagen" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                            <label for="imagen" class="ml-3 block text-sm font-medium text-gray-700">Solo imágenes</label>
-                                        </div>
+                                    <!-- Descripción -->
+                                    <div>
+                                        <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción (opcional)</label>
+                                        <textarea wire:model="descripcion" id="descripcion" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                                        @error('descripcion') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
-                                    @error('seleccion_campanas') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
 
-                                <!-- Autenticación Mikrotik -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Tipo de Autenticación Mikrotik</label>
-                                    <div class="mt-2 space-y-2">
-                                        <div class="flex items-center">
-                                            <input wire:model="tipo_autenticacion_mikrotik" id="sin_autenticacion" name="tipo_autenticacion_mikrotik" type="radio" value="sin_autenticacion" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                            <label for="sin_autenticacion" class="ml-3 block text-sm font-medium text-gray-700">Sin autenticación</label>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <input wire:model="tipo_autenticacion_mikrotik" id="pin" name="tipo_autenticacion_mikrotik" type="radio" value="pin" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                            <label for="pin" class="ml-3 block text-sm font-medium text-gray-700">Solo PIN</label>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <input wire:model="tipo_autenticacion_mikrotik" id="usuario_password" name="tipo_autenticacion_mikrotik" type="radio" value="usuario_password" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                            <label for="usuario_password" class="ml-3 block text-sm font-medium text-gray-700">Usuario y Contraseña</label>
-                                        </div>
+                                    <!-- ID Personalizado -->
+                                    <div>
+                                        <label for="id_personalizado" class="block text-sm font-medium text-gray-700">ID Personalizado (opcional)</label>
+                                        <input wire:model="id_personalizado" type="text" id="id_personalizado" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <p class="mt-1 text-sm text-gray-500">Si se especifica, se usará en la URL en lugar del ID numérico</p>
+                                        @error('id_personalizado') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
-                                    @error('tipo_autenticacion_mikrotik') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+
+                                    <!-- Tipo de Registro -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Tipo de Registro</label>
+                                        <div class="mt-2 space-y-2">
+                                            <div class="flex items-center">
+                                                <input wire:model="tipo_registro" id="sin_registro" name="tipo_registro" type="radio" value="sin_registro" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <label for="sin_registro" class="ml-3 block text-sm font-medium text-gray-700">Sin registro</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input wire:model="tipo_registro" id="registro_simple" name="tipo_registro" type="radio" value="registro_simple" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <label for="registro_simple" class="ml-3 block text-sm font-medium text-gray-700">Registro simple</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input wire:model="tipo_registro" id="registro_completo" name="tipo_registro" type="radio" value="registro_completo" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <label for="registro_completo" class="ml-3 block text-sm font-medium text-gray-700">Registro completo</label>
+                                            </div>
+                                        </div>
+                                        @error('tipo_registro') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <!-- Tiempo de visualización -->
+                                    <div>
+                                        <label for="tiempo_visualizacion" class="block text-sm font-medium text-gray-700">Tiempo de visualización (segundos)</label>
+                                        <input wire:model="tiempo_visualizacion" type="number" id="tiempo_visualizacion" min="5" max="300" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <p class="mt-1 text-sm text-gray-500">Tiempo que se muestra cada campaña antes de pasar a la siguiente</p>
+                                        @error('tiempo_visualizacion') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <!-- Segundos de cuenta regresiva -->
+                                    <div>
+                                        <label for="segundos" class="block text-sm font-medium text-gray-700">Cuenta regresiva (segundos)</label>
+                                        <input wire:model="segundos" type="number" id="segundos" min="1" max="300" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <p class="mt-1 text-sm text-gray-500">Tiempo de espera antes de permitir el acceso</p>
+                                        @error('segundos') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <!-- Selección de Campañas -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Selección de Campañas</label>
+                                        <div class="mt-2 space-y-2">
+                                            <div class="flex items-center">
+                                                <input wire:model="seleccion_campanas" id="aleatorio" name="seleccion_campanas" type="radio" value="aleatorio" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <label for="aleatorio" class="ml-3 block text-sm text-gray-700">
+                                                    <span class="font-medium">Alternancia automática</span>
+                                                    <span class="block text-xs text-gray-500">Cambia automáticamente entre campañas cada cierto tiempo</span>
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input wire:model="seleccion_campanas" id="prioridad" name="seleccion_campanas" type="radio" value="prioridad" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <label for="prioridad" class="ml-3 block text-sm text-gray-700">
+                                                    <span class="font-medium">Por prioridad</span>
+                                                    <span class="block text-xs text-gray-500">Muestra las campañas según su prioridad</span>
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input wire:model="seleccion_campanas" id="video" name="seleccion_campanas" type="radio" value="video" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <label for="video" class="ml-3 block text-sm text-gray-700">
+                                                    <span class="font-medium">Solo videos</span>
+                                                    <span class="block text-xs text-gray-500">Únicamente muestra campañas de video</span>
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input wire:model="seleccion_campanas" id="imagen" name="seleccion_campanas" type="radio" value="imagen" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <label for="imagen" class="ml-3 block text-sm text-gray-700">
+                                                    <span class="font-medium">Solo imágenes</span>
+                                                    <span class="block text-xs text-gray-500">Únicamente muestra campañas de imagen</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        @error('seleccion_campanas') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <!-- Autenticación Mikrotik -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Tipo de Autenticación Mikrotik</label>
+                                        <div class="mt-2 space-y-2">
+                                            <div class="flex items-center">
+                                                <input wire:model="tipo_autenticacion_mikrotik" id="sin_autenticacion" name="tipo_autenticacion_mikrotik" type="radio" value="sin_autenticacion" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <label for="sin_autenticacion" class="ml-3 block text-sm text-gray-700">
+                                                    <span class="font-medium">Sin autenticación</span>
+                                                    <span class="block text-xs text-gray-500">Conexión automática sin credenciales</span>
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input wire:model="tipo_autenticacion_mikrotik" id="pin" name="tipo_autenticacion_mikrotik" type="radio" value="pin" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <label for="pin" class="ml-3 block text-sm text-gray-700">
+                                                    <span class="font-medium">Solo PIN</span>
+                                                    <span class="block text-xs text-gray-500">Los usuarios ingresan únicamente un código PIN</span>
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input wire:model="tipo_autenticacion_mikrotik" id="usuario_password" name="tipo_autenticacion_mikrotik" type="radio" value="usuario_password" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <label for="usuario_password" class="ml-3 block text-sm text-gray-700">
+                                                    <span class="font-medium">Usuario y Contraseña</span>
+                                                    <span class="block text-xs text-gray-500">Autenticación completa con usuario y contraseña</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        @error('tipo_autenticacion_mikrotik') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                        <button wire:click="save" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm">
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button wire:click="save" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
                             {{ $editMode ? 'Actualizar' : 'Crear' }}
                         </button>
-                        <button wire:click="closeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                        <button wire:click="closeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                             Cancelar
                         </button>
                     </div>

@@ -29,6 +29,7 @@ class ZonasIndex extends Component
     public $id_personalizado = '';
     public $tipo_registro = 'sin_registro';
     public $segundos = 10;
+    public $tiempo_visualizacion = 15;
     public $seleccion_campanas = 'aleatorio';
     public $tipo_autenticacion_mikrotik = 'sin_autenticacion';
 
@@ -65,6 +66,7 @@ class ZonasIndex extends Component
         $this->id_personalizado = $zona->id_personalizado;
         $this->tipo_registro = $zona->tipo_registro;
         $this->segundos = $zona->segundos;
+        $this->tiempo_visualizacion = $zona->tiempo_visualizacion ?? 15;
         $this->seleccion_campanas = $zona->seleccion_campanas;
         $this->tipo_autenticacion_mikrotik = $zona->tipo_autenticacion_mikrotik;
 
@@ -80,6 +82,7 @@ class ZonasIndex extends Component
             'id_personalizado' => 'nullable|string|max:255|unique:zonas,id_personalizado,' . ($this->editMode ? $this->zonaId : ''),
             'tipo_registro' => 'required|in:sin_registro,registro_simple,registro_completo',
             'segundos' => 'required|integer|min:1|max:300',
+            'tiempo_visualizacion' => 'nullable|integer|min:5|max:300',
             'seleccion_campanas' => 'required|in:aleatorio,prioridad,video,imagen',
             'tipo_autenticacion_mikrotik' => 'required|in:sin_autenticacion,pin,usuario_password',
         ];
@@ -105,6 +108,7 @@ class ZonasIndex extends Component
             $zona->id_personalizado = $this->id_personalizado;
             $zona->tipo_registro = $this->tipo_registro;
             $zona->segundos = $this->segundos;
+            $zona->tiempo_visualizacion = $this->tiempo_visualizacion;
             $zona->seleccion_campanas = $this->seleccion_campanas;
             $zona->tipo_autenticacion_mikrotik = $this->tipo_autenticacion_mikrotik;
 
@@ -161,6 +165,7 @@ class ZonasIndex extends Component
         $this->id_personalizado = '';
         $this->tipo_registro = 'sin_registro';
         $this->segundos = 10;
+        $this->tiempo_visualizacion = 15;
         $this->seleccion_campanas = 'aleatorio';
         $this->tipo_autenticacion_mikrotik = 'sin_autenticacion';
         $this->zonaId = null;
