@@ -174,6 +174,77 @@
             color: var(--color-text-light);
         }
 
+        .zonas-disponibles {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            border-left: 4px solid #0ea5e9;
+        }
+
+        .zonas-titulo {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 12px;
+        }
+
+        .zonas-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .zona-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            color: #0ea5e9;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: 1px solid #e0f2fe;
+        }
+
+        .zona-link:hover {
+            background: #0ea5e9;
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .admin-info {
+            margin-top: 24px;
+            padding: 16px;
+            background: #fef3c7;
+            border-radius: 8px;
+            border-left: 4px solid #d97706;
+        }
+
+        .admin-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #d97706;
+            margin-bottom: 8px;
+        }
+
+        .admin-details {
+            font-size: 13px;
+            color: #92400e;
+        }
+
+        .admin-details code {
+            background: #fbbf24;
+            color: #451a03;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
         @media (max-width: 480px) {
             .error-container {
                 margin: 10px;
@@ -239,19 +310,50 @@
         </div>
 
         <div class="error-content">
+            @if(isset($tipo_error) && $tipo_error === 'inactiva')
+            <div class="error-icon" style="background: linear-gradient(135deg, #fef3c7, #fcd34d); color: #d97706;">
+                🔒
+            </div>
+            @else
             <div class="error-icon">
                 ⚠️
             </div>
+            @endif
 
+            @if(isset($tipo_error) && $tipo_error === 'inactiva')
+            <h2 class="error-message">Zona temporalmente desactivada</h2>
+            @else
             <h2 class="error-message">Zona no disponible</h2>
+            @endif
 
+            @if(isset($zona_nombre))
+            <p class="error-details">
+                La zona <strong>{{ $zona_nombre }}</strong> está temporalmente desactivada.
+                <br>{{ $mensaje ?? 'Contacte al administrador para activarla.' }}
+            </p>
+            @else
             <p class="error-details">
                 {{ $mensaje ?? 'La zona solicitada no existe o no está disponible en este momento.' }}
             </p>
+            @endif
 
             @if(isset($zona_id))
             <div class="error-code">
-                ID de Zona: {{ $zona_id }}
+                @if(isset($zona_nombre))
+                    Zona: {{ $zona_nombre }} (ID: {{ $zona_id }})
+                @else
+                    ID de Zona: {{ $zona_id }}
+                @endif
+            </div>
+            @endif
+
+            @if(isset($tipo_error) && $tipo_error === 'inactiva')
+            <div class="admin-info">
+                <h3 class="admin-title">Para el administrador:</h3>
+                <p class="admin-details">
+                    Para activar esta zona, ejecute:<br>
+                    <code>php artisan zona:activar {{ $zona_id }}</code>
+                </p>
             </div>
             @endif
 
@@ -259,13 +361,24 @@
                 <a href="javascript:history.back()" class="btn btn-primary">
                     ← Volver atrás
                 </a>
-
+                
                 <a href="javascript:location.reload()" class="btn btn-secondary">
                     🔄 Intentar nuevamente
                 </a>
             </div>
 
-            <div class="contact-info">
+            @if(isset($zonas_disponibles) && !empty($zonas_disponibles))
+            <div class="zonas-disponibles">
+                <h3 class="zonas-titulo">Zonas disponibles:</h3>
+                <div class="zonas-lista">
+                    @foreach($zonas_disponibles as $zona_id => $zona_nombre)
+                    <a href="{{ route('zona.login.mikrotik', ['id' => $zona_id]) }}" class="zona-link">
+                        📍 {{ $zona_nombre }}
+                    </a>
+                    @endforeach
+                </div>
+            </div>
+            @endif            <div class="contact-info">
                 <h3 class="contact-title">¿Necesitas ayuda?</h3>
                 <p class="contact-details">
                     Si continúas teniendo problemas para acceder al WiFi, contacta al administrador del establecimiento o al soporte técnico de i-Free.

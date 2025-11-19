@@ -33,20 +33,33 @@ class ZonaLoginController extends Controller
             if (!$zona) {
                 \Log::warning("Zona no encontrada con ID: {$id}");
                 
+                // FALLBACK: Si es ID 10, intentar redirigir a zona por defecto
+                if ($id == '10') {
+                    $zonaFallback = \App\Models\Zona::where('activo', true)->first();
+                    if ($zonaFallback) {
+                        \Log::info("Redirigiendo ID 10 a zona fallback: {$zonaFallback->id}");
+                        return redirect()->route('zona.login.mikrotik', ['id' => $zonaFallback->id]);
+                    }
+                }
+                
                 // Mostrar página de error personalizada en lugar de abort 404
                 return view('portal.zona-no-encontrada', [
                     'zona_id' => $id,
-                    'mensaje' => 'La zona solicitada no existe o ha sido desactivada.'
+                    'mensaje' => 'La zona solicitada no existe o ha sido desactivada.',
+                    'zonas_disponibles' => \App\Models\Zona::where('activo', true)->pluck('nombre', 'id')->toArray()
                 ]);
             }
 
             // Verificar si la zona está activa
             if (!$zona->activo) {
-                \Log::warning("Intento de acceso a zona inactiva ID: {$id}");
+                \Log::warning("Intento de acceso a zona inactiva ID: {$id} - {$zona->nombre}");
                 
                 return view('portal.zona-no-encontrada', [
                     'zona_id' => $id,
-                    'mensaje' => 'Esta zona está temporalmente desactivada.'
+                    'zona_nombre' => $zona->nombre,
+                    'mensaje' => "La zona '{$zona->nombre}' está temporalmente desactivada. Contacte al administrador para activarla.",
+                    'tipo_error' => 'inactiva',
+                    'zonas_disponibles' => \App\Models\Zona::where('activo', true)->pluck('nombre', 'id')->toArray()
                 ]);
             }
 
