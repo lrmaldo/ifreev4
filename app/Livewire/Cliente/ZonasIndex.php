@@ -52,7 +52,7 @@ class ZonasIndex extends Component
     public function edit($zonaId)
     {
         $zona = Zona::findOrFail($zonaId);
-        
+
         // Verificar que el usuario sea propietario de la zona
         if ($zona->user_id !== Auth::id()) {
             session()->flash('error', 'No tienes permisos para editar esta zona.');
@@ -89,7 +89,7 @@ class ZonasIndex extends Component
         try {
             if ($this->editMode) {
                 $zona = Zona::findOrFail($this->zonaId);
-                
+
                 // Verificar que el usuario sea propietario
                 if ($zona->user_id !== Auth::id()) {
                     session()->flash('error', 'No tienes permisos para modificar esta zona.');
@@ -112,7 +112,7 @@ class ZonasIndex extends Component
 
             session()->flash('message', $this->editMode ? 'Zona actualizada exitosamente' : 'Zona creada exitosamente');
             $this->closeModal();
-            
+
         } catch (\Exception $e) {
             session()->flash('error', 'Error al guardar la zona: ' . $e->getMessage());
         }
@@ -121,7 +121,7 @@ class ZonasIndex extends Component
     public function confirmDelete($zonaId)
     {
         $zona = Zona::findOrFail($zonaId);
-        
+
         // Verificar que el usuario sea propietario de la zona
         if ($zona->user_id !== Auth::id()) {
             session()->flash('error', 'No tienes permisos para eliminar esta zona.');
@@ -135,7 +135,7 @@ class ZonasIndex extends Component
     public function deleteZona()
     {
         $zona = Zona::findOrFail($this->zonaId);
-        
+
         // Verificar que el usuario sea propietario
         if ($zona->user_id !== Auth::id()) {
             session()->flash('error', 'No tienes permisos para eliminar esta zona.');
@@ -143,7 +143,7 @@ class ZonasIndex extends Component
         }
 
         $zona->delete();
-        
+
         $this->confirmingZonaDeletion = false;
         session()->flash('message', 'Zona eliminada exitosamente');
     }
