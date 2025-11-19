@@ -1,13 +1,18 @@
-<x-layouts.app>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-zinc-800 dark:text-zinc-200 leading-tight">
-            {{ __('Mis Zonas') }}
-        </h2>
-    </x-slot>
+@php
+$layout = 'components.layouts.app';
+@endphp
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <livewire:cliente.zonas-index />
+<x-dynamic-component :component="$layout">
+    <div class="space-y-6">
+        <!-- Encabezado -->
+        <div>
+            <h1 class="text-2xl font-bold text-zinc-900 dark:text-white">Mis Zonas</h1>
+            <p class="text-sm text-zinc-600 dark:text-zinc-400">
+                Gestiona tus zonas de portal cautivo y descarga los archivos para Mikrotik
+            </p>
         </div>
+
+        <!-- Componente Livewire para Zonas de Cliente -->
+        @livewire('cliente.zonas-index')
     </div>
-</x-layouts.app>
+</x-dynamic-component>

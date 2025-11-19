@@ -15,6 +15,8 @@ class CampanasIndex extends Component
     public $filtroTipo = '';
     public $filtroActivo = false;
     public $perPage = 10;
+    public $sortBy = 'created_at';
+    public $sortDirection = 'desc';
 
     public function updatingSearch()
     {
@@ -29,6 +31,16 @@ class CampanasIndex extends Component
     public function updatingFiltroActivo()
     {
         $this->resetPage();
+    }
+
+    public function sortBy($field)
+    {
+        if ($this->sortBy === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortDirection = 'asc';
+        }
+        $this->sortBy = $field;
     }
 
     public function toggleActivo($campanaId)
@@ -82,7 +94,7 @@ class CampanasIndex extends Component
             $query->where('activo', true);
         }
 
-        return $query->orderBy('created_at', 'desc')
+        return $query->orderBy($this->sortBy, $this->sortDirection)
                     ->paginate($this->perPage);
     }
 

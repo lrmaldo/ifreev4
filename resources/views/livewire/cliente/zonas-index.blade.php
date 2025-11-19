@@ -1,19 +1,4 @@
 <div class="space-y-6">
-    <!-- Encabezado -->
-    <div class="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 p-6">
-        <div class="flex items-center gap-4">
-            <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <flux:icon.signal class="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-                <h1 class="text-2xl font-bold text-zinc-900 dark:text-white">Mis Zonas</h1>
-                <p class="text-sm text-zinc-600 dark:text-zinc-400">
-                    Gestiona tus zonas de portal cautivo y descarga los archivos para Mikrotik
-                </p>
-            </div>
-        </div>
-    </div>
-
     <!-- Mensajes flash -->
     @if (session()->has('message'))
         <div class="p-4 bg-green-100 dark:bg-green-900 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-200 rounded-lg">
@@ -271,7 +256,9 @@
     @else
         <!-- Estado vacío -->
         <div class="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 p-12 text-center">
-            <flux:icon.signal class="mx-auto h-12 w-12 text-zinc-400 mb-4" />
+            <svg class="mx-auto h-12 w-12 text-zinc-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+            </svg>
             <h3 class="text-lg font-medium text-zinc-900 dark:text-white mb-2">No tienes zonas asignadas</h3>
             <p class="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
                 @if($search)
@@ -299,7 +286,9 @@
                     <div class="p-6">
                         <div class="flex items-center gap-4 mb-6">
                             <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                                <flux:icon.information-circle class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                                <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                             </div>
                             <div>
                                 <h3 class="text-lg font-semibold text-zinc-900 dark:text-white">
