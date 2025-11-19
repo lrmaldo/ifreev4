@@ -35,7 +35,7 @@
                 </div>
                 <div class="flex items-center">
                     <label class="inline-flex items-center">
-                        <input type="checkbox" wire:model="filtroActivo" class="form-checkbox h-5 w-5 text-indigo-600">
+                        <input type="checkbox" wire:model="mostrarSoloActivas" class="form-checkbox h-5 w-5 text-indigo-600">
                         <span class="ml-2 text-sm text-gray-700">Solo activas</span>
                     </label>
                 </div>
