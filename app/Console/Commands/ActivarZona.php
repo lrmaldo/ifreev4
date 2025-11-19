@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\Zona;
+use Illuminate\Support\Facades\Schema;
 
 class ActivarZona extends Command
 {
@@ -12,8 +13,19 @@ class ActivarZona extends Command
 
     public function handle()
     {
+        // Detectar el campo de estado correcto
+        $campoEstado = $this->detectarCampoEstado();
+
+        if (!$campoEstado) {
+            $this->error("❌ No se pudo encontrar un campo de estado válido en la tabla zonas");
+            $this->line("Campos disponibles: " . implode(', ', Schema::getColumnListing('zonas')));
+            return 1;
+        }
+
+        $this->line("🔍 Usando campo de estado: $campoEstado");
+
         if ($this->option('all')) {
-            return $this->activarTodasLasZonas();
+            return $this->activarTodasLasZonas($campoEstado);
         }
 
         $id = $this->argument('id');
@@ -29,17 +41,20 @@ class ActivarZona extends Command
                 return 1;
             }
 
-            if ($zona->activo) {
+            $estadoActual = $zona->{$campoEstado};
+            if ($this->esZonaActiva($estadoActual)) {
                 $this->info("ℹ️ La zona '{$zona->nombre}' ya está activa");
                 return 0;
             }
 
-            $zona->activo = true;
+            // Activar la zona
+            $zona->{$campoEstado} = $this->obtenerValorActivo($campoEstado);
             $zona->save();
 
             $this->info("✅ Zona activada exitosamente:");
             $this->line("   - ID: {$zona->id}");
             $this->line("   - Nombre: {$zona->nombre}");
+            $this->line("   - Campo actualizado: $campoEstado = " . $zona->{$campoEstado});
             $this->line("   - ID personalizado: " . ($zona->id_personalizado ?? 'N/A'));
             $this->line("   - URL: /login_formulario/{$zona->id}");
 
@@ -55,10 +70,14 @@ class ActivarZona extends Command
         return 0;
     }
 
-    private function activarTodasLasZonas()
+    private function activarTodasLasZonas($campoEstado)
     {
         try {
-            $zonasInactivas = Zona::where('activo', false)->get();
+            // Buscar zonas inactivas
+            $todasLasZonas = Zona::all();
+            $zonasInactivas = $todasLasZonas->filter(function($zona) use ($campoEstado) {
+                return !$this->esZonaActiva($zona->{$campoEstado});
+            });
 
             if ($zonasInactivas->isEmpty()) {
                 $this->info("ℹ️ Todas las zonas ya están activas");
@@ -68,7 +87,7 @@ class ActivarZona extends Command
             $this->info("Activando " . $zonasInactivas->count() . " zonas...");
 
             foreach ($zonasInactivas as $zona) {
-                $zona->activo = true;
+                $zona->{$campoEstado} = $this->obtenerValorActivo($campoEstado);
                 $zona->save();
                 $this->line("✅ Activada: {$zona->nombre} (ID: {$zona->id})");
             }
@@ -81,5 +100,60 @@ class ActivarZona extends Command
         }
 
         return 0;
+    }
+
+    private function detectarCampoEstado()
+    {
+        $campos = Schema::getColumnListing('zonas');
+        $posiblesCampos = ['activo', 'active', 'enabled', 'estado', 'status', 'habilitado'];
+
+        foreach ($posiblesCampos as $campo) {
+            if (in_array($campo, $campos)) {
+                return $campo;
+            }
+        }
+
+        return null;
+    }
+
+    private function esZonaActiva($valor)
+    {
+        if (is_bool($valor)) {
+            return $valor;
+        }
+
+        if (is_numeric($valor)) {
+            return $valor == 1;
+        }
+
+        if (is_string($valor)) {
+            $valor = strtolower($valor);
+            return in_array($valor, ['activo', 'active', 'enabled', '1', 'true', 'si', 'yes']);
+        }
+
+        return false;
+    }
+
+    private function obtenerValorActivo($campoEstado)
+    {
+        // Para la mayoría de casos, 1 o true funcionará
+        // Pero podemos ser más específicos según el campo
+        if (in_array($campoEstado, ['activo', 'habilitado'])) {
+            return 1; // Para campos booleanos/enteros en español
+        }
+
+        if (in_array($campoEstado, ['active', 'enabled'])) {
+            return 1; // Para campos booleanos/enteros en inglés
+        }
+
+        if ($campoEstado === 'estado') {
+            return 'activo'; // Para campos de texto en español
+        }
+
+        if ($campoEstado === 'status') {
+            return 'active'; // Para campos de texto en inglés
+        }
+
+        return 1; // Valor por defecto
     }
 }
