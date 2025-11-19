@@ -30,6 +30,10 @@
                     @if(auth()->user()->hasRole('cliente'))
                     <flux:navlist.group :heading="__('Cliente')" class="grid">
                         <flux:navlist.item icon="signal" :href="route('cliente.zonas.index')" :current="request()->routeIs('cliente.zonas.*')" wire:navigate>{{ __('Mis Zonas WiFi') }}</flux:navlist.item>
+                        <flux:navlist.item icon="presentation-chart-bar" :href="route('cliente.campanas.index')" :current="request()->routeIs('cliente.campanas.*')" wire:navigate>{{ __('Mis Campañas') }}</flux:navlist.item>
+                        @can('ver metricas hotspot')
+                        <flux:navlist.item icon="chart-bar" :href="route('hotspot-metrics.index')" :current="request()->routeIs('hotspot-metrics.*')" wire:navigate>{{ __('Métricas') }}</flux:navlist.item>
+                        @endcan
                     </flux:navlist.group>
                     @endif
                 </flux:navlist.group>
