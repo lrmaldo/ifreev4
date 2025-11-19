@@ -8,14 +8,14 @@
                 <div class="flex items-center gap-4 mb-4">
                     <x-app-logo size="lg" class="h-16 w-16" />
                     <div>
-                        <h1 class="text-3xl font-bold">¡Bienvenido a i-Free!</h1>
-                        <p class="text-orange-100 text-lg">Monetiza tus espacios</p>
-                    </div>
+                            <h1 class="text-3xl font-bold">¡Bienvenido a i-Free!</h1>
+                            <p class="text-orange-100 dark:text-orange-200 text-lg">Monetiza tus espacios</p>
+                        </div>
                 </div>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
                         <h2 class="text-xl font-semibold mb-3">Internet gratuito que genera ingresos</h2>
-                        <ul class="space-y-2 text-orange-100">
+                        <ul class="space-y-2 text-orange-100 dark:text-orange-200">
                             <li class="flex items-center gap-2">
                                 <svg class="w-5 h-5 text-green-300" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
@@ -44,8 +44,8 @@
                     </div>
                     <div class="flex items-center justify-center">
                         <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-6 text-center">
-                            <div class="text-3xl font-bold">{{ auth()->user()->zonas->count() }}</div>
-                            <div class="text-orange-100">Zonas configuradas</div>
+                            <div class="text-3xl font-bold text-white dark:text-white">{{ auth()->user()->zonas->count() }}</div>
+                            <div class="text-white/80 dark:text-orange-200">Zonas configuradas</div>
                         </div>
                     </div>
                 </div>
