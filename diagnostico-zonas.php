@@ -30,7 +30,7 @@ try {
     // Mostrar todas las zonas disponibles
     echo "\n=== ZONAS DISPONIBLES ===\n";
     $zonas = App\Models\Zona::orderBy('id')->get();
-    
+
     if ($zonas->count() > 0) {
         foreach ($zonas as $zona) {
             $estado = $zona->activo ? '✅' : '❌';
