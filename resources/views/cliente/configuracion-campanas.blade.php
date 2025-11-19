@@ -14,13 +14,11 @@ $layout = 'components.layouts.app';
             </div>
 
             <!-- Botón volver -->
-            <flux:button
-                :href="route('cliente.zonas.index')"
-                variant="outline"
-                wire:navigate
-            >
+            <a href="{{ route('cliente.zonas.index') }}"
+               class="inline-flex items-center gap-2 px-4 py-2 border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-lg transition-colors"
+               wire:navigate>
                 ← Volver a Zonas
-            </flux:button>
+            </a>
         </div>
 
         <!-- Componente Livewire para Configuración de Campañas -->

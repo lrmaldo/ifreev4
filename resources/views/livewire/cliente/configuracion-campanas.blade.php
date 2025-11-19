@@ -16,12 +16,15 @@
 
     <!-- Botón crear nueva campaña -->
     <div class="flex justify-end">
-        <flux:button
+        <button
             wire:click="$set('showCrearCampana', true)"
-            icon="plus"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
         >
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
             Crear Nueva Campaña
-        </flux:button>
+        </button>
     </div>
 
     <!-- Modal crear campaña -->
@@ -38,35 +41,38 @@
 
                     <form wire:submit="crearCampana" class="space-y-4">
                         <div>
-                            <flux:label for="titulo">Título *</flux:label>
-                            <flux:input wire:model="titulo" id="titulo" placeholder="Nombre de la campaña" />
+                            <label for="titulo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Título *</label>
+                            <input wire:model="titulo" id="titulo" placeholder="Nombre de la campaña"
+                                   class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                             @error('titulo') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
-                            <flux:label for="descripcion">Descripción</flux:label>
-                            <flux:textarea wire:model="descripcion" id="descripcion" placeholder="Descripción opcional" rows="3" />
+                            <label for="descripcion" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Descripción</label>
+                            <textarea wire:model="descripcion" id="descripcion" placeholder="Descripción opcional" rows="3"
+                                      class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
                             @error('descripcion') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
-                            <flux:label for="tipo">Tipo *</flux:label>
-                            <flux:select wire:model.live="tipo" id="tipo">
-                                <flux:option value="imagen">Imagen</flux:option>
-                                <flux:option value="video">Video</flux:option>
-                            </flux:select>
+                            <label for="tipo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Tipo *</label>
+                            <select wire:model.live="tipo" id="tipo"
+                                    class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="imagen">Imagen</option>
+                                <option value="video">Video</option>
+                            </select>
                             @error('tipo') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
-                            <flux:label for="archivo">
+                            <label for="archivo" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                                 Archivo *
                                 @if($tipo === 'imagen')
                                     (JPG, PNG, GIF - máx 50MB)
                                 @else
                                     (MP4, MOV, AVI - máx 50MB)
                                 @endif
-                            </flux:label>
+                            </label>
                             <input type="file" wire:model="archivo" id="archivo"
                                    class="block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                    accept="{{ $tipo === 'imagen' ? 'image/*' : 'video/*' }}">
@@ -80,35 +86,43 @@
                         </div>
 
                         <div>
-                            <flux:label for="enlace">Enlace (opcional)</flux:label>
-                            <flux:input wire:model="enlace" id="enlace" type="url" placeholder="https://ejemplo.com" />
+                            <label for="enlace" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Enlace (opcional)</label>
+                            <input wire:model="enlace" id="enlace" type="url" placeholder="https://ejemplo.com"
+                                   class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                             @error('enlace') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
-                            <flux:label for="prioridad">Prioridad (1-100)</flux:label>
-                            <flux:input wire:model="prioridad" id="prioridad" type="number" min="1" max="100" />
+                            <label for="prioridad" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Prioridad (1-100)</label>
+                            <input wire:model="prioridad" id="prioridad" type="number" min="1" max="100"
+                                   class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                             <p class="text-xs text-zinc-500 mt-1">1 = mayor prioridad, 100 = menor prioridad</p>
                             @error('prioridad') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="flex items-center gap-2">
-                            <flux:checkbox wire:model="activo" id="activo" />
-                            <flux:label for="activo">Campaña activa</flux:label>
+                            <input type="checkbox" wire:model="activo" id="activo"
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-zinc-300 rounded" />
+                            <label for="activo" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">Campaña activa</label>
                         </div>
 
                         <div class="flex justify-end gap-3 pt-4">
-                            <flux:button type="button" wire:click="resetForm" variant="outline">
+                            <button type="button" wire:click="resetForm"
+                                    class="px-4 py-2 border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-lg transition-colors">
                                 Cancelar
-                            </flux:button>
-                            <flux:button type="submit">
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
                                 <div wire:loading wire:target="crearCampana">
-                                    <flux:icon.arrow-path class="animate-spin w-4 h-4" />
+                                    <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle>
+                                        <path fill="currentColor" d="m100 50c0 27.614-22.386 50-50 50s-50-22.386-50-50 22.386-50 50-50 50 22.386 50 50zm-90.856 0c0 22.091 17.909 40 40 40s40-17.909 40-40-17.909-40-40-40-40 17.909-40 40z" class="opacity-75"></path>
+                                    </svg>
                                 </div>
                                 <span wire:loading.remove wire:target="crearCampana">
                                     Crear Campaña
                                 </span>
-                            </flux:button>
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -155,9 +169,10 @@
                                     <h4 class="font-medium text-zinc-900 dark:text-white">{{ $campana->titulo }}</h4>
                                     <p class="text-sm text-zinc-600 dark:text-zinc-400">{{ $campana->descripcion ?: 'Sin descripción' }}</p>
                                 </div>
-                                <flux:badge :color="$campana->tipo === 'video' ? 'blue' : 'green'" size="sm">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {{ $campana->tipo === 'video' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' }}">
                                     {{ ucfirst($campana->tipo) }}
-                                </flux:badge>
+                                </span>
                             </div>
 
                             @if($campana->enlace)
@@ -173,25 +188,21 @@
 
                             <!-- Acciones -->
                             <div class="flex gap-2">
-                                <flux:button
+                                <button
                                     wire:click="toggleActivoCampana({{ $campana->id }})"
-                                    :variant="$campana->activo ? 'filled' : 'outline'"
-                                    :color="$campana->activo ? 'green' : 'zinc'"
-                                    size="sm"
-                                    class="flex-1"
+                                    class="flex-1 px-3 py-1 text-sm font-medium rounded transition-colors
+                                        {{ $campana->activo ? 'bg-green-600 hover:bg-green-700 text-white' : 'border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white' }}"
                                 >
                                     {{ $campana->activo ? 'Activa' : 'Inactiva' }}
-                                </flux:button>
+                                </button>
 
-                                <flux:button
+                                <button
                                     wire:click="desasociarCampana({{ $campana->id }})"
-                                    variant="outline"
-                                    color="red"
-                                    size="sm"
                                     wire:confirm="¿Seguro que quieres desasociar esta campaña de la zona?"
+                                    class="px-3 py-1 text-sm font-medium border border-red-300 bg-white hover:bg-red-50 text-red-700 rounded transition-colors"
                                 >
                                     Quitar
-                                </flux:button>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -244,20 +255,19 @@
                                     <h4 class="font-medium text-sm text-zinc-900 dark:text-white">{{ $campana->titulo }}</h4>
                                     <p class="text-xs text-zinc-600 dark:text-zinc-400 truncate">{{ $campana->descripcion ?: 'Sin descripción' }}</p>
                                 </div>
-                                <flux:badge :color="$campana->tipo === 'video' ? 'blue' : 'green'" size="sm">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {{ $campana->tipo === 'video' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' }}">
                                     {{ ucfirst($campana->tipo) }}
-                                </flux:badge>
+                                </span>
                             </div>
 
                             <!-- Acción -->
-                            <flux:button
+                            <button
                                 wire:click="asociarCampana({{ $campana->id }})"
-                                variant="outline"
-                                size="sm"
-                                class="w-full"
+                                class="w-full px-3 py-1 text-sm font-medium border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded transition-colors"
                             >
                                 + Asociar a esta zona
-                            </flux:button>
+                            </button>
                         </div>
                     </div>
                 @endforeach

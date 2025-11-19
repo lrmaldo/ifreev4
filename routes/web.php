@@ -198,7 +198,7 @@ Route::middleware(['auth'])->group(function () {
     });    // Rutas para clientes y admins (acceso a zonas)
     Route::middleware(['role:cliente|admin'])->group(function () {
         Route::get('/zonas', function() {
-            return view('zonas');
+            return view('cliente.zonas');
         })->name('cliente.zonas.index');
         Route::get('/zonas/download/{zonaId}/{fileType}', function ($zonaId, $fileType) {
             return app()->call([app()->make(App\Livewire\Admin\Zonas\Index::class), 'downloadMikrotikFile'], ['zonaId' => $zonaId, 'fileType' => $fileType]);

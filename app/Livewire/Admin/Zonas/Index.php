@@ -290,6 +290,13 @@ class Index extends Component
     public function downloadMikrotikFile($zonaId, $fileType)
     {
         $zona = Zona::findOrFail($zonaId);
+
+        // Verificar permisos: solo admins o el propietario de la zona pueden descargar
+        if (!auth()->user()->hasRole('admin') && $zona->user_id !== auth()->id()) {
+            session()->flash('error', 'No tienes permisos para acceder a esta zona.');
+            return redirect()->back();
+        }
+
         $fileName = $fileType . '.html';
         $filePath = public_path('templates/' . $fileName);
 
