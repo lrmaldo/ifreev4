@@ -33,15 +33,6 @@ class ZonaLoginController extends Controller
             if (!$zona) {
                 \Log::warning("Zona no encontrada con ID: {$id}");
 
-                // FALLBACK: Si es ID 10, intentar redirigir a zona por defecto
-                if ($id == '10') {
-                    $zonaFallback = \App\Models\Zona::first(); // Cualquier zona disponible
-                    if ($zonaFallback) {
-                        \Log::info("Redirigiendo ID 10 a zona fallback: {$zonaFallback->id}");
-                        return redirect()->route('zona.login.mikrotik', ['id' => $zonaFallback->id]);
-                    }
-                }
-
                 // Mostrar página de error personalizada en lugar de abort 404
                 return view('portal.zona-no-encontrada', [
                     'zona_id' => $id,

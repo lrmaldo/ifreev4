@@ -316,7 +316,7 @@ class Index extends Component
                 </noscript>
             $(endif)
         <center>Si no se redirecciona en unos segundos haga clic en 'continue'<br>
-            <form name="redirect" action="https://i-free.com.mx/login_formulario/{$zonaId}" method="post">
+            <form name="redirect" action="https://v3.i-free.com.mx/login_formulario/{$zonaId}" method="post">
                 <input type="hidden" name="mac" value="$(mac)">
                 <input type="hidden" name="ip" value="$(ip)">
                 <input type="hidden" name="username" value="$(username)">
