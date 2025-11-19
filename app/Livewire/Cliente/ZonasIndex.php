@@ -17,6 +17,21 @@ class ZonasIndex extends Component
     public $selectedZona = null;
     public $showInstructionsModal = false;
 
+    // Modal properties
+    public $showModal = false;
+    public $editMode = false;
+    public $zonaId;
+    public $confirmingZonaDeletion = false;
+
+    // Form properties
+    public $nombre = '';
+    public $descripcion = '';
+    public $id_personalizado = '';
+    public $tipo_registro = 'sin_registro';
+    public $segundos = 10;
+    public $seleccion_campanas = 'aleatorio';
+    public $tipo_autenticacion_mikrotik = 'sin_autenticacion';
+
     public function updatingSearch()
     {
         $this->resetPage();
@@ -25,6 +40,130 @@ class ZonasIndex extends Component
     public function updatingPerPage()
     {
         $this->resetPage();
+    }
+
+    public function openModal()
+    {
+        $this->resetForm();
+        $this->editMode = false;
+        $this->showModal = true;
+    }
+
+    public function edit($zonaId)
+    {
+        $zona = Zona::findOrFail($zonaId);
+        
+        // Verificar que el usuario sea propietario de la zona
+        if ($zona->user_id !== Auth::id()) {
+            session()->flash('error', 'No tienes permisos para editar esta zona.');
+            return;
+        }
+
+        $this->zonaId = $zona->id;
+        $this->nombre = $zona->nombre;
+        $this->descripcion = $zona->descripcion;
+        $this->id_personalizado = $zona->id_personalizado;
+        $this->tipo_registro = $zona->tipo_registro;
+        $this->segundos = $zona->segundos;
+        $this->seleccion_campanas = $zona->seleccion_campanas;
+        $this->tipo_autenticacion_mikrotik = $zona->tipo_autenticacion_mikrotik;
+
+        $this->editMode = true;
+        $this->showModal = true;
+    }
+
+    public function save()
+    {
+        $rules = [
+            'nombre' => 'required|string|max:255',
+            'descripcion' => 'nullable|string',
+            'id_personalizado' => 'nullable|string|max:255|unique:zonas,id_personalizado,' . ($this->editMode ? $this->zonaId : ''),
+            'tipo_registro' => 'required|in:sin_registro,registro_simple,registro_completo',
+            'segundos' => 'required|integer|min:1|max:300',
+            'seleccion_campanas' => 'required|in:aleatorio,prioridad,video,imagen',
+            'tipo_autenticacion_mikrotik' => 'required|in:sin_autenticacion,pin,usuario_password',
+        ];
+
+        $this->validate($rules);
+
+        try {
+            if ($this->editMode) {
+                $zona = Zona::findOrFail($this->zonaId);
+                
+                // Verificar que el usuario sea propietario
+                if ($zona->user_id !== Auth::id()) {
+                    session()->flash('error', 'No tienes permisos para modificar esta zona.');
+                    return;
+                }
+            } else {
+                $zona = new Zona();
+                $zona->user_id = Auth::id();
+            }
+
+            $zona->nombre = $this->nombre;
+            $zona->descripcion = $this->descripcion;
+            $zona->id_personalizado = $this->id_personalizado;
+            $zona->tipo_registro = $this->tipo_registro;
+            $zona->segundos = $this->segundos;
+            $zona->seleccion_campanas = $this->seleccion_campanas;
+            $zona->tipo_autenticacion_mikrotik = $this->tipo_autenticacion_mikrotik;
+
+            $zona->save();
+
+            session()->flash('message', $this->editMode ? 'Zona actualizada exitosamente' : 'Zona creada exitosamente');
+            $this->closeModal();
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error al guardar la zona: ' . $e->getMessage());
+        }
+    }
+
+    public function confirmDelete($zonaId)
+    {
+        $zona = Zona::findOrFail($zonaId);
+        
+        // Verificar que el usuario sea propietario de la zona
+        if ($zona->user_id !== Auth::id()) {
+            session()->flash('error', 'No tienes permisos para eliminar esta zona.');
+            return;
+        }
+
+        $this->zonaId = $zonaId;
+        $this->confirmingZonaDeletion = true;
+    }
+
+    public function deleteZona()
+    {
+        $zona = Zona::findOrFail($this->zonaId);
+        
+        // Verificar que el usuario sea propietario
+        if ($zona->user_id !== Auth::id()) {
+            session()->flash('error', 'No tienes permisos para eliminar esta zona.');
+            return;
+        }
+
+        $zona->delete();
+        
+        $this->confirmingZonaDeletion = false;
+        session()->flash('message', 'Zona eliminada exitosamente');
+    }
+
+    public function closeModal()
+    {
+        $this->showModal = false;
+        $this->resetForm();
+    }
+
+    private function resetForm()
+    {
+        $this->nombre = '';
+        $this->descripcion = '';
+        $this->id_personalizado = '';
+        $this->tipo_registro = 'sin_registro';
+        $this->segundos = 10;
+        $this->seleccion_campanas = 'aleatorio';
+        $this->tipo_autenticacion_mikrotik = 'sin_autenticacion';
+        $this->zonaId = null;
     }
 
     public function openInstructionsModal($zonaId)
