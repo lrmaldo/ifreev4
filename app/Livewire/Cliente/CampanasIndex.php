@@ -381,6 +381,9 @@ class CampanasIndex extends Component
     {
         return view('livewire.cliente.campanas-index', [
             'campanas' => $this->campanas,
+            'zonasFiltradas' => $this->zonasFiltradas,
+            'zonas' => $this->zonas,
+            'clientes' => $this->clientes,
         ]);
     }
 }
