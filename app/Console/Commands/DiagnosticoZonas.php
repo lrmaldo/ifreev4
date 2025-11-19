@@ -21,7 +21,7 @@ class DiagnosticoZonas extends Command
             if ($this->option('id')) {
                 $id = $this->option('id');
                 $this->info("\nBuscando zona ID: $id");
-                
+
                 // Buscar por ID normal
                 $zona = Zona::find($id);
                 if ($zona) {
@@ -46,7 +46,7 @@ class DiagnosticoZonas extends Command
 
             $this->info("\n=== TODAS LAS ZONAS ===");
             $zonas = Zona::orderBy('id')->get();
-            
+
             if ($zonas->count() > 0) {
                 foreach ($zonas as $zona) {
                     $estado = $zona->activo ? '✅' : '❌';
