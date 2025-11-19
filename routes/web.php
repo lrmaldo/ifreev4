@@ -210,9 +210,8 @@ Route::middleware(['auth'])->group(function () {
         })->name('cliente.campanas.index');
 
         // Ruta para configuración de campañas de zona (cliente)
-        Route::get('/zonas/{zonaId}/configuracion-campanas', function($zonaId) {
-            return view('cliente.configuracion-campanas', ['zonaId' => $zonaId]);
-        })->name('cliente.zonas.configuracion-campanas');
+        Route::get('/zonas/{zonaId}/configuracion-campanas', \App\Livewire\Cliente\ZonasConfiguracionCampanas::class)
+            ->name('cliente.zonas.configuracion-campanas');
 
         // Ruta para ver el formulario dinámico de una zona
         Route::get('/zonas/{zonaId}/formulario', \App\Livewire\FormularioDinamico::class)
