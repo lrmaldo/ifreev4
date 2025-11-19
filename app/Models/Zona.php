@@ -259,6 +259,17 @@ class Zona extends Model
     }
 
     /**
+     * Todas las zonas están activas por defecto en este sistema.
+     * No existe campo de estado en la tabla.
+     *
+     * @return bool
+     */
+    public function getActivoAttribute()
+    {
+        return true;
+    }
+
+    /**
      * Obtiene el ID que se usará en los formularios de login para Mikrotik.
      * Usa el ID personalizado si está definido, de lo contrario usa el ID real.
      *
