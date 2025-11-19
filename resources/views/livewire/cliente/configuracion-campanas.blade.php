@@ -16,7 +16,7 @@
 
     <!-- Botón crear nueva campaña -->
     <div class="flex justify-end">
-        <flux:button 
+        <flux:button
             wire:click="$set('showCrearCampana', true)"
             icon="plus"
         >
@@ -29,7 +29,7 @@
     <div class="fixed inset-0 z-50 overflow-y-auto" wire:ignore.self>
         <div class="flex min-h-screen items-center justify-center p-4">
             <div class="fixed inset-0 bg-black bg-opacity-50" wire:click="resetForm"></div>
-            
+
             <div class="relative w-full max-w-md bg-white dark:bg-zinc-800 rounded-lg shadow-xl">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-zinc-900 dark:text-white mb-4">
@@ -60,18 +60,18 @@
 
                         <div>
                             <flux:label for="archivo">
-                                Archivo * 
+                                Archivo *
                                 @if($tipo === 'imagen')
                                     (JPG, PNG, GIF - máx 50MB)
                                 @else
                                     (MP4, MOV, AVI - máx 50MB)
                                 @endif
                             </flux:label>
-                            <input type="file" wire:model="archivo" id="archivo" 
+                            <input type="file" wire:model="archivo" id="archivo"
                                    class="block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                    accept="{{ $tipo === 'imagen' ? 'image/*' : 'video/*' }}">
                             @error('archivo') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                            
+
                             @if ($archivo)
                                 <div class="mt-2 text-sm text-zinc-600">
                                     Archivo seleccionado: {{ $archivo->getClientOriginalName() }}
@@ -173,7 +173,7 @@
 
                             <!-- Acciones -->
                             <div class="flex gap-2">
-                                <flux:button 
+                                <flux:button
                                     wire:click="toggleActivoCampana({{ $campana->id }})"
                                     :variant="$campana->activo ? 'filled' : 'outline'"
                                     :color="$campana->activo ? 'green' : 'zinc'"
@@ -183,7 +183,7 @@
                                     {{ $campana->activo ? 'Activa' : 'Inactiva' }}
                                 </flux:button>
 
-                                <flux:button 
+                                <flux:button
                                     wire:click="desasociarCampana({{ $campana->id }})"
                                     variant="outline"
                                     color="red"
@@ -250,7 +250,7 @@
                             </div>
 
                             <!-- Acción -->
-                            <flux:button 
+                            <flux:button
                                 wire:click="asociarCampana({{ $campana->id }})"
                                 variant="outline"
                                 size="sm"

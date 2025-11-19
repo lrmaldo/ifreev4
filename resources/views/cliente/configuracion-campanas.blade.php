@@ -12,11 +12,11 @@ $layout = 'components.layouts.app';
                     Gestiona las campañas publicitarias para esta zona WiFi
                 </p>
             </div>
-            
+
             <!-- Botón volver -->
-            <flux:button 
-                :href="route('cliente.zonas.index')" 
-                variant="outline" 
+            <flux:button
+                :href="route('cliente.zonas.index')"
+                variant="outline"
                 wire:navigate
             >
                 ← Volver a Zonas

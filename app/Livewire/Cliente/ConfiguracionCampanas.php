@@ -17,7 +17,7 @@ class ConfiguracionCampanas extends Component
     public $zona;
     public $campanasDisponibles;
     public $campanasAsociadas;
-    
+
     // Formulario para nueva campaña
     public $showCrearCampana = false;
     public $titulo = '';
@@ -38,7 +38,7 @@ class ConfiguracionCampanas extends Component
     public function loadZona()
     {
         $this->zona = Zona::findOrFail($this->zonaId);
-        
+
         // Verificar que el usuario tenga acceso a esta zona
         if (!auth()->user()->hasRole('admin') && $this->zona->user_id !== auth()->id()) {
             abort(403, 'No tienes permisos para acceder a esta zona');
@@ -49,7 +49,7 @@ class ConfiguracionCampanas extends Component
     {
         // Campañas ya asociadas a esta zona
         $this->campanasAsociadas = $this->zona->campanas()->get();
-        
+
         // Todas las campañas disponibles (del usuario o del admin)
         if (auth()->user()->hasRole('admin')) {
             $this->campanasDisponibles = Campana::whereNotIn('id', $this->campanasAsociadas->pluck('id'))
@@ -71,7 +71,7 @@ class ConfiguracionCampanas extends Component
     {
         try {
             $campana = Campana::findOrFail($campanaId);
-            
+
             // Verificar permisos
             if (!auth()->user()->hasRole('admin')) {
                 $zonasUsuario = auth()->user()->zonas->pluck('id');
@@ -107,7 +107,7 @@ class ConfiguracionCampanas extends Component
     {
         try {
             $campana = Campana::findOrFail($campanaId);
-            
+
             // Verificar permisos
             if (!auth()->user()->hasRole('admin')) {
                 $zonasUsuario = auth()->user()->zonas->pluck('id');
@@ -168,7 +168,7 @@ class ConfiguracionCampanas extends Component
     public function resetForm()
     {
         $this->reset([
-            'titulo', 'descripcion', 'tipo', 'archivo', 
+            'titulo', 'descripcion', 'tipo', 'archivo',
             'enlace', 'prioridad', 'activo', 'showCrearCampana'
         ]);
     }

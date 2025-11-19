@@ -2,7 +2,7 @@
     <!-- Barra de búsqueda y filtros -->
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex-1 max-w-md">
-            <flux:input 
+            <flux:input
                 wire:model.live.debounce.300ms="search"
                 placeholder="Buscar campañas..."
                 icon="magnifying-glass"
@@ -24,7 +24,7 @@
     <div class="overflow-hidden border border-zinc-200 rounded-lg dark:border-zinc-700">
         <flux:table class="w-full">
             <flux:columns>
-                <flux:column 
+                <flux:column
                     wire:click="sortBy('titulo')"
                     class="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 >
@@ -35,8 +35,8 @@
                         @endif
                     </div>
                 </flux:column>
-                
-                <flux:column 
+
+                <flux:column
                     wire:click="sortBy('tipo')"
                     class="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 >
@@ -47,10 +47,10 @@
                         @endif
                     </div>
                 </flux:column>
-                
+
                 <flux:column>Descripción</flux:column>
-                
-                <flux:column 
+
+                <flux:column
                     wire:click="sortBy('activo')"
                     class="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 >
@@ -61,10 +61,10 @@
                         @endif
                     </div>
                 </flux:column>
-                
+
                 <flux:column>Zonas</flux:column>
-                
-                <flux:column 
+
+                <flux:column
                     wire:click="sortBy('created_at')"
                     class="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 >
@@ -75,7 +75,7 @@
                         @endif
                     </div>
                 </flux:column>
-                
+
                 <flux:column>Acciones</flux:column>
             </flux:columns>
 
@@ -90,7 +90,7 @@
                                             <flux:icon.play class="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                         </div>
                                     @else
-                                        <img src="{{ \Storage::url($campana->archivo_path) }}" 
+                                        <img src="{{ \Storage::url($campana->archivo_path) }}"
                                              alt="{{ $campana->titulo }}"
                                              class="w-10 h-10 rounded object-cover">
                                     @endif
@@ -99,7 +99,7 @@
                                         <flux:icon.photo class="w-5 h-5 text-zinc-400" />
                                     </div>
                                 @endif
-                                
+
                                 <div>
                                     <div class="font-medium text-zinc-900 dark:text-white">
                                         {{ $campana->titulo }}
@@ -114,7 +114,7 @@
                         </flux:cell>
 
                         <flux:cell>
-                            <flux:badge 
+                            <flux:badge
                                 :color="$campana->tipo === 'video' ? 'blue' : 'green'"
                                 size="sm"
                             >
@@ -129,7 +129,7 @@
                         </flux:cell>
 
                         <flux:cell>
-                            <flux:button 
+                            <flux:button
                                 wire:click="toggleActivo({{ $campana->id }})"
                                 :variant="$campana->activo ? 'filled' : 'outline'"
                                 :color="$campana->activo ? 'green' : 'zinc'"
@@ -169,18 +169,18 @@
                         <flux:cell>
                             <div class="flex items-center gap-2">
                                 @if($campana->archivo_path)
-                                    <flux:button 
-                                        size="sm" 
+                                    <flux:button
+                                        size="sm"
                                         variant="ghost"
                                         onclick="window.open('{{ \Storage::url($campana->archivo_path) }}', '_blank')"
                                     >
                                         Ver archivo
                                     </flux:button>
                                 @endif
-                                
+
                                 @if($campana->enlace)
-                                    <flux:button 
-                                        size="sm" 
+                                    <flux:button
+                                        size="sm"
                                         variant="ghost"
                                         onclick="window.open('{{ $campana->enlace }}', '_blank')"
                                     >

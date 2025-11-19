@@ -41,7 +41,7 @@ class CampanasIndex extends Component
     public function getCampanasProperty()
     {
         $user = auth()->user();
-        
+
         // Si es admin, puede ver todas las campañas
         if ($user->hasRole('admin')) {
             $query = Campana::query();
@@ -68,7 +68,7 @@ class CampanasIndex extends Component
     public function toggleActivo($campanaId)
     {
         $campana = Campana::findOrFail($campanaId);
-        
+
         // Verificar que el usuario tenga acceso a esta campaña
         if (!auth()->user()->hasRole('admin')) {
             $zonasIds = auth()->user()->zonas->pluck('id');
