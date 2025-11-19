@@ -36,6 +36,12 @@
                     <option value="25">25 por página</option>
                     <option value="50">50 por página</option>
                 </select>
+                <button wire:click="openModal" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg flex items-center">
+                    <svg class="h-4 w-4 mr-2" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
+                        <path d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Nueva Zona
+                </button>
             </div>
         </div>
     </div>
@@ -230,25 +236,52 @@
 
                                 <!-- Acciones -->
                                 <td class="col-acciones">
-                                    <div class="relative" x-data="{ open: false, position: 'right' }"
-                                         x-init="$watch('open', value => {
-                                            if (value) {
-                                                // Detectar posición del dropdown
-                                                const rect = $el.getBoundingClientRect();
-                                                const windowWidth = window.innerWidth;
-                                                position = rect.left > windowWidth / 2 ? 'left' : 'right';
-                                            }
-                                         })">
-                                        <button
-                                            @click="open = !open"
-                                            onclick="detectPosition(event, 'dropdown-{{ $zona->id }}')"
-                                            class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                        >
-                                            Acciones
-                                            <svg class="ml-1 -mr-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    <div class="flex items-center gap-2">
+                                        <!-- Configurar campañas -->
+                                        <a href="{{ route('cliente.zonas.configuracion-campanas', ['zonaId' => $zona->id]) }}"
+                                           class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                           title="Configurar campañas">
+                                            <svg class="h-5 w-5" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                            </svg>
+                                        </a>
+
+                                        <!-- Editar -->
+                                        <button wire:click="edit({{ $zona->id }})"
+                                                class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                                                title="Editar zona">
+                                            <svg class="h-5 w-5" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                             </svg>
                                         </button>
+
+                                        <!-- Eliminar -->
+                                        <button wire:click="confirmDelete({{ $zona->id }})"
+                                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                                title="Eliminar zona">
+                                            <svg class="h-5 w-5" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+
+                                        <!-- Dropdown para más opciones -->
+                                        <div class="relative" x-data="{ open: false, position: 'right' }"
+                                             x-init="$watch('open', value => {
+                                                if (value) {
+                                                    const rect = $el.getBoundingClientRect();
+                                                    const windowWidth = window.innerWidth;
+                                                    position = rect.left > windowWidth / 2 ? 'left' : 'right';
+                                                }
+                                             })">
+                                            <button
+                                                @click="open = !open"
+                                                onclick="detectPosition(event, 'dropdown-{{ $zona->id }}')"
+                                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                                title="Más opciones">
+                                                <svg class="h-5 w-5" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                                                </svg>
+                                            </button>
 
                                         <div id="dropdown-{{ $zona->id }}"
                                              x-show="open"
@@ -393,6 +426,164 @@
                     Limpiar búsqueda
                 </button>
             @endif
+        </div>
+    @endif
+
+    <!-- Modal para crear/editar zona -->
+    @if ($showModal)
+        <div class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                    <div>
+                        <div class="mt-3 text-center sm:mt-5">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                {{ $editMode ? 'Editar Zona' : 'Nueva Zona' }}
+                            </h3>
+                            <div class="mt-4 space-y-4">
+                                <!-- Nombre -->
+                                <div>
+                                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
+                                    <input wire:model="nombre" type="text" id="nombre" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    @error('nombre') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Descripción -->
+                                <div>
+                                    <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción (opcional)</label>
+                                    <textarea wire:model="descripcion" id="descripcion" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                                    @error('descripcion') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- ID Personalizado -->
+                                <div>
+                                    <label for="id_personalizado" class="block text-sm font-medium text-gray-700">ID Personalizado (opcional)</label>
+                                    <input wire:model="id_personalizado" type="text" id="id_personalizado" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <p class="mt-1 text-sm text-gray-500">Si se especifica, se usará en la URL en lugar del ID numérico</p>
+                                    @error('id_personalizado') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Tipo de Registro -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Tipo de Registro</label>
+                                    <div class="mt-2 space-y-2">
+                                        <div class="flex items-center">
+                                            <input wire:model="tipo_registro" id="sin_registro" name="tipo_registro" type="radio" value="sin_registro" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                            <label for="sin_registro" class="ml-3 block text-sm font-medium text-gray-700">Sin registro</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input wire:model="tipo_registro" id="registro_simple" name="tipo_registro" type="radio" value="registro_simple" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                            <label for="registro_simple" class="ml-3 block text-sm font-medium text-gray-700">Registro simple</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input wire:model="tipo_registro" id="registro_completo" name="tipo_registro" type="radio" value="registro_completo" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                            <label for="registro_completo" class="ml-3 block text-sm font-medium text-gray-700">Registro completo</label>
+                                        </div>
+                                    </div>
+                                    @error('tipo_registro') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Segundos -->
+                                <div>
+                                    <label for="segundos" class="block text-sm font-medium text-gray-700">Segundos de cuenta regresiva</label>
+                                    <input wire:model="segundos" type="number" id="segundos" min="1" max="300" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    @error('segundos') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Selección de Campañas -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Selección de Campañas</label>
+                                    <div class="mt-2 space-y-2">
+                                        <div class="flex items-center">
+                                            <input wire:model="seleccion_campanas" id="aleatorio" name="seleccion_campanas" type="radio" value="aleatorio" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                            <label for="aleatorio" class="ml-3 block text-sm font-medium text-gray-700">Alternancia automática</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input wire:model="seleccion_campanas" id="prioridad" name="seleccion_campanas" type="radio" value="prioridad" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                            <label for="prioridad" class="ml-3 block text-sm font-medium text-gray-700">Por prioridad</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input wire:model="seleccion_campanas" id="video" name="seleccion_campanas" type="radio" value="video" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                            <label for="video" class="ml-3 block text-sm font-medium text-gray-700">Solo videos</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input wire:model="seleccion_campanas" id="imagen" name="seleccion_campanas" type="radio" value="imagen" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                            <label for="imagen" class="ml-3 block text-sm font-medium text-gray-700">Solo imágenes</label>
+                                        </div>
+                                    </div>
+                                    @error('seleccion_campanas') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Autenticación Mikrotik -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Tipo de Autenticación Mikrotik</label>
+                                    <div class="mt-2 space-y-2">
+                                        <div class="flex items-center">
+                                            <input wire:model="tipo_autenticacion_mikrotik" id="sin_autenticacion" name="tipo_autenticacion_mikrotik" type="radio" value="sin_autenticacion" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                            <label for="sin_autenticacion" class="ml-3 block text-sm font-medium text-gray-700">Sin autenticación</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input wire:model="tipo_autenticacion_mikrotik" id="pin" name="tipo_autenticacion_mikrotik" type="radio" value="pin" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                            <label for="pin" class="ml-3 block text-sm font-medium text-gray-700">Solo PIN</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input wire:model="tipo_autenticacion_mikrotik" id="usuario_password" name="tipo_autenticacion_mikrotik" type="radio" value="usuario_password" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                            <label for="usuario_password" class="ml-3 block text-sm font-medium text-gray-700">Usuario y Contraseña</label>
+                                        </div>
+                                    </div>
+                                    @error('tipo_autenticacion_mikrotik') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                        <button wire:click="save" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm">
+                            {{ $editMode ? 'Actualizar' : 'Crear' }}
+                        </button>
+                        <button wire:click="closeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Modal de confirmación para eliminar zona -->
+    @if ($confirmingZonaDeletion)
+        <div class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                Eliminar Zona
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">
+                                    ¿Estás seguro de que quieres eliminar esta zona? Esta acción no se puede deshacer.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                        <button wire:click="deleteZona" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Eliminar
+                        </button>
+                        <button wire:click="$set('confirmingZonaDeletion', false)" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     @endif
 
