@@ -1,8 +1,4 @@
-@php
-$layout = 'components.layouts.app';
-@endphp
-
-<x-dynamic-component :component="$layout">
+<x-layouts.app>
     <div class="space-y-6">
         <!-- Encabezado -->
         <div class="flex items-center justify-between">
@@ -24,4 +20,4 @@ $layout = 'components.layouts.app';
         <!-- Componente Livewire para Configuración de Campañas -->
         @livewire('cliente.configuracion-campanas', ['zonaId' => $zonaId])
     </div>
-</x-dynamic-component>
+</x-layouts.app>
