@@ -47,7 +47,7 @@
                 <flux:navbar.item icon="map-pin" :href="route('cliente.zonas.index')" :current="request()->routeIs('cliente.zonas.*')" wire:navigate>
                     Mis Zonas
                 </flux:navbar.item>
-                <flux:navbar.item icon="presentation-chart-bar" href="#" wire:navigate>
+                <flux:navbar.item icon="presentation-chart-bar" :href="route('cliente.campanas.index')" :current="request()->routeIs('cliente.campanas.*')" wire:navigate>
                     Mis Campañas
                 </flux:navbar.item>
                 @can('ver metricas hotspot')
@@ -58,6 +58,9 @@
                 @endhasrole
 
                 @hasrole('tecnico')
+                <flux:navbar.item icon="map-pin" :href="route('cliente.zonas.index')" :current="request()->routeIs('cliente.zonas.*')" wire:navigate>
+                    Mis Zonas
+                </flux:navbar.item>
                 @can('ver metricas hotspot')
                 <flux:navbar.item icon="chart-bar" :href="route('hotspot-metrics.index')" :current="request()->routeIs('hotspot-metrics.*')" wire:navigate>
                     Métricas Hotspot
@@ -164,12 +167,23 @@
                     <flux:navlist.item icon="map-pin" :href="route('cliente.zonas.index')" :current="request()->routeIs('cliente.zonas.*')" wire:navigate>
                         Mis Zonas
                     </flux:navlist.item>
-                    <flux:navlist.item icon="presentation-chart-bar" href="#" wire:navigate>
+                    <flux:navlist.item icon="presentation-chart-bar" :href="route('cliente.campanas.index')" :current="request()->routeIs('cliente.campanas.*')" wire:navigate>
                         Mis Campañas
                     </flux:navlist.item>
                     @can('ver metricas hotspot')
                     <flux:navlist.item icon="chart-bar" :href="route('hotspot-metrics.index')" :current="request()->routeIs('hotspot-metrics.*')" wire:navigate>
                         Métricas
+                    </flux:navlist.item>
+                    @endcan
+                    @endhasrole
+
+                    @hasrole('tecnico')
+                    <flux:navlist.item icon="map-pin" :href="route('cliente.zonas.index')" :current="request()->routeIs('cliente.zonas.*')" wire:navigate>
+                        Mis Zonas
+                    </flux:navlist.item>
+                    @can('ver metricas hotspot')
+                    <flux:navlist.item icon="chart-bar" :href="route('hotspot-metrics.index')" :current="request()->routeIs('hotspot-metrics.*')" wire:navigate>
+                        Métricas Hotspot
                     </flux:navlist.item>
                     @endcan
                     @endhasrole
