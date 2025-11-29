@@ -308,15 +308,21 @@ class TelegramController extends Controller
         $mensaje = <<<'HTML'
 🤖 <b>¡Bienvenido al Bot de I-Free!</b>
 
-Este bot te notificará sobre eventos importantes del sistema de hotspots.
+Este bot te notificará sobre eventos importantes del sistema de hotspots y te proporciona estadísticas en tiempo real.
 
 📋 <b>Comandos disponibles:</b>
-/start - Mostrar este mensaje
 /zonas - Ver zonas disponibles
 /registrar [zona_id] - Asociar chat con una zona
-/ayuda - Mostrar ayuda detallada
+/estadisticas - Ver estadísticas
+/estado - Ver estado del sistema
+/ayuda - Ver todos los comandos disponibles
 
-🔧 Para empezar, usa /zonas para ver las zonas disponibles.
+🚀 <b>¿Cómo empezar?</b>
+1. Usa /zonas para ver las zonas disponibles
+2. Usa /registrar [ID] para suscribirte a una zona
+3. ¡Recibe notificaciones automáticas!
+
+💡 Usa /ayuda para ver todos los comandos disponibles
 HTML;
 
         try {
@@ -548,20 +554,86 @@ HTML;
 
 Este bot te permite recibir notificaciones sobre eventos importantes del sistema de hotspots I-Free.
 
-<b>Comandos disponibles:</b>
+<b>🔧 COMANDOS BÁSICOS:</b>
 
-/start - Inicia la conversación con el bot y muestra el mensaje de bienvenida.
+/start - Inicia la conversación con el bot y muestra el mensaje de bienvenida
 
-/zonas - Muestra la lista de zonas disponibles para suscribirse.
+/zonas - Muestra la lista de zonas disponibles para suscribirse
 
-/registrar [ID] - Asocia este chat con una zona específica para recibir sus notificaciones. Reemplaza [ID] con el número de identificación de la zona.
+/registrar [ID] - Asocia este chat con una zona específica. Ej: /registrar 1
 
-/ayuda - Muestra este mensaje de ayuda.
+/ayuda - Muestra este mensaje de ayuda
 
-<b>¿Cómo funciona?</b>
-1. Usa /zonas para ver las zonas disponibles
-2. Usa /registrar [ID] para asociar el chat con una zona
-3. ¡Listo! Recibirás notificaciones automáticas sobre eventos en esa zona
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>📊 COMANDOS DE ESTADÍSTICAS:</b>
+
+/estadisticas - Ver estadísticas generales de las zonas suscritas
+
+/reporte - Generar reporte detallado de actividad
+
+/dispositivos - Ver dispositivos conectados
+
+/navegadores - Ver navegadores más utilizados
+
+/conectados - Ver usuarios conectados en tiempo real
+
+/ultimo - Mostrar último evento registrado
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🔍 COMANDOS DE DIAGNÓSTICO:</b>
+
+/estado - Ver estado del sistema y zonas
+
+/ping - Verificar conectividad con el bot
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>⚙️ COMANDOS AVANZADOS:</b>
+
+/alertas - Configurar alertas personalizadas
+
+/perfil - Ver o editar configuración del chat
+
+/desuscribirse - Dejar de recibir notificaciones de una zona
+
+/exportar - Exportar datos en formato CSV
+
+/horarios - Configurar horarios de envío de notificaciones
+
+/restricciones - Ver restricciones de ancho de banda
+
+/detalle [zona_id] - Ver detalles de una zona específica
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💾 COMANDOS DE DATOS:</b>
+
+/historial - Ver historial de eventos
+
+/descarga - Descargar reportes
+
+/limpiar - Limpiar datos locales del bot
+
+/sincronizar - Sincronizar datos con el servidor
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🎯 MODO DE USO RÁPIDO:</b>
+
+1️⃣ Usa /zonas para ver las zonas disponibles
+2️⃣ Usa /registrar [ID] para asociar el chat con una zona
+3️⃣ ¡Listo! Recibirás notificaciones automáticas
+
+<b>💡 EJEMPLOS:</b>
+• /registrar 1
+• /estadisticas
+• /dispositivos
+• /reporte
+• /detalle 2
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Para más información o soporte, contacta al administrador del sistema.
 HTML;
@@ -596,13 +668,22 @@ HTML;
         $mensaje = <<<HTML
 ⚠️ <b>Comando desconocido</b>: /{$command}
 
-Puedo ayudarte con los siguientes comandos:
+No reconozco este comando, pero puedo ayudarte con:
 
-📋 <b>Comandos disponibles:</b>
-/start - Mensaje de bienvenida
+<b>📋 COMANDOS BÁSICOS:</b>
 /zonas - Ver zonas disponibles
-/registrar [zona_id] - Asociar chat con una zona
-/ayuda - Mostrar ayuda detallada
+/registrar [zona_id] - Suscribirse a una zona
+/estado - Ver estado del sistema
+
+<b>📊 ESTADÍSTICAS:</b>
+/estadisticas - Estadísticas generales
+/dispositivos - Dispositivos conectados
+/navegadores - Navegadores más utilizados
+
+<b>💡 MÁS OPCIONES:</b>
+/ayuda - Ver todos los comandos disponibles
+
+¿Necesitas ayuda? Usa /ayuda para ver la lista completa.
 HTML;
 
         try {
@@ -645,15 +726,15 @@ HTML;
         $mensaje = <<<HTML
 👋 Hola {$nombre}!
 
-Has enviado: "<i>{$text}</i>"
+Recibí tu mensaje, pero espero <b>comandos</b> del bot.
 
-Puedo ayudarte con los siguientes comandos:
-
-📋 <b>Comandos disponibles:</b>
-/start - Mensaje de bienvenida
+<b>📋 COMANDOS POPULARES:</b>
 /zonas - Ver zonas disponibles
-/registrar [zona_id] - Asociar chat con una zona
-/ayuda - Mostrar ayuda detallada
+/estadisticas - Ver estadísticas
+/estado - Ver estado del sistema
+/ayuda - Ver todos los comandos
+
+¿Qué necesitas?
 HTML;
 
         try {
