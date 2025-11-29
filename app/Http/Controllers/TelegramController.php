@@ -888,7 +888,7 @@ HTML;
 
                 foreach ($metricas as $metrica) {
                     $fecha = $metrica->created_at->format('H:i');
-                    $dispositivo = $metrica->user_agent ? substr($metrica->user_agent, 0, 20) : 'Desconocido';
+                    $dispositivo = $metrica->dispositivo ? substr($metrica->dispositivo, 0, 20) : 'Desconocido';
                     $mensaje .= "  • {$fecha} - {$dispositivo}\n";
                 }
 
@@ -940,8 +940,8 @@ HTML;
 
             $zonaIds = $zonas->pluck('id')->toArray();
             $dispositivos = \App\Models\HotspotMetric::whereIn('zona_id', $zonaIds)
-                ->select('user_agent')
-                ->groupBy('user_agent')
+                ->select('dispositivo')
+                ->groupBy('dispositivo')
                 ->limit(10)
                 ->get();
 
@@ -949,8 +949,8 @@ HTML;
                 $mensaje .= 'Sin conexiones registradas';
             } else {
                 foreach ($dispositivos as $idx => $disp) {
-                    $count = \App\Models\HotspotMetric::where('user_agent', $disp->user_agent)->count();
-                    $mensaje .= ''.($idx + 1).". {$disp->user_agent} ({$count} conexiones)\n";
+                    $count = \App\Models\HotspotMetric::where('dispositivo', $disp->dispositivo)->count();
+                    $mensaje .= ''.($idx + 1).". {$disp->dispositivo} ({$count} conexiones)\n";
                 }
             }
 
@@ -1119,7 +1119,7 @@ HTML;
                     $fecha = $metrica->created_at->format('d/m/Y H:i:s');
                     $mensaje .= "<b>{$zona->nombre}</b>\n";
                     $mensaje .= "Fecha: {$fecha}\n";
-                    $mensaje .= "User Agent: {$metrica->user_agent}\n\n";
+                    $mensaje .= "Dispositivo: {$metrica->dispositivo}\n\n";
                 } else {
                     $mensaje .= "<b>{$zona->nombre}</b>: Sin eventos\n\n";
                 }
