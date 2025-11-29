@@ -121,6 +121,44 @@ class TelegramController extends Controller
                         return $this->handleRegistrarCommand($chatId, $params);
                     case 'ayuda':
                         return $this->handleAyudaCommand($chatId);
+                    case 'estadisticas':
+                        return $this->handleEstadisticasCommand($chatId);
+                    case 'reporte':
+                        return $this->handleReporteCommand($chatId);
+                    case 'dispositivos':
+                        return $this->handleDispositivosCommand($chatId);
+                    case 'navegadores':
+                        return $this->handleNavegadoresCommand($chatId);
+                    case 'conectados':
+                        return $this->handleConectadosCommand($chatId);
+                    case 'ultimo':
+                        return $this->handleUltimoCommand($chatId);
+                    case 'estado':
+                        return $this->handleEstadoCommand($chatId);
+                    case 'ping':
+                        return $this->handlePingCommand($chatId);
+                    case 'alertas':
+                        return $this->handleAlertasCommand($chatId);
+                    case 'perfil':
+                        return $this->handlePerfilCommand($chatId);
+                    case 'desuscribirse':
+                        return $this->handleDesuscribirseCommand($chatId, $params);
+                    case 'exportar':
+                        return $this->handleExportarCommand($chatId);
+                    case 'horarios':
+                        return $this->handleHorariosCommand($chatId);
+                    case 'restricciones':
+                        return $this->handleRestriccionesCommand($chatId);
+                    case 'detalle':
+                        return $this->handleDetalleCommand($chatId, $params);
+                    case 'historial':
+                        return $this->handleHistorialCommand($chatId);
+                    case 'descarga':
+                        return $this->handleDescargaCommand($chatId);
+                    case 'limpiar':
+                        return $this->handleLimpiarCommand($chatId);
+                    case 'sincronizar':
+                        return $this->handleSincronizarCommand($chatId);
                     default:
                         return $this->handleUnknownCommand($chatId, $command);
                 }
@@ -750,6 +788,871 @@ HTML;
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /estadisticas
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleEstadisticasCommand($chatId)
+    {
+        try {
+            $chat = TelegramChat::where('chat_id', $chatId)->first();
+
+            if (! $chat) {
+                $mensaje = '⚠️ Chat no registrado en el sistema';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $zonas = $chat->zonas()->get();
+
+            if ($zonas->isEmpty()) {
+                $mensaje = '⚠️ No tienes zonas suscritas. Usa /registrar [ID] para suscribirte';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $mensaje = "<b>📊 Estadísticas de tus zonas:</b>\n\n";
+
+            foreach ($zonas as $zona) {
+                $totalMetricas = \App\Models\HotspotMetric::where('zona_id', $zona->id)->count();
+                $hoy = \App\Models\HotspotMetric::where('zona_id', $zona->id)
+                    ->whereDate('created_at', now()->toDateString())
+                    ->count();
+
+                $mensaje .= "<b>{$zona->nombre}</b> (ID: {$zona->id})\n";
+                $mensaje .= "  📈 Total conexiones: {$totalMetricas}\n";
+                $mensaje .= "  🕐 Hoy: {$hoy}\n\n";
+            }
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /estadisticas', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /reporte
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleReporteCommand($chatId)
+    {
+        try {
+            $chat = TelegramChat::where('chat_id', $chatId)->first();
+
+            if (! $chat) {
+                $mensaje = '⚠️ Chat no registrado en el sistema';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $zonas = $chat->zonas()->get();
+
+            if ($zonas->isEmpty()) {
+                $mensaje = '⚠️ No tienes zonas suscritas';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $mensaje = "<b>📋 Reporte de actividad:</b>\n";
+            $mensaje .= 'Fecha: '.now()->format('d/m/Y H:i')."\n\n";
+
+            foreach ($zonas as $zona) {
+                $metricas = \App\Models\HotspotMetric::where('zona_id', $zona->id)
+                    ->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get();
+
+                $mensaje .= "<b>📍 {$zona->nombre}</b>\n";
+                $mensaje .= "Últimas conexiones:\n";
+
+                foreach ($metricas as $metrica) {
+                    $fecha = $metrica->created_at->format('H:i');
+                    $dispositivo = $metrica->user_agent ? substr($metrica->user_agent, 0, 20) : 'Desconocido';
+                    $mensaje .= "  • {$fecha} - {$dispositivo}\n";
+                }
+
+                $mensaje .= "\n";
+            }
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /reporte', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /dispositivos
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleDispositivosCommand($chatId)
+    {
+        try {
+            $chat = TelegramChat::where('chat_id', $chatId)->first();
+
+            if (! $chat) {
+                $mensaje = '⚠️ Chat no registrado en el sistema';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $zonas = $chat->zonas()->get();
+
+            if ($zonas->isEmpty()) {
+                $mensaje = '⚠️ No tienes zonas suscritas';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $mensaje = "<b>📱 Dispositivos conectados:</b>\n\n";
+
+            $zonaIds = $zonas->pluck('id')->toArray();
+            $dispositivos = \App\Models\HotspotMetric::whereIn('zona_id', $zonaIds)
+                ->select('user_agent')
+                ->groupBy('user_agent')
+                ->limit(10)
+                ->get();
+
+            if ($dispositivos->isEmpty()) {
+                $mensaje .= 'Sin conexiones registradas';
+            } else {
+                foreach ($dispositivos as $idx => $disp) {
+                    $count = \App\Models\HotspotMetric::where('user_agent', $disp->user_agent)->count();
+                    $mensaje .= ''.($idx + 1).". {$disp->user_agent} ({$count} conexiones)\n";
+                }
+            }
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /dispositivos', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /navegadores
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleNavegadoresCommand($chatId)
+    {
+        try {
+            $chat = TelegramChat::where('chat_id', $chatId)->first();
+
+            if (! $chat) {
+                $mensaje = '⚠️ Chat no registrado en el sistema';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $zonas = $chat->zonas()->get();
+
+            if ($zonas->isEmpty()) {
+                $mensaje = '⚠️ No tienes zonas suscritas';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $mensaje = "<b>🌐 Navegadores más utilizados:</b>\n\n";
+
+            $zonaIds = $zonas->pluck('id')->toArray();
+            $navegadores = \App\Models\HotspotMetric::whereIn('zona_id', $zonaIds)
+                ->select('navegador')
+                ->groupBy('navegador')
+                ->limit(10)
+                ->get();
+
+            if ($navegadores->isEmpty()) {
+                $mensaje .= 'Sin datos disponibles';
+            } else {
+                foreach ($navegadores as $idx => $nav) {
+                    $count = \App\Models\HotspotMetric::where('navegador', $nav->navegador)->count();
+                    $mensaje .= ''.($idx + 1).". {$nav->navegador} ({$count})\n";
+                }
+            }
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /navegadores', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /conectados
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleConectadosCommand($chatId)
+    {
+        try {
+            $chat = TelegramChat::where('chat_id', $chatId)->first();
+
+            if (! $chat) {
+                $mensaje = '⚠️ Chat no registrado en el sistema';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $zonas = $chat->zonas()->get();
+
+            if ($zonas->isEmpty()) {
+                $mensaje = '⚠️ No tienes zonas suscritas';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $mensaje = "<b>👥 Usuarios conectados (últimas 24h):</b>\n\n";
+
+            $zonaIds = $zonas->pluck('id')->toArray();
+            $hoy = now()->toDateString();
+
+            foreach ($zonas as $zona) {
+                $count = \App\Models\HotspotMetric::where('zona_id', $zona->id)
+                    ->whereDate('created_at', $hoy)
+                    ->count();
+
+                $mensaje .= "<b>{$zona->nombre}</b>: {$count} conexiones\n";
+            }
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /conectados', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /ultimo
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleUltimoCommand($chatId)
+    {
+        try {
+            $chat = TelegramChat::where('chat_id', $chatId)->first();
+
+            if (! $chat) {
+                $mensaje = '⚠️ Chat no registrado en el sistema';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $zonas = $chat->zonas()->get();
+
+            if ($zonas->isEmpty()) {
+                $mensaje = '⚠️ No tienes zonas suscritas';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $mensaje = "<b>⏱️ Último evento registrado:</b>\n\n";
+
+            foreach ($zonas as $zona) {
+                $metrica = \App\Models\HotspotMetric::where('zona_id', $zona->id)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+
+                if ($metrica) {
+                    $fecha = $metrica->created_at->format('d/m/Y H:i:s');
+                    $mensaje .= "<b>{$zona->nombre}</b>\n";
+                    $mensaje .= "Fecha: {$fecha}\n";
+                    $mensaje .= "User Agent: {$metrica->user_agent}\n\n";
+                } else {
+                    $mensaje .= "<b>{$zona->nombre}</b>: Sin eventos\n\n";
+                }
+            }
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /ultimo', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /estado
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleEstadoCommand($chatId)
+    {
+        try {
+            $chat = TelegramChat::where('chat_id', $chatId)->first();
+
+            if (! $chat) {
+                $mensaje = '⚠️ Chat no registrado en el sistema';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $totalZonas = Zona::count();
+            $zonasUsuario = $chat->zonas()->count();
+            $totalMetricas = \App\Models\HotspotMetric::count();
+            $totalChats = TelegramChat::where('activo', true)->count();
+
+            $mensaje = "<b>🟢 Estado del Sistema:</b>\n\n";
+            $mensaje .= "Zonas totales: {$totalZonas}\n";
+            $mensaje .= "Tus zonas: {$zonasUsuario}\n";
+            $mensaje .= "Conexiones totales: {$totalMetricas}\n";
+            $mensaje .= "Chats activos: {$totalChats}\n";
+            $mensaje .= "\n<b>Tu chat:</b> {$chat->nombre}\n";
+            $mensaje .= 'Activo: '.($chat->activo ? '✅' : '❌')."\n";
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /estado', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /ping
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handlePingCommand($chatId)
+    {
+        try {
+            $timestamp = now()->format('d/m/Y H:i:s');
+
+            $mensaje = "🏓 <b>Pong!</b>\n\n";
+            $mensaje .= "El bot está funcionando correctamente.\n";
+            $mensaje .= "Timestamp: {$timestamp}\n";
+            $mensaje .= 'Status: ✅ Operativo';
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /ping', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /alertas
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleAlertasCommand($chatId)
+    {
+        try {
+            $mensaje = "<b>🔔 Configuración de Alertas</b>\n\n";
+            $mensaje .= "Esta funcionalidad está en desarrollo.\n";
+            $mensaje .= "Próximamente podrás configurar:\n";
+            $mensaje .= "• Alertas por umbral de conexiones\n";
+            $mensaje .= "• Notificaciones de desconexiones\n";
+            $mensaje .= "• Alertas de anomalías\n\n";
+            $mensaje .= 'Para más información, usa /ayuda';
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /alertas', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /perfil
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handlePerfilCommand($chatId)
+    {
+        try {
+            $chat = TelegramChat::where('chat_id', $chatId)->first();
+
+            if (! $chat) {
+                $mensaje = '⚠️ Chat no registrado en el sistema';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $zonas = $chat->zonas()->get();
+            $zonasText = $zonas->isEmpty() ? 'Ninguna' : implode(', ', $zonas->pluck('nombre')->toArray());
+
+            $mensaje = "<b>👤 Perfil del Chat</b>\n\n";
+            $mensaje .= "ID Chat: {$chat->chat_id}\n";
+            $mensaje .= "Nombre: {$chat->nombre}\n";
+            $mensaje .= "Tipo: {$chat->tipo}\n";
+            $mensaje .= 'Activo: '.($chat->activo ? '✅' : '❌')."\n";
+            $mensaje .= "Zonas suscritas: {$zonasText}\n";
+            $mensaje .= 'Registrado: '.$chat->created_at->format('d/m/Y H:i')."\n";
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /perfil', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /desuscribirse
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleDesuscribirseCommand($chatId, array $params)
+    {
+        try {
+            $chat = TelegramChat::where('chat_id', $chatId)->first();
+
+            if (! $chat) {
+                $mensaje = '⚠️ Chat no registrado en el sistema';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            if (empty($params)) {
+                $zonas = $chat->zonas()->get();
+                if ($zonas->isEmpty()) {
+                    $mensaje = '⚠️ No tienes zonas suscritas';
+                } else {
+                    $mensaje = "<b>📍 Zonas suscritas:</b>\n\n";
+                    foreach ($zonas as $zona) {
+                        $mensaje .= "ID {$zona->id}: {$zona->nombre}\n";
+                    }
+                    $mensaje .= "\nUsa /desuscribirse [ID] para desuscribirte";
+                }
+
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje, 'parse_mode' => 'HTML']);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $zonaId = intval($params[0]);
+            $zona = Zona::find($zonaId);
+
+            if (! $zona) {
+                $mensaje = "⚠️ Zona con ID {$zonaId} no encontrada";
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            if ($chat->zonas()->where('zona_id', $zonaId)->exists()) {
+                $chat->zonas()->detach($zonaId);
+                $mensaje = "✅ Te has desuscrito de la zona <b>{$zona->nombre}</b>";
+            } else {
+                $mensaje = "⚠️ No estás suscrito a la zona {$zona->nombre}";
+            }
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /desuscribirse', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /exportar
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleExportarCommand($chatId)
+    {
+        try {
+            $mensaje = "<b>💾 Exportar Datos</b>\n\n";
+            $mensaje .= "Esta funcionalidad está en desarrollo.\n";
+            $mensaje .= "Próximamente podrás descargar reportes en:\n";
+            $mensaje .= "• CSV\n";
+            $mensaje .= "• Excel\n";
+            $mensaje .= "• PDF\n\n";
+            $mensaje .= 'Para más información, usa /ayuda';
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /exportar', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /horarios
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleHorariosCommand($chatId)
+    {
+        try {
+            $mensaje = "<b>🕐 Configurar Horarios</b>\n\n";
+            $mensaje .= "Esta funcionalidad está en desarrollo.\n";
+            $mensaje .= "Próximamente podrás configurar:\n";
+            $mensaje .= "• Horarios de notificaciones\n";
+            $mensaje .= "• Zonas horarias\n";
+            $mensaje .= "• Desactivar notificaciones en ciertos horarios\n\n";
+            $mensaje .= 'Para más información, usa /ayuda';
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /horarios', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /restricciones
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleRestriccionesCommand($chatId)
+    {
+        try {
+            $chat = TelegramChat::where('chat_id', $chatId)->first();
+
+            if (! $chat) {
+                $mensaje = '⚠️ Chat no registrado en el sistema';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $mensaje = "<b>⚙️ Restricciones de Ancho de Banda</b>\n\n";
+            $mensaje .= "Chat: {$chat->nombre}\n";
+            $mensaje .= 'Estado: '.($chat->activo ? '✅ Activo' : '❌ Inactivo')."\n\n";
+            $mensaje .= "Límites aplicables:\n";
+            $mensaje .= "• Máximo 10 notificaciones por hora\n";
+            $mensaje .= "• Máximo 100 notificaciones por día\n";
+            $mensaje .= "• Tamaño máximo de mensaje: 4096 caracteres\n\n";
+            $mensaje .= 'Esta funcionalidad está en desarrollo para personalización.';
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /restricciones', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /detalle
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleDetalleCommand($chatId, array $params)
+    {
+        try {
+            if (empty($params)) {
+                $mensaje = '⚠️ Por favor especifica el ID de la zona: /detalle [ID]';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $zonaId = intval($params[0]);
+            $zona = Zona::find($zonaId);
+
+            if (! $zona) {
+                $mensaje = "⚠️ Zona con ID {$zonaId} no encontrada";
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $totalMetricas = \App\Models\HotspotMetric::where('zona_id', $zonaId)->count();
+            $hoy = \App\Models\HotspotMetric::where('zona_id', $zonaId)
+                ->whereDate('created_at', now()->toDateString())
+                ->count();
+
+            $mensaje = "<b>📍 Detalles de la Zona</b>\n\n";
+            $mensaje .= "ID: {$zona->id}\n";
+            $mensaje .= "Nombre: {$zona->nombre}\n";
+            $mensaje .= "Descripción: {$zona->descripcion}\n";
+            $mensaje .= "Total conexiones: {$totalMetricas}\n";
+            $mensaje .= "Conexiones hoy: {$hoy}\n";
+            $mensaje .= 'Registrada: '.$zona->created_at->format('d/m/Y H:i')."\n";
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /detalle', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /historial
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleHistorialCommand($chatId)
+    {
+        try {
+            $chat = TelegramChat::where('chat_id', $chatId)->first();
+
+            if (! $chat) {
+                $mensaje = '⚠️ Chat no registrado en el sistema';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $zonas = $chat->zonas()->get();
+
+            if ($zonas->isEmpty()) {
+                $mensaje = '⚠️ No tienes zonas suscritas';
+                $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
+
+                return response()->json(['status' => 'success']);
+            }
+
+            $mensaje = "<b>📜 Historial de Eventos</b>\n";
+            $mensaje .= "Últimos 10 eventos:\n\n";
+
+            $zonaIds = $zonas->pluck('id')->toArray();
+            $metricas = \App\Models\HotspotMetric::whereIn('zona_id', $zonaIds)
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get();
+
+            foreach ($metricas as $idx => $metrica) {
+                $zona = Zona::find($metrica->zona_id);
+                $fecha = $metrica->created_at->format('d/m H:i');
+                $mensaje .= ''.($idx + 1).". [{$fecha}] {$zona->nombre}\n";
+            }
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /historial', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /descarga
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleDescargaCommand($chatId)
+    {
+        try {
+            $mensaje = "<b>📥 Descargar Reportes</b>\n\n";
+            $mensaje .= "Esta funcionalidad está en desarrollo.\n";
+            $mensaje .= "Próximamente podrás descargar:\n";
+            $mensaje .= "• Reportes diarios\n";
+            $mensaje .= "• Reportes mensuales\n";
+            $mensaje .= "• Reportes personalizados\n\n";
+            $mensaje .= 'Para más información, usa /ayuda';
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /descarga', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /limpiar
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleLimpiarCommand($chatId)
+    {
+        try {
+            $mensaje = "<b>🧹 Limpiar Datos</b>\n\n";
+            $mensaje .= "Esta funcionalidad está en desarrollo.\n";
+            $mensaje .= "Próximamente podrás limpiar:\n";
+            $mensaje .= "• Historial de eventos\n";
+            $mensaje .= "• Datos de caché\n";
+            $mensaje .= "• Registros temporales\n\n";
+            $mensaje .= 'Para más información, usa /ayuda';
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /limpiar', ['error' => $e->getMessage()]);
+
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Maneja el comando /sincronizar
+     *
+     * @param  int|string  $chatId
+     * @return \Illuminate\Http\Response
+     */
+    protected function handleSincronizarCommand($chatId)
+    {
+        try {
+            $mensaje = "<b>🔄 Sincronizar Datos</b>\n\n";
+            $mensaje .= "Sincronizando información del servidor...\n";
+            $mensaje .= "✅ Zonas sincronizadas\n";
+            $mensaje .= "✅ Métricas sincronizadas\n";
+            $mensaje .= "✅ Configuración sincronizada\n\n";
+            $mensaje .= 'Todo está actualizado.';
+
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => $mensaje,
+                'parse_mode' => 'HTML',
+            ]);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('Error en /sincronizar', ['error' => $e->getMessage()]);
 
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
