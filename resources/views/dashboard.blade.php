@@ -1,11 +1,16 @@
+
 <x-layouts.app :title="__('Dashboard')">
-    <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
-            </div>
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
+    @hasrole('admin')
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <!-- Bienvenida -->
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6 text-gray-900 dark:text-gray-100">
+                    <h2 class="text-2xl font-semibold mb-2">{{ __('Bienvenido de nuevo,') }} {{ Auth::user()->name }}</h2>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        {{ __('Aquí tienes un resumen del rendimiento de tus puntos de acceso WiFi y campañas.') }}
+                    </p>
+                </div>
             </div>
 
             <!-- Accesos Rápidos -->
@@ -36,7 +41,6 @@
                     </div>
                 </a>
                 
-                @role('admin')
                 <!-- Tarjeta Usuarios -->
                 <a href="{{ route('admin.users.index') }}" class="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-150 ease-in-out border-l-4 border-purple-500">
                     <div class="flex items-center">
@@ -49,7 +53,6 @@
                         </div>
                     </div>
                 </a>
-                @endrole
             </div>
             
             <!-- Dashboard de Métricas -->
@@ -57,6 +60,7 @@
         </div>
     </div>
     @endhasrole
+
 
     @hasrole('cliente')
     <!-- Dashboard para Cliente -->
