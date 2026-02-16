@@ -34,7 +34,17 @@ class Register extends Component
 
         $validated['password'] = Hash::make($validated['password']);
 
-        event(new Registered(($user = User::create($validated))));
+        $user = User::create($validated);
+
+        // Asignar el rol de cliente automáticamente
+        if (class_exists(\Spatie\Permission\Models\Role::class)) {
+            $clienteRole = \Spatie\Permission\Models\Role::where('name', 'cliente')->first();
+            if ($clienteRole) {
+                $user->assignRole($clienteRole);
+            }
+        }
+
+        event(new Registered($user));
 
         Auth::login($user);
 

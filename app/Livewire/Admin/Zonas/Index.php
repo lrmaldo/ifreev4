@@ -290,6 +290,13 @@ class Index extends Component
     public function downloadMikrotikFile($zonaId, $fileType)
     {
         $zona = Zona::findOrFail($zonaId);
+
+        // Verificar permisos: solo admins o el propietario de la zona pueden descargar
+        if (!auth()->user()->hasRole('admin') && $zona->user_id !== auth()->id()) {
+            session()->flash('error', 'No tienes permisos para acceder a esta zona.');
+            return redirect()->back();
+        }
+
         $fileName = $fileType . '.html';
         $filePath = public_path('templates/' . $fileName);
 
@@ -316,7 +323,7 @@ class Index extends Component
                 </noscript>
             $(endif)
         <center>Si no se redirecciona en unos segundos haga clic en 'continue'<br>
-            <form name="redirect" action="https://i-free.com.mx/login_formulario/{$zonaId}" method="post">
+            <form name="redirect" action="https://v3.i-free.com.mx/login_formulario/{$zonaId}" method="post">
                 <input type="hidden" name="mac" value="$(mac)">
                 <input type="hidden" name="ip" value="$(ip)">
                 <input type="hidden" name="username" value="$(username)">

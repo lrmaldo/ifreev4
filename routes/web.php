@@ -198,11 +198,20 @@ Route::middleware(['auth'])->group(function () {
     });    // Rutas para clientes y admins (acceso a zonas)
     Route::middleware(['role:cliente|admin'])->group(function () {
         Route::get('/zonas', function() {
-            return view('zonas');
+            return view('cliente.zonas');
         })->name('cliente.zonas.index');
         Route::get('/zonas/download/{zonaId}/{fileType}', function ($zonaId, $fileType) {
             return app()->call([app()->make(App\Livewire\Admin\Zonas\Index::class), 'downloadMikrotikFile'], ['zonaId' => $zonaId, 'fileType' => $fileType]);
         })->name('cliente.zonas.download');
+
+        // Ruta para campañas de cliente
+        Route::get('/campanas', function() {
+            return view('cliente.campanas');
+        })->name('cliente.campanas.index');
+
+        // Ruta para configuración de campañas de zona (cliente)
+        Route::get('/zonas/{zonaId}/configuracion-campanas', \App\Livewire\Cliente\ZonasConfiguracionCampanas::class)
+            ->name('cliente.zonas.configuracion-campanas');
 
         // Ruta para ver el formulario dinámico de una zona
         Route::get('/zonas/{zonaId}/formulario', \App\Livewire\FormularioDinamico::class)

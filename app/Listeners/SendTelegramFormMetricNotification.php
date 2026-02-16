@@ -3,7 +3,6 @@
 namespace App\Listeners;
 
 use App\Events\HotspotMetricCreated;
-use App\Services\TelegramNotificationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
@@ -33,40 +32,65 @@ class SendTelegramFormMetricNotification implements ShouldQueue
             $metric = $event->hotspotMetric;
             $zona = $metric->zona;
 
+            Log::info("Procesando notificación Telegram para métrica ID: {$metric->id}", [
+                'zona_id' => $zona?->id,
+                'tipo_registro' => $zona?->tipo_registro,
+                'has_campos' => $zona?->campos->count() ?? 0,
+            ]);
+
             // Verificamos si la zona tiene el tipo de registro de formulario
-            if ($zona && $zona->tipo_registro === 'formulario' && $zona->campos->count() > 0) {
-                Log::info("Procesando notificación Telegram para métrica de formulario ID: {$metric->id} en zona {$zona->nombre}");
+            if (! $zona) {
+                Log::warning("Métrica ID {$metric->id} no tiene zona asociada");
 
-                // Obtenemos los chats asociados a la zona
-                $chats = $zona->telegramChats()->activos()->get();
+                return;
+            }
 
-                if ($chats->isEmpty()) {
-                    Log::info("No hay chats de Telegram activos asociados a la zona {$zona->id}");
-                    return;
+            if ($zona->tipo_registro !== 'formulario') {
+                Log::info("Zona {$zona->id} no es de tipo formulario: {$zona->tipo_registro}");
+
+                return;
+            }
+
+            if ($zona->campos->count() === 0) {
+                Log::info("Zona {$zona->id} no tiene campos de formulario");
+
+                return;
+            }
+
+            Log::info("Procesando notificación Telegram para métrica de formulario ID: {$metric->id} en zona {$zona->nombre}");
+
+            // Obtenemos los chats asociados a la zona
+            $chats = $zona->telegramChats()->where('activo', true)->get();
+
+            Log::info("Chats activos encontrados para zona {$zona->id}: ".$chats->count());
+
+            if ($chats->isEmpty()) {
+                Log::info("No hay chats de Telegram activos asociados a la zona {$zona->id}");
+
+                return;
+            }
+
+            // Preparamos el mensaje con la información de la métrica
+            $mensaje = $this->prepararMensaje($metric);
+
+            // Enviamos la notificación a cada chat
+            foreach ($chats as $chat) {
+                try {
+                    $this->telegram->sendMessage([
+                        'chat_id' => $chat->chat_id,
+                        'text' => $mensaje,
+                        'parse_mode' => 'HTML',
+                    ]);
+
+                    Log::info("Notificación enviada exitosamente al chat {$chat->chat_id} para zona {$zona->nombre}");
+                } catch (\Exception $e) {
+                    Log::error("Error al enviar notificación a chat {$chat->chat_id}: ".$e->getMessage());
                 }
-
-                // Preparamos el mensaje con la información de la métrica
-                $mensaje = $this->prepararMensaje($metric);
-
-                // Enviamos la notificación a cada chat
-                foreach ($chats as $chat) {
-                    try {
-                        $this->telegram->sendMessage([
-                            'chat_id' => $chat->chat_id,
-                            'text' => $mensaje,
-                            'parse_mode' => 'HTML',
-                        ]);
-
-                        Log::info("Notificación enviada exitosamente al chat {$chat->chat_id} para zona {$zona->nombre}");
-                    } catch (\Exception $e) {
-                        Log::error("Error al enviar notificación a chat {$chat->chat_id}: " . $e->getMessage());
-                    }
-                }
-            } else {
-                Log::info("La zona {$zona->id} no tiene formulario o es otro tipo de registro: {$zona->tipo_registro}");
             }
         } catch (\Exception $e) {
-            Log::error("Error general al procesar notificación Telegram para formularios: " . $e->getMessage());
+            Log::error('Error general al procesar notificación Telegram para formularios: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
             throw $e;
         }
     }
@@ -76,7 +100,7 @@ class SendTelegramFormMetricNotification implements ShouldQueue
      */
     public function failed(HotspotMetricCreated $event, \Throwable $exception): void
     {
-        Log::error("Falló el envío de notificación Telegram para métrica de formulario ID: {$event->hotspotMetric->id}. Error: " . $exception->getMessage());
+        Log::error("Falló el envío de notificación Telegram para métrica de formulario ID: {$event->hotspotMetric->id}. Error: ".$exception->getMessage());
     }
 
     /**
@@ -100,11 +124,11 @@ class SendTelegramFormMetricNotification implements ShouldQueue
         }
 
         // Construimos el mensaje completo
-        $mensaje = "<b>🆕 Nueva conexión en {$zona->nombre}</b>\n\n" .
-                   "<b>📱 Dispositivo:</b> {$metric->dispositivo}\n" .
-                   "<b>🌐 Navegador:</b> {$metric->navegador}\n" .
-                   "<b>⏱️ Fecha:</b> " . $metric->created_at->format('d/m/Y H:i:s') . "\n" .
-                   "<b>🔄 Visitas:</b> {$metric->veces_entradas}" .
+        $mensaje = "<b>🆕 Nueva conexión en {$zona->nombre}</b>\n\n".
+                   "<b>📱 Dispositivo:</b> {$metric->dispositivo}\n".
+                   "<b>🌐 Navegador:</b> {$metric->navegador}\n".
+                   '<b>⏱️ Fecha:</b> '.$metric->created_at->format('d/m/Y H:i:s')."\n".
+                   "<b>🔄 Visitas:</b> {$metric->veces_entradas}".
                    $formularioInfo;
 
         return $mensaje;

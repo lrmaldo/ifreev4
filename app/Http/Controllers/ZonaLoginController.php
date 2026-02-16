@@ -22,15 +22,30 @@ class ZonaLoginController extends Controller
      */
     public function handle(Request $request, $id)
     {
-        // Buscar la zona primero por id_personalizado, luego por id
-        $zona = \App\Models\Zona::where('id_personalizado', $id)->first();
+        try {
+            // Buscar la zona primero por id_personalizado, luego por id
+            $zona = \App\Models\Zona::where('id_personalizado', $id)->first();
 
-        if (!$zona) {
-            $zona = \App\Models\Zona::find($id);
-        }
+            if (!$zona) {
+                $zona = \App\Models\Zona::find($id);
+            }
 
-        if (!$zona) {
-            abort(404, 'Zona no encontrada');
+            if (!$zona) {
+                \Log::warning("Zona no encontrada con ID: {$id}");
+
+                // Mostrar página de error personalizada en lugar de abort 404
+                return view('portal.zona-no-encontrada', [
+                    'zona_id' => $id,
+                    'mensaje' => 'La zona solicitada no existe o ha sido desactivada.',
+                    'zonas_disponibles' => \App\Models\Zona::pluck('nombre', 'id')->toArray()
+                ]);
+            }        } catch (\Exception $e) {
+            \Log::error("Error al buscar zona ID {$id}: " . $e->getMessage());
+
+            return view('portal.zona-no-encontrada', [
+                'zona_id' => $id,
+                'mensaje' => 'Error al acceder al portal cautivo. Por favor contacte al administrador.'
+            ]);
         }
 
         // Comprobar en el controlador que estos valores estén presentes
@@ -44,6 +59,17 @@ class ZonaLoginController extends Controller
             'chap-challenge' => $request->get('chap-challenge', ''),
             'error' => $request->get('error', '')
         ];
+
+        // Log detallado para debugging en producción
+        \Log::info("Acceso al portal cautivo", [
+            'zona_id' => $zona->id,
+            'zona_nombre' => $zona->nombre,
+            'zona_activa' => $zona->activo,
+            'ip_cliente' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'mac_address' => $mikrotikData['mac'] ?? 'no-mac',
+            'timestamp' => now()->format('Y-m-d H:i:s')
+        ]);
 
         // Registrar métrica de entrada al portal
         $this->registrarMetricaEntrada($zona, $mikrotikData);

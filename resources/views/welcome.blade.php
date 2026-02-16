@@ -6,9 +6,24 @@
 
         <title>Ifree Hotspot - Monetiza el acceso a Internet con publicidad</title>
 
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <link rel="icon" href="{{ asset('img/Logo i-Free.png') }}" sizes="any">
+        <link rel="icon" href="{{ asset('img/Logo i-Free.png') }}" type="image/svg+xml">
+        <link rel="apple-touch-icon" href="{{ asset('img/Logo i-Free.png') }}">
+        <meta name="author" content="i-Free - Portal Cautivo WiFi">
+        <meta name="description" content="Ifree Hotspot permite ofrecer acceso a internet en espacios públicos mediante publicidad. Tus usuarios obtienen conexión gratis y tú obtienes ingresos publicitarios.">
+        <meta name="keywords" content="i-Free, Portal Cautivo, WiFi, Hotspot, Acceso a Internet">
+        <meta name="robots" content="index, follow">
+        <meta name="theme-color" content="#2563EB">
+        <meta property="og:title" content="Ifree Hotspot - Monetiza el acceso a Internet con publicidad" />
+        <meta property="og:description" content="Ifree Hotspot permite ofrecer acceso a internet en espacios públicos mediante publicidad. Tus usuarios obtienen conexión gratis y tú obtienes ingresos publicitarios." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="{{ url()->current() }}" />
+        <meta property="og:image" content="{{ asset('img/Logo i-Free.png') }}" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Ifree Hotspot - Monetiza el acceso a Internet con publicidad" />
+        <meta name="twitter:description" content="Ifree Hotspot permite ofrecer acceso a internet en espacios públicos mediante publicidad. Tus usuarios obtienen conexión gratis y tú obtienes ingresos publicitarios." />
+        <meta name="twitter:image" content="{{ asset('img/Logo i-Free.png') }}" />
+
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

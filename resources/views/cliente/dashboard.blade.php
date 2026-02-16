@@ -1,65 +1,4 @@
-<x-layouts.app :title="__('Dashboard')">
-    <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
-            </div>
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
-            </div>
-
-            <!-- Accesos Rápidos -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <!-- Tarjeta Zonas -->
-                <a href="{{ route('admin.zonas.index') }}" class="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-150 ease-in-out border-l-4 border-blue-500">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-500 dark:text-blue-300 mr-4">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Zonas WiFi</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Gestionar puntos de acceso</p>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Tarjeta Campañas -->
-                <a href="{{ route('admin.campanas.index') }}" class="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-150 ease-in-out border-l-4 border-green-500">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-300 mr-4">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Campañas</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Administrar publicidad</p>
-                        </div>
-                    </div>
-                </a>
-                
-                @role('admin')
-                <!-- Tarjeta Usuarios -->
-                <a href="{{ route('admin.users.index') }}" class="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-150 ease-in-out border-l-4 border-purple-500">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-500 dark:text-purple-300 mr-4">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path></svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Usuarios</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Administrar accesos</p>
-                        </div>
-                    </div>
-                </a>
-                @endrole
-            </div>
-            
-            <!-- Dashboard de Métricas -->
-            @livewire('hotspot-metrics-dashboard')
-        </div>
-    </div>
-    @endhasrole
-
-    @hasrole('cliente')
-    <!-- Dashboard para Cliente -->
+<x-layouts.app title="Dashboard - i-Free">
     <!-- Bienvenida para nuevos usuarios -->
     @if(auth()->user()->created_at->diffInDays() <= 7)
     <div class="mb-6">
@@ -69,14 +8,14 @@
                 <div class="flex items-center gap-4 mb-4">
                     <x-app-logo size="lg" class="h-16 w-16" />
                     <div>
-                        <h1 class="text-3xl font-bold">¡Bienvenido a i-Free!</h1>
-                        <p class="text-orange-100 text-lg">Monetiza tus espacios</p>
-                    </div>
+                            <h1 class="text-3xl font-bold">¡Bienvenido a i-Free!</h1>
+                            <p class="text-orange-100 dark:text-orange-200 text-lg">Monetiza tus espacios</p>
+                        </div>
                 </div>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
                         <h2 class="text-xl font-semibold mb-3">Internet gratuito que genera ingresos</h2>
-                        <ul class="space-y-2 text-orange-100">
+                        <ul class="space-y-2 text-orange-100 dark:text-orange-200">
                             <li class="flex items-center gap-2">
                                 <svg class="w-5 h-5 text-green-300" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
@@ -105,8 +44,8 @@
                     </div>
                     <div class="flex items-center justify-center">
                         <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-6 text-center">
-                            <div class="text-3xl font-bold">{{ auth()->user()->zonas->count() }}</div>
-                            <div class="text-orange-100">Zonas configuradas</div>
+                            <div class="text-3xl font-bold text-white dark:text-white">{{ auth()->user()->zonas->count() }}</div>
+                            <div class="text-white/80 dark:text-orange-200">Zonas configuradas</div>
                         </div>
                     </div>
                 </div>
@@ -140,7 +79,13 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-zinc-600 dark:text-zinc-400">Campañas Activas</p>
-                    <p class="text-3xl font-bold text-zinc-900 dark:text-white">0</p>
+                    <p class="text-3xl font-bold text-zinc-900 dark:text-white">
+                        {{
+                            \App\Models\Campana::whereIn('zona_id', auth()->user()->zonas->pluck('id'))
+                                ->where('visible', true)
+                                ->count()
+                        }}
+                    </p>
                 </div>
                 <div class="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
                     <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +100,13 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-zinc-600 dark:text-zinc-400">Usuarios Hoy</p>
-                    <p class="text-3xl font-bold text-zinc-900 dark:text-white">0</p>
+                    <p class="text-3xl font-bold text-zinc-900 dark:text-white">
+                        {{
+                            \App\Models\HotspotMetric::whereIn('zona_id', auth()->user()->zonas->pluck('id'))
+                                ->whereDate('created_at', today())
+                                ->count()
+                        }}
+                    </p>
                 </div>
                 <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
                     <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,7 +121,13 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-zinc-600 dark:text-zinc-400">Visualizaciones</p>
-                    <p class="text-3xl font-bold text-zinc-900 dark:text-white">0</p>
+                    <p class="text-3xl font-bold text-zinc-900 dark:text-white">
+                        {{
+                            \App\Models\HotspotMetric::whereIn('zona_id', auth()->user()->zonas->pluck('id'))
+                                ->whereMonth('created_at', now()->month)
+                                ->sum('duracion_visual')
+                        }}
+                    </p>
                 </div>
                 <div class="p-3 bg-orange-100 dark:bg-orange-900 rounded-lg">
                     <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,6 +189,43 @@
 
         <!-- Panel lateral -->
         <div class="space-y-6">
+            <!-- Campañas Recientes -->
+            <div class="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-zinc-900 dark:text-white">Campañas Activas</h3>
+                    @can('ver campanas')
+                    <flux:button size="sm" :href="route('admin.campanas.index')" wire:navigate>
+                        Ver todas
+                    </flux:button>
+                    @endcan
+                </div>
+
+                @php
+                    $campanasActivas = \App\Models\Campana::whereIn('zona_id', auth()->user()->zonas->pluck('id'))
+                        ->where('visible', true)
+                        ->take(3)
+                        ->get();
+                @endphp
+
+                @if($campanasActivas->count() > 0)
+                    <div class="space-y-3">
+                        @foreach($campanasActivas as $campana)
+                        <div class="p-3 bg-zinc-50 dark:bg-zinc-700 rounded-lg">
+                            <h4 class="font-medium text-zinc-900 dark:text-white text-sm">{{ $campana->nombre }}</h4>
+                            <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{{ $campana->tipo }}</p>
+                        </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-6">
+                        <svg class="mx-auto w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <p class="text-sm text-zinc-600 dark:text-zinc-400 mt-2">No hay campañas activas</p>
+                    </div>
+                @endif
+            </div>
+
             <!-- Acceso rápido -->
             <div class="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 p-6">
                 <h3 class="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Acceso Rápido</h3>
@@ -263,22 +257,4 @@
             </div>
         </div>
     </div>
-    @endhasrole
-
-    @hasrole('tecnico')
-    <!-- Dashboard para Técnico -->
-    <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <div class="grid auto-rows-min gap-4 md:grid-cols-2">
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
-            </div>
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
-            </div>
-        </div>
-        <div class="relative h-full flex-1 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-            <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
-        </div>
-    </div>
-    @endhasrole
 </x-layouts.app>
