@@ -392,7 +392,7 @@
             <!-- Header -->
             <div class="z-10 text-center">
                 <div class="flex justify-center mb-4">
-                    <x-application-logo class="w-20 h-20 fill-current text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)]" />
+                    <x-app-logo size="xl" class="fill-current text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)]" />
                 </div>
                 <h1 class="text-4xl font-extrabold tracking-tight uppercase leading-none mb-1 text-white">METRIC WRAPPED</h1>
                 <p class="text-orange-200 text-sm font-medium tracking-widest uppercase">Resumen de tu Zona</p>
