@@ -557,21 +557,6 @@
             });
         }, 800);
     }
-                const link = document.createElement('a');
-                const zonaName = '{{ $zona_id ? "Zona-" . $zona_id : "General" }}';
-                link.download = `Wrapped-${zonaName}-${new Date().getTime()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }).catch(err => {
-                console.error("Error al generar el Wrapped:", err);
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-                alert("Error al generar imagen. Prueba recargar la página.");
-            });
-        }, 800);
-    }
     
     // El resto de los scripts de Chart.js se mantienen igual...
     if (!window.visitasChart) {
