@@ -51,6 +51,14 @@
                 </svg>
                 Exportar CSV
             </x-button>
+
+            <button onclick="generateWrapped()"
+                    class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 active:bg-purple-900 focus:outline-none focus:border-purple-900 focus:ring ring-purple-300 disabled:opacity-25 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Generar Wrapped
+            </button>
             @endcan
         </div>
     </div>    <!-- Estadísticas Generales -->
@@ -373,9 +381,128 @@
             {{ $metricas->links() }}
         </div>
     </div>
+
+    <!-- Contenedor para el Wrapped (oculto) -->
+    <div style="position: absolute; left: -9999px; top: -9999px;">
+        <div id="wrapped-card" class="w-[600px] h-[900px] bg-gradient-to-br from-[#ff3f00] to-[#591100] text-white p-10 flex flex-col justify-between font-sans relative overflow-hidden">
+            <!-- Partículas decorativas de fondo -->
+            <div class="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl"></div>
+            <div class="absolute bottom-0 left-0 w-64 h-64 bg-[#ff3f00]/20 rounded-full -ml-20 -mb-20 blur-2xl"></div>
+
+            <!-- Header -->
+            <div class="z-10 text-center">
+                <div class="flex justify-center mb-4">
+                    <x-application-logo class="w-20 h-20 fill-current text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)]" />
+                </div>
+                <h1 class="text-4xl font-extrabold tracking-tight uppercase leading-none mb-1 text-white">METRIC WRAPPED</h1>
+                <p class="text-orange-200 text-sm font-medium tracking-widest uppercase">Resumen de tu Zona</p>
+                <div class="h-1.5 w-24 bg-white/80 mx-auto mt-5 rounded-full"></div>
+            </div>
+
+            <!-- Zona e Info -->
+            <div class="z-10 mt-6 bg-black/30 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
+                <p class="text-[10px] text-orange-200 uppercase font-black tracking-widest mb-1">Zona Seleccionada</p>
+                <h2 class="text-3xl font-bold truncate tracking-tight">
+                    {{ $zona_id ? ($zonas->find($zona_id)->nombre ?? 'Todas las Zonas') : 'Todas las Zonas' }}
+                </h2>
+                <div class="flex items-center gap-2 mt-3 text-sm text-gray-100 font-medium">
+                    <svg class="w-4 h-4 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>{{ Carbon\Carbon::parse($fecha_inicio)->format('d/m/Y') }} — {{ Carbon\Carbon::parse($fecha_fin)->format('d/m/Y') }}</span>
+                </div>
+            </div>
+
+            <!-- Estadísticas Principales -->
+            <div class="grid grid-cols-2 gap-4 z-10 my-6">
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+                    <p class="text-[10px] text-orange-200 uppercase font-black tracking-widest">Total Visitas</p>
+                    <p class="text-4xl font-black mt-1 tracking-tighter">{{ number_format($estadisticas['total_visitas'] ?? 0) }}</p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+                    <p class="text-[10px] text-orange-200 uppercase font-black tracking-widest">Disp. Únicos</p>
+                    <p class="text-4xl font-black mt-1 tracking-tighter">{{ number_format($estadisticas['dispositivos_unicos'] ?? 0) }}</p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+                    <p class="text-[10px] text-orange-200 uppercase font-black tracking-widest">Conversión</p>
+                    <p class="text-4xl font-black mt-1 tracking-tighter">{{ $estadisticas['tasa_conversion'] ?? 0 }}%</p>
+                    <div class="w-full bg-white/20 h-1.5 rounded-full mt-3 overflow-hidden">
+                        <div class="bg-white h-full shadow-[0_0_8px_rgba(255,255,255,0.8)]" style="width: {{ $estadisticas['tasa_conversion'] ?? 0 }}%"></div>
+                    </div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+                    <p class="text-[10px] text-orange-200 uppercase font-black tracking-widest">Duración Prom.</p>
+                    <p class="text-4xl font-black mt-1 tracking-tighter">{{ $estadisticas['duracion_promedio'] ?? 0 }}s</p>
+                </div>
+            </div>
+
+            <!-- Gráfico (Miniatura) -->
+            <div class="z-10 bg-white shadow-2xl rounded-2xl p-6 mb-4">
+                <p class="text-[10px] text-center text-[#ff3f00] mb-4 font-black uppercase tracking-[0.2em]">Gráfica de Tendencia</p>
+                <div class="flex items-center justify-center p-2">
+                    <img id="wrapped-chart-img" class="max-w-full h-auto brightness-110 contrast-125" src="" alt="Gráfico de visitas">
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="z-10 text-center">
+                <p class="text-white font-black tracking-[0.3em] text-xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{{ config('app.name') }}</p>
+                <p class="text-orange-200/80 text-xs mt-2 font-bold tracking-widest uppercase italic">#YourHotspotWrapped</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
+    // Cargar html2canvas Dinámicamente si no existe
+    if (typeof html2canvas === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+        document.head.appendChild(script);
+    }
+
+    function generateWrapped() {
+        const btn = event.currentTarget || document.activeElement;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="flex items-center"><svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generando...</span>';
+
+        // 1. Obtener la imagen de la gráfica actual
+        if (window.visitasChart) {
+            const chartImg = window.visitasChart.toBase64Image('image/png', 1.0);
+            const wrappedImg = document.getElementById('wrapped-chart-img');
+            wrappedImg.src = chartImg;
+        }
+
+        // 2. Dar un pequeño respiro al DOM para renderizar la imagen
+        setTimeout(() => {
+            const element = document.getElementById('wrapped-card');
+            
+            html2canvas(element, {
+                scale: 2, // Mejor resolución
+                backgroundColor: null,
+                logging: false,
+                useCORS: true
+            }).then(canvas => {
+                // Descargar el canvas como imagen
+                const link = document.createElement('a');
+                const zonaName = '{{ $zona_id ? "Zona-" . $zona_id : "General" }}';
+                link.download = `Wrapped-${zonaName}-${new Date().getTime()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                // Restaurar botón
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }).catch(err => {
+                console.error("Error al generar el Wrapped:", err);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                alert("Ocurrió un error al generar la imagen. Por favor, intenta de nuevo.");
+            });
+        }, 300);
+    }
+
     // Usar window para evitar redeclaraciones en Livewire
     if (!window.visitasChart) {
         window.visitasChart = null;
