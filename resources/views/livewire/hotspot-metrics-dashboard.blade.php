@@ -416,18 +416,35 @@
             </div>
 
             <!-- Estadísticas Principales -->
-            <div style="display: flex; flex-wrap: wrap; gap: 15px; z-index: 10; margin: 30px 0; border: 0px solid transparent;">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; z-index: 10; margin: 20px 0; border: 0px solid transparent;">
                 @foreach([
                     ['Visitas', number_format($estadisticas['total_visitas'] ?? 0)],
                     ['Disp. Únicos', number_format($estadisticas['dispositivos_unicos'] ?? 0)],
+                    ['Recurrentes', number_format($estadisticas['usuarios_recurrentes'] ?? 0)],
                     ['Conversión', ($estadisticas['tasa_conversion'] ?? 0) . '%'],
                     ['Duración', ($estadisticas['duracion_promedio'] ?? 0) . 's']
-                ] as $stat)
-                <div style="flex: 1 1 calc(50% - 15px); background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); box-sizing: border-box;">
-                    <p style="font-size: 10px; color: #ffd5c2; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin: 0; border: 0px solid transparent;">{{ $stat[0] }}</p>
-                    <p style="font-size: 30px; font-weight: 900; margin: 5px 0 0 0; letter-spacing: -0.05em; color: white; border: 0px solid transparent;">{{ $stat[1] }}</p>
+                ] as $index => $stat)
+                <div style="flex: 1 1 {{ $index < 2 ? 'calc(50% - 10px)' : 'calc(33.33% - 10px)' }}; background: rgba(255,255,255,0.1); border-radius: 15px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); box-sizing: border-box; text-align: center;">
+                    <p style="font-size: 9px; color: #ffd5c2; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin: 0; border: 0px solid transparent;">{{ $stat[0] }}</p>
+                    <p style="font-size: {{ $index < 2 ? '28px' : '20px' }}; font-weight: 900; margin: 4px 0 0 0; letter-spacing: -0.05em; color: white; border: 0px solid transparent;">{{ $stat[1] }}</p>
                 </div>
                 @endforeach
+            </div>
+
+            <!-- Dispositivos Populares -->
+            <div style="z-index: 10; background: rgba(0,0,0,0.2); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px;">
+                <p style="font-size: 10px; color: #ffd5c2; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin: 0 0 12px 0; text-align: center;">Dispositivos más utilizados</p>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    @foreach(array_slice($dispositivosPopulares, 0, 3) as $index => $dispositivo)
+                    <div style="display: flex; align-items: center; justify-content: space-between; border: 0px solid transparent;">
+                        <div style="display: flex; align-items: center; gap: 10px; border: 0px solid transparent;">
+                            <span style="width: 20px; height: 20px; background: {{ ['#ffd5c2', '#ffaa85', '#ff7f4d'][$index] ?? '#ffffff33' }}; color: #591100; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900;">{{ $index + 1 }}</span>
+                            <span style="font-size: 13px; font-weight: 600; color: white;">{{ Str::limit($dispositivo['dispositivo'] ?: 'Desconocido', 25) }}</span>
+                        </div>
+                        <span style="font-size: 13px; font-weight: 900; color: #ffd5c2;">{{ number_format($dispositivo['total']) }}</span>
+                    </div>
+                    @endforeach
+                </div>
             </div>
 
             <!-- Gráfico (Miniatura) -->
