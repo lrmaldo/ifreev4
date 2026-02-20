@@ -384,8 +384,8 @@
 
     <!-- Contenedor para el Wrapped (oculto y aislado de Flux) -->
     <div style="position: fixed; left: -9999px; top: -9999px; z-index: -100;" id="wrapped-outer-container">
-        <!-- Usamos estilos inline exhaustivos para evitar cualquier herencia de oklch de Tailwind 4 -->
-        <div id="wrapped-card" style="width: 600px; height: 900px; background: linear-gradient(to bottom right, #ff3f00, #591100); color: white; padding: 40px; display: flex; flex-direction: column; justify-content: space-between; font-family: sans-serif; position: relative; overflow: hidden; box-sizing: border-box; border: 0px solid transparent;">
+        <!-- Aumentamos la altura a 1100px para que no se corte la gráfica -->
+        <div id="wrapped-card" style="width: 600px; height: 1100px; background: linear-gradient(to bottom right, #ff3f00, #591100); color: white; padding: 40px; display: flex; flex-direction: column; justify-content: space-between; font-family: sans-serif; position: relative; overflow: hidden; box-sizing: border-box; border: 0px solid transparent;">
             
             <!-- Partículas decorativas -->
             <div style="position: absolute; top: -80px; right: -80px; width: 320px; height: 320px; background: rgba(255,255,255,0.1); border-radius: 9999px; filter: blur(60px); border: 0px solid transparent;"></div>
@@ -394,23 +394,23 @@
             <!-- Header -->
             <div style="z-index: 10; text-align: center; position: relative; border: 0px solid transparent;">
                 <div style="display: flex; justify-content: center; margin-bottom: 20px; border: 0px solid transparent;">
-                    <svg width="80" height="80" viewBox="0 0 100 100" fill="white" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); border: 0px solid transparent;">
+                    <svg width="60" height="60" viewBox="0 0 100 100" fill="white" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); border: 0px solid transparent;">
                         <circle cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="2" />
                         <path d="M30 70 L50 30 L70 70" stroke="white" stroke-width="6" fill="none" stroke-linecap="round" />
                     </svg>
                 </div>
-                <h1 style="font-size: 36px; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase; margin: 0 0 5px 0; line-height: 1; color: white; border: 0px solid transparent;">METRIC WRAPPED</h1>
-                <p style="color: #ffd5c2; font-size: 14px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; margin: 0; border: 0px solid transparent;">Resumen de tu Zona</p>
-                <div style="height: 6px; width: 100px; background: #ffffff; margin: 20px auto 0; border-radius: 9999px; opacity: 0.8; border: 0px solid transparent;"></div>
+                <h1 style="font-size: 32px; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase; margin: 0 0 5px 0; line-height: 1; color: white; border: 0px solid transparent;">METRIC WRAPPED</h1>
+                <p style="color: #ffd5c2; font-size: 13px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; margin: 0; border: 0px solid transparent;">Resumen de tu Zona</p>
+                <div style="height: 4px; width: 80px; background: #ffffff; margin: 15px auto 0; border-radius: 9999px; opacity: 0.8; border: 0px solid transparent;"></div>
             </div>
 
             <!-- Zona e Info -->
-            <div style="z-index: 10; margin-top: 30px; background: rgba(0,0,0,0.3); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">
+            <div style="z-index: 10; margin-top: 20px; background: rgba(0,0,0,0.3); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">
                 <p style="font-size: 10px; color: #ffd5c2; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin: 0 0 5px 0; border: 0px solid transparent;">Zona Seleccionada</p>
-                <h2 style="font-size: 28px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: white; border: 0px solid transparent;">
+                <h2 style="font-size: 26px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: white; border: 0px solid transparent;">
                     {{ $zona_id ? ($zonas->find($zona_id)->nombre ?? 'Todas las Zonas') : 'Todas las Zonas' }}
                 </h2>
-                <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; color: #f3f4f6; border: 0px solid transparent;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: #f3f4f6; border: 0px solid transparent;">
                     <span style="border: 0px solid transparent;">📅 {{ Carbon\Carbon::parse($fecha_inicio)->format('d/m/Y') }} — {{ Carbon\Carbon::parse($fecha_fin)->format('d/m/Y') }}</span>
                 </div>
             </div>
@@ -426,7 +426,7 @@
                 ] as $index => $stat)
                 <div style="flex: 1 1 {{ $index < 2 ? 'calc(50% - 10px)' : 'calc(33.33% - 10px)' }}; background: rgba(255,255,255,0.1); border-radius: 15px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); box-sizing: border-box; text-align: center;">
                     <p style="font-size: 9px; color: #ffd5c2; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin: 0; border: 0px solid transparent;">{{ $stat[0] }}</p>
-                    <p style="font-size: {{ $index < 2 ? '28px' : '20px' }}; font-weight: 900; margin: 4px 0 0 0; letter-spacing: -0.05em; color: white; border: 0px solid transparent;">{{ $stat[1] }}</p>
+                    <p style="font-size: {{ $index < 2 ? '26px' : '18px' }}; font-weight: 900; margin: 4px 0 0 0; letter-spacing: -0.05em; color: white; border: 0px solid transparent;">{{ $stat[1] }}</p>
                 </div>
                 @endforeach
             </div>
@@ -450,15 +450,16 @@
             <!-- Gráfico (Miniatura) -->
             <div style="z-index: 10; background: #ffffff; border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); border: 0px solid transparent;">
                 <p style="font-size: 11px; text-align: center; color: #ff3f00; margin: 0 0 15px 0; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2em; border: 0px solid transparent;">Tendencia de Visitas</p>
-                <div style="display: flex; align-items: center; justify-content: center; background: #ffffff; border: 0px solid transparent;">
-                    <img id="wrapped-chart-img" style="max-width: 100%; height: auto; display: block; border: 0px solid transparent;" src="" alt="Gráfico">
+                <div style="display: flex; align-items: center; justify-content: center; background: #ffffff; border: 0px solid transparent; min-height: 200px;">
+                    <!-- Ajustamos el estilo de la imagen para asegurar que se vea -->
+                    <img id="wrapped-chart-img" style="width: 100%; max-width: 500px; height: auto; display: block; border: 0px solid transparent;" src="" alt="Cargando gráfica...">
                 </div>
             </div>
 
             <!-- Footer -->
             <div style="z-index: 10; text-align: center; border: 0px solid transparent;">
-                <p style="color: white; font-weight: 900; letter-spacing: 0.3em; font-size: 20px; margin: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); border: 0px solid transparent;">{{ config('app.name') }}</p>
-                <p style="color: rgba(255,213,194,0.8); font-size: 11px; margin: 8px 0 0 0; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; font-style: italic; border: 0px solid transparent;">#YourHotspotWrapped</p>
+                <p style="color: white; font-weight: 900; letter-spacing: 0.3em; font-size: 18px; margin: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); border: 0px solid transparent;">{{ config('app.name') }}</p>
+                <p style="color: rgba(255,213,194,0.8); font-size: 10px; margin: 8px 0 0 0; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; font-style: italic; border: 0px solid transparent;">#YourHotspotWrapped</p>
             </div>
         </div>
     </div>
@@ -477,10 +478,20 @@
         btn.disabled = true;
         btn.innerHTML = '<span style="display:flex;align-items:center;"><svg style="animation:spin 1s linear infinite;margin-right:8px;width:16px;height:16px;" viewBox="0 0 24 24"><circle style="opacity:0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path style="opacity:0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> GENERANDO...</span>';
 
-        if (window.visitasChart) {
-            document.getElementById('wrapped-chart-img').src = window.visitasChart.toBase64Image('image/png', 1.0);
+        // Asegurar que la gráfica existe y convertirla
+        const chartCanvas = document.getElementById('visitasChart');
+        if (chartCanvas) {
+            try {
+                // Forzar la imagen del gráfico al elemento img del Wrapped
+                const chartImg = chartCanvas.toDataURL('image/png');
+                const targetImg = document.getElementById('wrapped-chart-img');
+                targetImg.src = chartImg;
+            } catch (e) {
+                console.error("No se pudo capturar el canvas:", e);
+            }
         }
 
+        // Dar más tiempo (800ms) para que la imagen se renderice en el DOM oculto
         setTimeout(() => {
             const element = document.getElementById('wrapped-card');
             
@@ -490,12 +501,9 @@
                 logging: false,
                 useCORS: true,
                 onclone: (clonedDoc) => {
-                    // Limpieza agresiva de Flux / Livewire en el clon para evitar errores de JS
                     const clonedCard = clonedDoc.getElementById('wrapped-card');
                     const allElements = clonedCard.getElementsByTagName('*');
-                    
                     for (let el of allElements) {
-                        // Eliminar atributos que disparan Flux/Livewire
                         const attrs = el.attributes;
                         for (let i = attrs.length - 1; i >= 0; i--) {
                             const attrName = attrs[i].name;
@@ -503,15 +511,17 @@
                                 el.removeAttribute(attrName);
                             }
                         }
-                        // Forzar borde a hex para evitar oklch
-                        if (window.getComputedStyle(el).borderStyle !== 'none') {
-                            el.style.borderColor = '#ffffff33';
+                        if (el.tagName === 'IMG' && el.id === 'wrapped-chart-img') {
+                           // Aseguramos visibilidad en el clon
+                           el.style.display = 'block';
+                           el.style.visibility = 'visible';
                         }
                     }
                 }
             }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = `Wrapped-${new Date().getTime()}.png`;
+                const zonaName = '{{ $zona_id ? "Zona-" . $zona_id : "General" }}';
+                link.download = `Wrapped-${zonaName}-${new Date().getTime()}.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
                 btn.disabled = false;
@@ -522,7 +532,7 @@
                 btn.innerHTML = originalText;
                 alert("Error al generar imagen. Prueba recargar la página.");
             });
-        }, 500);
+        }, 800);
     }
     
     // El resto de los scripts de Chart.js se mantienen igual...
