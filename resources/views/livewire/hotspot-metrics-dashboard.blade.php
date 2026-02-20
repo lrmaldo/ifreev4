@@ -384,70 +384,73 @@
 
     <!-- Contenedor para el Wrapped (oculto) -->
     <div style="position: absolute; left: -9999px; top: -9999px;">
-        <div id="wrapped-card" class="w-[600px] h-[900px] bg-gradient-to-br from-[#ff3f00] to-[#591100] text-white p-10 flex flex-col justify-between font-sans relative overflow-hidden">
-            <!-- Partículas decorativas de fondo -->
-            <div class="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl"></div>
-            <div class="absolute bottom-0 left-0 w-64 h-64 bg-[#ff3f00]/20 rounded-full -ml-20 -mb-20 blur-2xl"></div>
+        <!-- Usamos estilos inline para asegurar compatibilidad total con html2canvas y evitar oklch -->
+        <div id="wrapped-card" style="width: 600px; height: 900px; background: linear-gradient(to bottom right, #ff3f00, #591100); color: white; padding: 40px; display: flex; flex-direction: column; justify-content: space-between; font-family: ui-sans-serif, system-ui, sans-serif; position: relative; overflow: hidden; box-sizing: border-box;">
+            
+            <!-- Partículas decorativas (usando estilos base para evitar oklch) -->
+            <div style="position: absolute; top: -80px; right: -80px; width: 320px; height: 320px; background: rgba(255,255,255,0.1); border-radius: 9999px; filter: blur(60px);"></div>
+            <div style="position: absolute; bottom: -80px; left: -80px; width: 256px; height: 256px; background: rgba(255, 63, 0, 0.2); border-radius: 9999px; filter: blur(40px);"></div>
 
             <!-- Header -->
-            <div class="z-10 text-center">
-                <div class="flex justify-center mb-4">
-                    <x-app-logo size="xl" class="fill-current text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)]" />
+            <div style="z-index: 10; text-align: center; position: relative;">
+                <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                    <!-- SVG Simple en lugar de componente Flux/Blade complejo -->
+                    <svg width="80" height="80" viewBox="0 0 100 100" fill="white" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="2" />
+                        <path d="M30 70 L50 30 L70 70" stroke="white" stroke-width="6" fill="none" stroke-linecap="round" />
+                    </svg>
                 </div>
-                <h1 class="text-4xl font-extrabold tracking-tight uppercase leading-none mb-1 text-white">METRIC WRAPPED</h1>
-                <p class="text-orange-200 text-sm font-medium tracking-widest uppercase">Resumen de tu Zona</p>
-                <div class="h-1.5 w-24 bg-white/80 mx-auto mt-5 rounded-full"></div>
+                <h1 style="font-size: 36px; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase; margin-bottom: 5px; line-height: 1;">METRIC WRAPPED</h1>
+                <p style="color: #ffd5c2; font-size: 14px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; margin: 0;">Resumen de tu Zona</p>
+                <div style="height: 6px; width: 100px; background: rgba(255,255,255,0.8); margin: 20px auto 0; border-radius: 9999px;"></div>
             </div>
 
             <!-- Zona e Info -->
-            <div class="z-10 mt-6 bg-black/30 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
-                <p class="text-[10px] text-orange-200 uppercase font-black tracking-widest mb-1">Zona Seleccionada</p>
-                <h2 class="text-3xl font-bold truncate tracking-tight">
+            <div style="z-index: 10; margin-top: 30px; background: rgba(0,0,0,0.3); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">
+                <p style="font-size: 10px; color: #ffd5c2; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin-bottom: 5px;">Zona Seleccionada</p>
+                <h2 style="font-size: 28px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     {{ $zona_id ? ($zonas->find($zona_id)->nombre ?? 'Todas las Zonas') : 'Todas las Zonas' }}
                 </h2>
-                <div class="flex items-center gap-2 mt-3 text-sm text-gray-100 font-medium">
-                    <svg class="w-4 h-4 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>{{ Carbon\Carbon::parse($fecha_inicio)->format('d/m/Y') }} — {{ Carbon\Carbon::parse($fecha_fin)->format('d/m/Y') }}</span>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; color: #f3f4f6;">
+                    <span>📅 {{ Carbon\Carbon::parse($fecha_inicio)->format('d/m/Y') }} — {{ Carbon\Carbon::parse($fecha_fin)->format('d/m/Y') }}</span>
                 </div>
             </div>
 
             <!-- Estadísticas Principales -->
-            <div class="grid grid-cols-2 gap-4 z-10 my-6">
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
-                    <p class="text-[10px] text-orange-200 uppercase font-black tracking-widest">Total Visitas</p>
-                    <p class="text-4xl font-black mt-1 tracking-tighter">{{ number_format($estadisticas['total_visitas'] ?? 0) }}</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; z-index: 10; margin: 30px 0;">
+                <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                    <p style="font-size: 10px; color: #ffd5c2; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin: 0;">Total Visitas</p>
+                    <p style="font-size: 32px; font-weight: 900; margin: 5px 0 0; letter-spacing: -0.05em;">{{ number_format($estadisticas['total_visitas'] ?? 0) }}</p>
                 </div>
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
-                    <p class="text-[10px] text-orange-200 uppercase font-black tracking-widest">Disp. Únicos</p>
-                    <p class="text-4xl font-black mt-1 tracking-tighter">{{ number_format($estadisticas['dispositivos_unicos'] ?? 0) }}</p>
+                <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                    <p style="font-size: 10px; color: #ffd5c2; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin: 0;">Disp. Únicos</p>
+                    <p style="font-size: 32px; font-weight: 900; margin: 5px 0 0; letter-spacing: -0.05em;">{{ number_format($estadisticas['dispositivos_unicos'] ?? 0) }}</p>
                 </div>
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
-                    <p class="text-[10px] text-orange-200 uppercase font-black tracking-widest">Conversión</p>
-                    <p class="text-4xl font-black mt-1 tracking-tighter">{{ $estadisticas['tasa_conversion'] ?? 0 }}%</p>
-                    <div class="w-full bg-white/20 h-1.5 rounded-full mt-3 overflow-hidden">
-                        <div class="bg-white h-full shadow-[0_0_8px_rgba(255,255,255,0.8)]" style="width: {{ $estadisticas['tasa_conversion'] ?? 0 }}%"></div>
+                <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                    <p style="font-size: 10px; color: #ffd5c2; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin: 0;">Conversión</p>
+                    <p style="font-size: 32px; font-weight: 900; margin: 5px 0 0; letter-spacing: -0.05em;">{{ $estadisticas['tasa_conversion'] ?? 0 }}%</p>
+                    <div style="width: 100%; background: rgba(255,255,255,0.2); height: 6px; border-radius: 9999px; margin-top: 10px; overflow: hidden;">
+                        <div style="background: white; height: 100%; border-radius: 9999px; width: {{ $estadisticas['tasa_conversion'] ?? 0 }}%;"></div>
                     </div>
                 </div>
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
-                    <p class="text-[10px] text-orange-200 uppercase font-black tracking-widest">Duración Prom.</p>
-                    <p class="text-4xl font-black mt-1 tracking-tighter">{{ $estadisticas['duracion_promedio'] ?? 0 }}s</p>
+                <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                    <p style="font-size: 10px; color: #ffd5c2; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin: 0;">Duración Prom.</p>
+                    <p style="font-size: 32px; font-weight: 900; margin: 5px 0 0; letter-spacing: -0.05em;">{{ $estadisticas['duracion_promedio'] ?? 0 }}s</p>
                 </div>
             </div>
 
             <!-- Gráfico (Miniatura) -->
-            <div class="z-10 bg-white shadow-2xl rounded-2xl p-6 mb-4">
-                <p class="text-[10px] text-center text-[#ff3f00] mb-4 font-black uppercase tracking-[0.2em]">Gráfica de Tendencia</p>
-                <div class="flex items-center justify-center p-2">
-                    <img id="wrapped-chart-img" class="max-w-full h-auto brightness-110 contrast-125" src="" alt="Gráfico de visitas">
+            <div style="z-index: 10; background: white; border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+                <p style="font-size: 10px; text-align: center; color: #ff3f00; margin-bottom: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2em;">Gráfica de Tendencia</p>
+                <div style="display: flex; align-items: center; justify-content: center;">
+                    <img id="wrapped-chart-img" style="max-width: 100%; height: auto; display: block;" src="" alt="Gráfico de visitas">
                 </div>
             </div>
 
             <!-- Footer -->
-            <div class="z-10 text-center">
-                <p class="text-white font-black tracking-[0.3em] text-xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{{ config('app.name') }}</p>
-                <p class="text-orange-200/80 text-xs mt-2 font-bold tracking-widest uppercase italic">#YourHotspotWrapped</p>
+            <div style="z-index: 10; text-align: center;">
+                <p style="color: white; font-weight: 900; letter-spacing: 0.3em; font-size: 20px; margin: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">{{ config('app.name') }}</p>
+                <p style="color: rgba(255,213,194,0.8); font-size: 12px; margin-top: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; font-style: italic;">#YourHotspotWrapped</p>
             </div>
         </div>
     </div>
