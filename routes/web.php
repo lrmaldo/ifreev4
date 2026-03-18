@@ -5,7 +5,6 @@ use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
 use App\Http\Controllers\ZonaLoginController;
 use App\Http\Controllers\TelegramController;
-use Illuminate\Support\Facades\Route;
 
 
  // Rutas para previsualizar el portal cautivo de una zona
@@ -314,5 +313,8 @@ Route::post('/telegram/webhook', [TelegramController::class, 'webhook'])
 Route::post('/telegram/enviar-notificacion', [TelegramController::class, 'enviarNotificacion'])
     ->name('telegram.notificacion')
     ->middleware(['auth:sanctum']);
+
+// Ruta pública para la guía de anuncios (sin autenticación)
+Route::view('/guia-anuncios', 'guia-anuncios')->name('guia.anuncios');
 
 require __DIR__.'/auth.php';
