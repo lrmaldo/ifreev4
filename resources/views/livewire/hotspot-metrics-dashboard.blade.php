@@ -51,6 +51,14 @@
                 </svg>
                 Exportar CSV
             </x-button>
+
+            <button onclick="generateWrapped()"
+                    class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 active:bg-purple-900 focus:outline-none focus:border-purple-900 focus:ring ring-purple-300 disabled:opacity-25 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Generar Wrapped
+            </button>
             @endcan
         </div>
     </div>    <!-- Estadísticas Generales -->
@@ -373,10 +381,184 @@
             {{ $metricas->links() }}
         </div>
     </div>
+
+    <!-- Contenedor para el Wrapped (oculto y totalmente aislado) -->
+    <div style="position: fixed; left: -9999px; top: -9999px; z-index: -100; pointer-events: none;" id="wrapped-outer-container">
+        <!-- Estilo interno para asegurar que nada de Tailwind 4 (oklch) se filtre -->
+        <style>
+            #wrapped-card, #wrapped-card * {
+                border-color: rgba(255,255,255,0.2) !important;
+                outline: none !important;
+                box-shadow: none !important;
+                appearance: none !important;
+            }
+            #wrapped-card {
+                box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5) !important;
+            }
+        </style>
+        
+        <div id="wrapped-card" style="width: 600px; height: 1100px; background: linear-gradient(to bottom right, #ff3f00, #591100) !important; color: #ffffff !important; padding: 40px; display: flex; flex-direction: column; justify-content: space-between; font-family: sans-serif; position: relative; overflow: hidden; box-sizing: border-box; border: none !important;">
+            
+            <!-- Partículas decorativas -->
+            <div style="position: absolute; top: -80px; right: -80px; width: 320px; height: 320px; background: rgba(255,255,255,0.1) !important; border-radius: 9999px; filter: blur(60px); pointer-events: none;"></div>
+            <div style="position: absolute; bottom: -80px; left: -80px; width: 256px; height: 256px; background: rgba(255, 63, 0, 0.2) !important; border-radius: 9999px; filter: blur(40px); pointer-events: none;"></div>
+
+            <!-- Header -->
+            <div style="z-index: 10; text-align: center; position: relative; border: none !important;">
+                <div style="display: flex; justify-content: center; margin-bottom: 20px; border: none !important;">
+                    <svg width="60" height="60" viewBox="0 0 100 100" fill="white" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); border: none !important;">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="2" />
+                        <path d="M30 70 L50 30 L70 70" stroke="white" stroke-width="6" fill="none" stroke-linecap="round" />
+                    </svg>
+                </div>
+                <h1 style="font-size: 32px; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase; margin: 0 0 5px 0; line-height: 1; color: #ffffff !important; border: none !important;">METRIC WRAPPED</h1>
+                <p style="color: #ffd5c2 !important; font-size: 13px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; margin: 0; border: none !important;">Resumen de tu Zona</p>
+                <div style="height: 4px; width: 80px; background: #ffffff !important; margin: 15px auto 0; border-radius: 9999px; opacity: 0.8; border: none !important;"></div>
+            </div>
+
+            <!-- Zona e Info -->
+            <div style="z-index: 10; margin-top: 20px; background: rgba(0,0,0,0.3) !important; border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.2) !important; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">
+                <p style="font-size: 10px; color: #ffd5c2 !important; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin: 0 0 5px 0; border: none !important;">Zona Seleccionada</p>
+                <h2 style="font-size: 26px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #ffffff !important; border: none !important;">
+                    {{ $zona_id ? ($zonas->find($zona_id)->nombre ?? 'Todas las Zonas') : 'Todas las Zonas' }}
+                </h2>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: #f3f4f6 !important; border: none !important;">
+                    <span style="border: none !important;">📅 {{ Carbon\Carbon::parse($fecha_inicio)->format('d/m/Y') }} — {{ Carbon\Carbon::parse($fecha_fin)->format('d/m/Y') }}</span>
+                </div>
+            </div>
+
+            <!-- Estadísticas Principales -->
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; z-index: 10; margin: 20px 0; border: none !important;">
+                @foreach([
+                    ['Visitas', number_format($estadisticas['total_visitas'] ?? 0)],
+                    ['Disp. Únicos', number_format($estadisticas['dispositivos_unicos'] ?? 0)],
+                    ['Recurrentes', number_format($estadisticas['usuarios_recurrentes'] ?? 0)],
+                    ['Conversión', ($estadisticas['tasa_conversion'] ?? 0) . '%'],
+                    ['Duración', ($estadisticas['duracion_promedio'] ?? 0) . 's']
+                ] as $index => $stat)
+                <div style="flex: 1 1 {{ $index < 2 ? 'calc(50% - 10px)' : 'calc(33.33% - 10px)' }}; background: rgba(255,255,255,0.1) !important; border-radius: 15px; padding: 15px; border: 1px solid rgba(255,255,255,0.1) !important; box-sizing: border-box; text-align: center;">
+                    <p style="font-size: 9px; color: #ffd5c2 !important; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin: 0; border: none !important;">{{ $stat[0] }}</p>
+                    <p style="font-size: {{ $index < 2 ? '26px' : '18px' }}; font-weight: 900; margin: 4px 0 0 0; letter-spacing: -0.05em; color: #ffffff !important; border: none !important;">{{ $stat[1] }}</p>
+                </div>
+                @endforeach
+            </div>
+
+            <!-- Dispositivos Populares -->
+            <div style="z-index: 10; background: rgba(0,0,0,0.2) !important; border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.1) !important; margin-bottom: 20px;">
+                <p style="font-size: 10px; color: #ffd5c2 !important; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; margin: 0 0 12px 0; text-align: center; border: none !important;">Dispositivos más utilizados</p>
+                <div style="display: flex; flex-direction: column; gap: 8px; border: none !important;">
+                    @foreach(array_slice($dispositivosPopulares, 0, 3) as $index => $dispositivo)
+                    <div style="display: flex; align-items: center; justify-content: space-between; border: none !important;">
+                        <div style="display: flex; align-items: center; gap: 10px; border: none !important;">
+                            <span style="width: 20px; height: 20px; background: {{ ['#ffd5c2', '#ffaa85', '#ff7f4d'][$index] ?? '#ffffff33' }} !important; color: #591100 !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; border: none !important;">{{ $index + 1 }}</span>
+                            <span style="font-size: 13px; font-weight: 600; color: #ffffff !important; border: none !important;">{{ Str::limit($dispositivo['dispositivo'] ?: 'Desconocido', 25) }}</span>
+                        </div>
+                        <span style="font-size: 13px; font-weight: 900; color: #ffd5c2 !important; border: none !important;">{{ number_format($dispositivo['total']) }}</span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Gráfico (Miniatura) -->
+            <div style="z-index: 10; background: #ffffff !important; border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); border: none !important;">
+                <p style="font-size: 11px; text-align: center; color: #ff3f00 !important; margin: 0 0 15px 0; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2em; border: none !important;">Tendencia de Visitas</p>
+                <div style="display: flex; align-items: center; justify-content: center; background: #ffffff !important; border: none !important; min-height: 200px;">
+                    <img id="wrapped-chart-img" style="width: 100%; max-width: 500px; height: auto; display: block; border: none !important;" src="" alt="Cargando gráfica...">
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="z-index: 10; text-align: center; border: none !important;">
+                <p style="color: #ffffff !important; font-weight: 900; letter-spacing: 0.3em; font-size: 18px; margin: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); border: none !important;">{{ config('app.name') }}</p>
+                <p style="color: rgba(255,213,194,0.8) !important; font-size: 10px; margin: 8px 0 0 0; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; font-style: italic; border: none !important;">#YourHotspotWrapped</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-    // Usar window para evitar redeclaraciones en Livewire
+    if (typeof html2canvas === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+        document.head.appendChild(script);
+    }
+
+    function generateWrapped() {
+        const btn = event.currentTarget || document.activeElement;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:flex;align-items:center;"><svg style="animation:spin 1s linear infinite;margin-right:8px;width:16px;height:16px;" viewBox="0 0 24 24"><circle style="opacity:0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path style="opacity:0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> GENERANDO...</span>';
+
+        const chartCanvas = document.getElementById('visitasChart');
+        if (chartCanvas) {
+            try {
+                const chartImg = chartCanvas.toDataURL('image/png');
+                document.getElementById('wrapped-chart-img').src = chartImg;
+            } catch (e) {
+                console.error("No se pudo capturar el canvas:", e);
+            }
+        }
+
+        setTimeout(() => {
+            const element = document.getElementById('wrapped-card');
+            
+            html2canvas(element, {
+                scale: 2,
+                backgroundColor: null,
+                logging: false,
+                useCORS: true,
+                onclone: (clonedDoc) => {
+                    // 1. ELIMINAR TODO LO QUE NO SEA EL WRAPPED CARD PARA EVITAR ERRORES DE FLUX/TOOLTIPS
+                    const clonedOuter = clonedDoc.getElementById('wrapped-outer-container');
+                    const clonedBody = clonedDoc.body;
+                    
+                    // Solo dejamos nuestro contenedor en el body del clon
+                    clonedBody.innerHTML = '';
+                    clonedOuter.style.position = 'static';
+                    clonedOuter.style.left = '0';
+                    clonedOuter.style.top = '0';
+                    clonedBody.appendChild(clonedOuter);
+
+                    // 2. LIMPIEZA AGRESIVA DE ATRIBUTOS Y COLORES OKLCH
+                    const allElements = clonedOuter.getElementsByTagName('*');
+                    for (let el of allElements) {
+                        // Eliminar atributos reactivos
+                        const attrs = el.attributes;
+                        for (let i = attrs.length - 1; i >= 0; i--) {
+                            const name = attrs[i].name;
+                            if (name.startsWith('data-flux') || name.startsWith('wire:') || name.startsWith('x-')) {
+                                el.removeAttribute(name);
+                            }
+                        }
+
+                        // Forzar limpieza de estilos calculados (evitar oklch en bordes invisibles)
+                        const style = window.getComputedStyle(el);
+                        if (style.borderColor.includes('oklch')) {
+                            el.style.borderColor = 'rgba(255,255,255,0.1)';
+                        }
+                        if (style.backgroundColor.includes('oklch')) {
+                            el.style.backgroundColor = 'transparent';
+                        }
+                    }
+                }
+            }).then(canvas => {
+                const link = document.createElement('a');
+                const zonaName = '{{ $zona_id ? "Zona-" . $zona_id : "General" }}';
+                link.download = `Wrapped-${zonaName}-${new Date().getTime()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }).catch(err => {
+                console.error("Error al generar el Wrapped:", err);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                alert("Error técnico al generar la imagen. Por favor, recarga la página.");
+            });
+        }, 800);
+    }
+    
+    // El resto de los scripts de Chart.js se mantienen igual...
     if (!window.visitasChart) {
         window.visitasChart = null;
     }
