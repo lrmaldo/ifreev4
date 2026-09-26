@@ -32,7 +32,7 @@ class SendTelegramFormMetricNotification implements ShouldQueue
             $metric = $event->hotspotMetric;
             $zona = $metric->zona;
 
-            Log::info("Procesando notificación Telegram para métrica ID: {$metric->id}", [
+            Log::debug("Procesando notificación Telegram para métrica ID: {$metric->id}", [
                 'zona_id' => $zona?->id,
                 'tipo_registro' => $zona?->tipo_registro,
                 'has_campos' => $zona?->campos->count() ?? 0,
@@ -46,26 +46,26 @@ class SendTelegramFormMetricNotification implements ShouldQueue
             }
 
             if ($zona->tipo_registro !== 'formulario') {
-                Log::info("Zona {$zona->id} no es de tipo formulario: {$zona->tipo_registro}");
+                Log::debug("Zona {$zona->id} no es de tipo formulario: {$zona->tipo_registro}");
 
                 return;
             }
 
             if ($zona->campos->count() === 0) {
-                Log::info("Zona {$zona->id} no tiene campos de formulario");
+                Log::debug("Zona {$zona->id} no tiene campos de formulario");
 
                 return;
             }
 
-            Log::info("Procesando notificación Telegram para métrica de formulario ID: {$metric->id} en zona {$zona->nombre}");
+            Log::debug("Procesando notificación Telegram para métrica de formulario ID: {$metric->id} en zona {$zona->nombre}");
 
             // Obtenemos los chats asociados a la zona
             $chats = $zona->telegramChats()->where('activo', true)->get();
 
-            Log::info("Chats activos encontrados para zona {$zona->id}: ".$chats->count());
+            Log::debug("Chats activos encontrados para zona {$zona->id}: ".$chats->count());
 
             if ($chats->isEmpty()) {
-                Log::info("No hay chats de Telegram activos asociados a la zona {$zona->id}");
+                Log::debug("No hay chats de Telegram activos asociados a la zona {$zona->id}");
 
                 return;
             }

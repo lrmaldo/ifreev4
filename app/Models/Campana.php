@@ -58,14 +58,6 @@ class Campana extends Model
         $hoy = now();
         $diaSemanaActual = $hoy->dayOfWeek; // 0 (domingo) hasta 6 (sábado)
         $diaNombre = strtolower($hoy->locale('es')->dayName); // Nombre del día en español
-        
-        \Log::info("Aplicando scope activas, fecha: {$hoy}, día de semana: {$diaSemanaActual}, nombre día: {$diaNombre}");
-        
-        // Primero verificar las condiciones críticas de visibilidad
-        $campanasIds = $query->pluck('id', 'id')->toArray();
-        if (!empty($campanasIds)) {
-            \Log::info("Verificando visibilidad para " . count($campanasIds) . " campañas");
-        }
 
         return $query->where('visible', true) // Solo campañas marcadas como visibles
                     ->where(function($query) use ($hoy, $diaSemanaActual, $diaNombre) {

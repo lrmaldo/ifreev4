@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\HotspotMetric;
 use App\Models\MetricaDetalle;
+use App\Services\SeleccionCampanaService;
 use App\Traits\RenderizaFormFields;
 use Jenssegers\Agent\Agent;
 use Illuminate\Support\Facades\Storage;
@@ -102,9 +103,6 @@ class ZonaLoginController extends Controller
      */
     protected function mostrarPortalCautivo($zona, $mikrotikData, $metricaInfo)
     {
-        // Registrar la entrada al método para depuración
-        \Log::info("Entrando a mostrarPortalCautivo para zona: {$zona->id}, MAC: " . ($mikrotikData['mac'] ?? 'no-mac'));
-
         $macAddress = $mikrotikData['mac'] ?? '';
 
         // Verificar si la MAC ya tiene respuesta de formulario
@@ -138,276 +136,35 @@ class ZonaLoginController extends Controller
             }
         }
 
-        // Obtener campañas activas para mostrar en el carrusel/video
-        $campanasActivas = $zona->getCampanasActivas();
-        $imagenes = [];
-        $videoUrl = '';
-        $campanaSeleccionada = null;
-
-        // Determinar tipo de contenido (imagen, video)
-        if (!$campanasActivas->isEmpty()) {
-            // Separar videos e imágenes
-            $videos = $campanasActivas->where('tipo', 'video')->filter(function($campana) {
-                return !empty($campana->archivo_path);
-            });
-
-            $imagenesCollection = $campanasActivas->where('tipo', 'imagen')->filter(function($campana) {
-                return !empty($campana->archivo_path);
-            });
-
-            // Verificar la configuración de la zona y la sesión para alternar entre video e imagen
-            $tipoPreferido = $zona->seleccion_campanas ?? 'aleatorio';
-
-            // Implementar un sistema robusto de cookies + sesión para controlar la alternancia
-            $cookieKey = 'ultimo_tipo_zona_' . $zona->id;
-            $ultimoTipoMostradoCookie = request()->cookie($cookieKey);
-            $ultimoTipoMostradoSesion = session('ultimo_tipo_mostrado_' . $zona->id, '');
-            $ultimoTipoMostrado = '';
-
-            // Estrategia de prioridad: 1° Cookie, 2° Sesión, 3° Nada (se trata como primera vez)
-            if ($ultimoTipoMostradoCookie && in_array($ultimoTipoMostradoCookie, ['video', 'imagen'])) {
-                $ultimoTipoMostrado = $ultimoTipoMostradoCookie;
-                \Log::info("Usando valor de COOKIE para alternar: {$ultimoTipoMostradoCookie}");
-
-                // Si la sesión está vacía o es diferente, actualizamos la sesión para sincronizarla
-                if ($ultimoTipoMostradoSesion !== $ultimoTipoMostrado) {
-                    session(['ultimo_tipo_mostrado_' . $zona->id => $ultimoTipoMostrado]);
-                    session()->save();
-                    \Log::info("Sincronizando sesión con cookie: {$ultimoTipoMostrado}");
-                }
-            } else if ($ultimoTipoMostradoSesion && in_array($ultimoTipoMostradoSesion, ['video', 'imagen'])) {
-                $ultimoTipoMostrado = $ultimoTipoMostradoSesion;
-                \Log::info("No se encontró cookie, usando valor de SESIÓN: {$ultimoTipoMostradoSesion}");
-            } else {
-                \Log::info("No se encontró cookie ni sesión para alternar, se tratará como primera visita");
-            }
-
-            // Registrar en log el método de selección para depuración
-            \Log::info("Método de selección de campañas: {$tipoPreferido} para zona: {$zona->id}. Último tipo mostrado: {$ultimoTipoMostrado}");
-
-            // Contar campañas disponibles por tipo para diagnóstico
-            \Log::info("Videos disponibles: " . $videos->count() . ", Imágenes disponibles: " . $imagenesCollection->count());
-
-            // Decisión de mostrar video o imagen
-            $mostrarVideo = false;
-
-            // Algoritmo mejorado para mejor alternancia entre tipos de contenido
-            if ($tipoPreferido === 'aleatorio') {
-                // En modo aleatorio, garantizamos alternancia estricta
-                if (!$videos->isEmpty() && !$imagenesCollection->isEmpty()) {
-                    // Antes de decidir, vamos a registrar detalladamente el valor de la sesión
-                    $sessionId = session()->getId();
-                    $sessionKey = 'ultimo_tipo_mostrado_' . $zona->id;
-                    $sessionValue = session($sessionKey, '');
-                    \Log::info("SESIÓN ID: {$sessionId}, CLAVE: {$sessionKey}, VALOR ACTUAL: '{$sessionValue}'");
-
-                    // Si hay ambos tipos de contenido disponibles
-                    if ($ultimoTipoMostrado === 'video') {
-                        $mostrarVideo = false;
-                        \Log::info("Alternancia estricta: último fue video, ahora mostramos imagen");
-                    } else if ($ultimoTipoMostrado === 'imagen') {
-                        $mostrarVideo = true;
-                        \Log::info("Alternancia estricta: último fue imagen, ahora mostramos video");
-                    } else {
-                        // Si es primera visualización o sesión vacía, implementamos verdadera selección aleatoria
-                        $mostrarVideo = (mt_rand(0, 1) === 1);
-                        $tipoInicial = $mostrarVideo ? "VIDEO" : "IMAGEN";
-                        \Log::info("Primera visualización o sesión vacía: selección aleatoria = {$tipoInicial}");
-                    }
-                } else {
-                    // Si solo hay un tipo disponible, usamos lo que haya
-                    $mostrarVideo = !$videos->isEmpty();
-                    $tipoMostrado = $mostrarVideo ? "videos" : "imágenes";
-                    \Log::info("Solo hay un tipo disponible: {$tipoMostrado}");
-                }
-            } else if ($tipoPreferido === 'prioridad') {
-                // En modo prioridad, buscamos la campaña con mayor prioridad
-                // pero respetando alternancia cuando sea posible
-
-                // Si hay ambos tipos de contenido, verificamos prioridades
-                if (!$videos->isEmpty() && !$imagenesCollection->isEmpty()) {
-                    // Obtenemos la prioridad más alta (número más bajo) para cada tipo
-                    $mejorVideoP = $videos->min('prioridad') ?? 999;
-                    $mejorImagenP = $imagenesCollection->min('prioridad') ?? 999;
-
-                    // Si hay empate en prioridades, alternamos basado en última visualización
-                    if ($mejorVideoP == $mejorImagenP) {
-                        if ($ultimoTipoMostrado === 'video') {
-                            $mostrarVideo = false;
-                            \Log::info("Prioridades iguales ({$mejorVideoP}), alternando: último fue video, ahora imagen");
-                        } else {
-                            $mostrarVideo = true;
-                            \Log::info("Prioridades iguales ({$mejorVideoP}), alternando: último fue imagen o ninguno, ahora video");
-                        }
-                    } else {
-                        // Elegimos la mejor prioridad
-                        $mostrarVideo = ($mejorVideoP < $mejorImagenP);
-                        $mejorPrioridad = $mostrarVideo ? $mejorVideoP : $mejorImagenP;
-                        $tipo = $mostrarVideo ? "video" : "imagen";
-                        \Log::info("Seleccionando por prioridad: {$tipo} con prioridad {$mejorPrioridad}");
-                    }
-                } else {
-                    // Si solo hay un tipo disponible, usamos lo que haya
-                    $mostrarVideo = !$videos->isEmpty();
-                    \Log::info("Solo hay un tipo disponible en modo prioridad: " . ($mostrarVideo ? "videos" : "imágenes"));
-                }
-            } else if ($tipoPreferido === 'video') {
-                // Si la preferencia explícita es video
-                if (!$videos->isEmpty()) {
-                    // Si hay videos disponibles, mostrar video
-                    $mostrarVideo = true;
-                    \Log::info("Seleccionando video por preferencia explícita de configuración");
-                } else if (!$imagenesCollection->isEmpty()) {
-                    // Si no hay videos pero hay imágenes, mostrar imágenes como fallback
-                    $mostrarVideo = false;
-                    \Log::info("No hay videos disponibles, mostrando imágenes como fallback");
-                }
-            } else if ($tipoPreferido === 'imagen') {
-                // Si la preferencia explícita es imagen
-                if (!$imagenesCollection->isEmpty()) {
-                    // Si hay imágenes disponibles, mostrar imágenes
-                    $mostrarVideo = false;
-                    \Log::info("Seleccionando imagen por preferencia explícita de configuración");
-                } else if (!$videos->isEmpty()) {
-                    // Si no hay imágenes pero hay videos, mostrar videos como fallback
-                    $mostrarVideo = true;
-                    \Log::info("No hay imágenes disponibles, mostrando videos como fallback");
-                }
-            } else {
-                // Cualquier otro caso, intentar alternar lo mejor posible
-                if (!$videos->isEmpty() && !$imagenesCollection->isEmpty()) {
-                    if ($ultimoTipoMostrado === 'video') {
-                        $mostrarVideo = false;
-                        \Log::info("Caso desconocido con ambos tipos, alternando: último fue video, ahora imagen");
-                    } else {
-                        $mostrarVideo = true;
-                        \Log::info("Caso desconocido con ambos tipos, alternando: último fue imagen o ninguno, ahora video");
-                    }
-                } else {
-                    // Si solo hay un tipo disponible, usamos lo que haya
-                    $mostrarVideo = !$videos->isEmpty();
-                    \Log::info("Caso desconocido, solo hay un tipo disponible: " . ($mostrarVideo ? "videos" : "imágenes"));
-                }
-            }
-
-            // Seleccionar campaña según la decisión
-            if ($mostrarVideo && !$videos->isEmpty()) {
-                // Si toca video y hay videos disponibles
-                if ($tipoPreferido === 'prioridad') {
-                    // En modo prioridad, elegimos el video con mejor prioridad (número más bajo)
-                    $mejorPrioridad = $videos->min('prioridad');
-                    $videosConMejorPrioridad = $videos->where('prioridad', $mejorPrioridad);
-                    $campanaSeleccionada = $videosConMejorPrioridad->random();
-                } else {
-                    // En modo aleatorio o cualquier otro, elegimos un video al azar
-                    $campanaSeleccionada = $videos->random();
-                }
-
-                $videoUrl = \Storage::url($campanaSeleccionada->archivo_path);
-
-                // Guardar en sesión para persistencia robusta
-                $sessionKey = 'ultimo_tipo_mostrado_' . $zona->id;
-                session([$sessionKey => 'video']);
-                session()->save();
-
-                // Verificar que la sesión se haya guardado correctamente
-                $sessionValueVerificacion = session($sessionKey);
-                if ($sessionValueVerificacion !== 'video') {
-                    \Log::warning("⚠️ Posible problema al guardar sesión - Esperado: 'video', Actual: '{$sessionValueVerificacion}'");
-                }
-
-                // Preparar cookie para respuesta final
-                $cookieKey = 'ultimo_tipo_zona_' . $zona->id;
-                $cookieValue = 'video';
-                \Log::info("VIDEO MOSTRADO - Se establecerá cookie {$cookieKey}={$cookieValue}");
-                \Log::info("VIDEO MOSTRADO - Guardada sesión '{$sessionValueVerificacion}' para zona {$zona->id}");
-                \Log::info("Seleccionado video: ID {$campanaSeleccionada->id}, '{$campanaSeleccionada->nombre}'");
-
-                // Actualizar tipo_visual en la métrica
-                $metricaInfo['tipo_visual'] = 'video';
-            } else if (!$imagenesCollection->isEmpty()) {
-                // Si no hay videos o toca mostrar imágenes
-                // Guardar en sesión para persistencia robusta
-                $sessionKey = 'ultimo_tipo_mostrado_' . $zona->id;
-                session([$sessionKey => 'imagen']);
-                session()->save();
-
-                // Verificar que la sesión se haya guardado correctamente
-                $sessionValueVerificacion = session($sessionKey);
-                if ($sessionValueVerificacion !== 'imagen') {
-                    \Log::warning("⚠️ Posible problema al guardar sesión - Esperado: 'imagen', Actual: '{$sessionValueVerificacion}'");
-                }
-
-                // Preparar cookie para respuesta final
-                $cookieKey = 'ultimo_tipo_zona_' . $zona->id;
-                $cookieValue = 'imagen';
-                \Log::info("IMAGEN MOSTRADA - Se establecerá cookie {$cookieKey}={$cookieValue}");
-                \Log::info("IMAGEN MOSTRADA - Guardada sesión '{$sessionValueVerificacion}' para zona {$zona->id}");
-
-                // Para imágenes, procedemos diferente según el método de selección
-                if ($tipoPreferido === 'prioridad') {
-                    // En modo prioridad, ordenamos por prioridad y seleccionamos las mejores
-                    $mejorPrioridad = $imagenesCollection->min('prioridad');
-                    $imagenesConMejorPrioridad = $imagenesCollection->where('prioridad', $mejorPrioridad);
-
-                    // Obtener todas las imágenes con mejor prioridad para el carrusel
-                    foreach ($imagenesConMejorPrioridad as $campana) {
-                        $imagenes[] = \Storage::url($campana->archivo_path);
-                    }
-                    $campanaSeleccionada = $imagenesConMejorPrioridad->first();
-                    // Actualizar tipo_visual en la métrica
-                    $metricaInfo['tipo_visual'] = 'imagen';
-                } else {
-                    // En modo aleatorio, mostramos todas las imágenes
-                    foreach ($imagenesCollection as $campana) {
-                        $imagenes[] = \Storage::url($campana->archivo_path);
-                    }
-                    // Actualizar tipo_visual en la métrica
-                    $metricaInfo['tipo_visual'] = 'imagen';
-                    $campanaSeleccionada = $imagenesCollection->first();
-                }
-
-                \Log::info("Seleccionadas " . count($imagenes) . " imágenes, primera: ID {$campanaSeleccionada->id}, '{$campanaSeleccionada->nombre}'");
-            }
+        // Último tipo mostrado (video/imagen) para alternar: 1° cookie, 2° sesión
+        $cookieKey = 'ultimo_tipo_zona_' . $zona->id;
+        $sessionKey = 'ultimo_tipo_mostrado_' . $zona->id;
+        $ultimoTipoMostrado = request()->cookie($cookieKey);
+        if (!in_array($ultimoTipoMostrado, ['video', 'imagen'], true)) {
+            $ultimoTipoMostrado = session($sessionKey);
+        }
+        if (!in_array($ultimoTipoMostrado, ['video', 'imagen'], true)) {
+            $ultimoTipoMostrado = null;
         }
 
-        // Verificar si se debe mostrar formulario (ya calculado arriba)
-        // $mostrarFormulario ya está definido
+        // Seleccionar la campaña a mostrar (ver App\Services\SeleccionCampanaService)
+        $seleccion = app(SeleccionCampanaService::class)->seleccionar($zona, $ultimoTipoMostrado);
+        $campanaSeleccionada = $seleccion['campana'];
+        $videoUrl = $seleccion['videoUrl'];
+        $imagenes = $seleccion['imagenes'];
+
+        if ($seleccion['tipo']) {
+            $cookieValue = $seleccion['tipo'];
+            $metricaInfo['tipo_visual'] = $seleccion['tipo'];
+            session([$sessionKey => $seleccion['tipo']]);
+            session()->save();
+        }
 
         // Tiempo de visualización
         $tiempoVisualizacion = $zona->tiempo_visualizacion ?? 15;
 
-        // DEBUG: Logs para depurar el problema del modal
-        \Log::info("=== DEBUG MODAL ENLACE ===");
-        \Log::info("Zona ID: {$zona->id}");
-        \Log::info("Campaña seleccionada existe: " . ($campanaSeleccionada ? 'SÍ' : 'NO'));
-        if ($campanaSeleccionada) {
-            \Log::info("Campaña ID: " . ($campanaSeleccionada->id ?? 'N/A'));
-            \Log::info("Campaña título: " . ($campanaSeleccionada->titulo ?? 'N/A'));
-            \Log::info("Campaña enlace: " . ($campanaSeleccionada->enlace ?? 'VACÍO'));
-            \Log::info("Campaña tipo: " . ($campanaSeleccionada->tipo ?? 'N/A'));
-        }
-        \Log::info("Video URL: " . ($videoUrl ? 'SÍ' : 'NO'));
-        \Log::info("Imágenes count: " . count($imagenes));
-        \Log::info("Mostrar formulario: " . ($mostrarFormulario ? 'SÍ' : 'NO'));
-        \Log::info("=== FIN DEBUG MODAL ===");
+        \Log::debug("Portal zona {$zona->id}: último tipo " . ($ultimoTipoMostrado ?? 'ninguno') . ", mostrado " . ($seleccion['tipo'] ?? 'nada') . ", campaña " . ($campanaSeleccionada->id ?? 'N/A') . ", formulario " . ($mostrarFormulario ? 'sí' : 'no'));
 
-        // Preparar la vista
-        $view = view('portal.formulario-cautivo', compact(
-            'zona',
-            'mikrotikData',
-            'metricaInfo',
-            'formFields',
-            'camposHtml',
-            'imagenes',
-            'videoUrl',
-            'campanaSeleccionada',
-            'mostrarFormulario',
-            'tiempoVisualizacion',
-            'respuestaExistente'
-        ));
-
-        // Prepara los datos para la vista de depuración
         $viewData = compact(
             'zona',
             'mikrotikData',
@@ -423,7 +180,7 @@ class ZonaLoginController extends Controller
         );
 
         // Verificar si necesitamos establecer la cookie
-        if (isset($cookieKey) && isset($cookieValue)) {
+        if (isset($cookieValue)) {
             // Crear una cookie que dure 24 horas con configuración robusta
             $cookie = cookie(
                 $cookieKey,                // nombre
@@ -436,11 +193,7 @@ class ZonaLoginController extends Controller
                 false,                     // raw
                 'lax'                      // sameSite
             );
-            \Log::info("Estableciendo cookie {$cookieKey}={$cookieValue} en la respuesta (duración: 24 horas)");
-
-            // Usa compact para generar la vista con datos consistentes
-            $view = view('portal.formulario-cautivo', $viewData);
-            return response($view)->withCookie($cookie);
+            return response(view('portal.formulario-cautivo', $viewData))->withCookie($cookie);
         }
 
         // Si no hay cookie, simplemente devuelve la vista con todos los datos
@@ -691,7 +444,7 @@ class ZonaLoginController extends Controller
 
             // Registrar detalles adicionales en log para análisis
             if ($request->has('detalle')) {
-                \Log::info('Detalle métrica', [
+                \Log::debug('Detalle métrica', [
                     'zona_id' => $request->zona_id,
                     'mac_address' => $request->mac_address,
                     'detalle' => $request->detalle,

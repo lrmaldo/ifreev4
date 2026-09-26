@@ -28,7 +28,7 @@ class SendTelegramNotification implements ShouldQueue
     public function handle(HotspotMetricCreated $event): void
     {
         try {
-            Log::info("Procesando notificación Telegram para métrica ID: {$event->hotspotMetric->id}");
+            Log::debug("Procesando notificación Telegram para métrica ID: {$event->hotspotMetric->id}");
 
             $metric = $event->hotspotMetric;
             $zona = $metric->zona;
@@ -38,7 +38,7 @@ class SendTelegramNotification implements ShouldQueue
                 $chats = $zona->telegramChats()->where('activo', true)->get();
 
                 if ($chats->isEmpty()) {
-                    Log::info("No hay chats de Telegram activos asociados a la zona {$zona->id}");
+                    Log::debug("No hay chats de Telegram activos asociados a la zona {$zona->id}");
 
                     return;
                 }

@@ -13,6 +13,11 @@ class FormResponseExportController extends Controller
 {
     public function export(Request $request, Zona $zona)
     {
+        // Solo el admin o el propietario de la zona pueden exportar sus respuestas
+        if (!auth()->user()->hasRole('admin') && (int) $zona->user_id !== (int) auth()->id()) {
+            abort(403, 'No tienes permisos para exportar estas respuestas');
+        }
+
         // Construir la consulta base
         $query = FormResponse::where('zona_id', $zona->id)
             ->with(['zona', 'zona.campos', 'zona.campos.opciones'])
