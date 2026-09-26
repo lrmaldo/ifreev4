@@ -72,14 +72,7 @@ class ZonaLoginController extends Controller
             'timestamp' => now()->format('Y-m-d H:i:s')
         ]);
 
-        // Registrar métrica de entrada al portal
-        $this->registrarMetricaEntrada($zona, $mikrotikData);
-
-        // Aquí puedes procesar los datos como sea necesario
-        // Por ejemplo, guardarlos en una base de datos, verificar si el usuario está autorizado, etc.
-
-        // Preparar información de métrica
-        // Preparar información básica de métrica
+        // La métrica de la visita se registra en mostrarPortalCautivo(), una sola vez por visita
         $metricaInfo = [
             'zona_id' => $zona->id,
             'mac_address' => $mikrotikData['mac'] ?? 'unknown',
@@ -101,7 +94,7 @@ class ZonaLoginController extends Controller
      * @param  array  $metricaInfo
      * @return \Illuminate\Http\Response
      */
-    protected function mostrarPortalCautivo($zona, $mikrotikData, $metricaInfo)
+    public function mostrarPortalCautivo($zona, $mikrotikData, $metricaInfo)
     {
         $macAddress = $mikrotikData['mac'] ?? '';
 
@@ -114,9 +107,6 @@ class ZonaLoginController extends Controller
                 ->where('mac_address', $macAddress)
                 ->first();
         }
-
-        // NUEVA LÓGICA: Registrar/actualizar métrica independientemente del formulario
-        $this->registrarMetricaCompleta($zona->id, $macAddress, $metricaInfo);
 
         // Determinar si mostrar formulario SOLO si no existe respuesta previa
         if (!$respuestaExistente && $zona->tipo_registro !== 'sin_registro' && $zona->campos->count() > 0) {
@@ -155,10 +145,14 @@ class ZonaLoginController extends Controller
 
         if ($seleccion['tipo']) {
             $cookieValue = $seleccion['tipo'];
-            $metricaInfo['tipo_visual'] = $seleccion['tipo'];
+            // En las métricas las imágenes se registran como 'carrusel'
+            $metricaInfo['tipo_visual'] = $seleccion['tipo'] === 'video' ? 'video' : 'carrusel';
             session([$sessionKey => $seleccion['tipo']]);
             session()->save();
         }
+
+        // Registrar/actualizar la métrica ya con el tipo de contenido que se va a mostrar
+        $this->registrarMetricaCompleta($zona->id, $macAddress, $metricaInfo);
 
         // Tiempo de visualización
         $tiempoVisualizacion = $zona->tiempo_visualizacion ?? 15;
@@ -370,52 +364,6 @@ class ZonaLoginController extends Controller
             'zona' => $zona,
             'mikrotikData' => $mikrotikData
         ]);
-    }
-
-    /**
-     * Registrar métrica de entrada al portal cautivo
-     */
-    protected function registrarMetricaEntrada($zona, $mikrotikData)
-    {
-        try {
-            $agent = new Agent();
-
-            // Obtener el user agent
-            $ua = request()->header('User-Agent');
-
-            // Procesar la información del dispositivo
-            $dispositivo = $agent->device() ?: 'Desconocido';
-            if ($dispositivo === 'Desconocido' && $ua) {
-                $dispositivo = $this->extraerInformacionDispositivo($ua);
-            }
-
-            // Procesar información del navegador
-            $navegador = $agent->browser() . ' ' . $agent->version($agent->browser());
-            if (!$agent->browser() && $ua) {
-                $navegador = $this->extraerInformacionNavegador($ua);
-            }
-
-            // Procesar información del sistema operativo
-            $sistemaOperativo = $agent->platform() . ' ' . $agent->version($agent->platform());
-            if (!$agent->platform() && $ua) {
-                $sistemaOperativo = $this->extraerSistemaOperativo($ua);
-            }
-
-            $data = [
-                'zona_id' => $zona->id,
-                'mac_address' => $mikrotikData['mac'] ?? 'unknown',
-                'dispositivo' => $dispositivo,
-                'navegador' => $navegador,
-                'sistema_operativo' => $sistemaOperativo,
-                'tipo_visual' => 'formulario', // Por defecto
-                'duracion_visual' => 0,
-                'clic_boton' => false,
-            ];
-
-            HotspotMetric::registrarMetrica($data);
-        } catch (\Exception $e) {
-            \Log::error('Error registrando métrica de entrada: ' . $e->getMessage());
-        }
     }
 
     /**

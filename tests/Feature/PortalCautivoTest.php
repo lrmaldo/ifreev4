@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Campana;
+use App\Models\HotspotMetric;
 use App\Models\User;
 use App\Models\Zona;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -57,6 +58,42 @@ class PortalCautivoTest extends TestCase
             ->assertOk()
             ->assertSee('promo.mp4')
             ->assertCookie($cookie, 'video', false);
+    }
+
+    public function test_cada_visita_cuenta_una_sola_entrada()
+    {
+        $zona = $this->crearZona();
+        $mac = 'AA:BB:CC:DD:EE:03';
+
+        $this->post('/login_formulario/' . $zona->id, ['mac' => $mac])->assertOk();
+        $this->assertEquals(1, HotspotMetric::where('mac_address', $mac)->value('veces_entradas'));
+
+        $this->post('/login_formulario/' . $zona->id, ['mac' => $mac])->assertOk();
+        $this->assertEquals(1, HotspotMetric::where('mac_address', $mac)->count());
+        $this->assertEquals(2, HotspotMetric::where('mac_address', $mac)->value('veces_entradas'));
+    }
+
+    public function test_la_metrica_guarda_el_tipo_de_contenido_mostrado()
+    {
+        $zona = $this->crearZona('imagen');
+        $zona->campanas()->attach($this->crearCampana('imagen', 'campanas/promo.jpg')->id);
+        $mac = 'AA:BB:CC:DD:EE:04';
+
+        $this->post('/login_formulario/' . $zona->id, ['mac' => $mac])->assertOk();
+        $this->assertEquals('carrusel', HotspotMetric::where('mac_address', $mac)->value('tipo_visual'));
+
+        $zona->campanas()->sync([$this->crearCampana('video', 'campanas/promo.mp4')->id]);
+        $this->post('/login_formulario/' . $zona->id, ['mac' => $mac])->assertOk();
+        $this->assertEquals('video', HotspotMetric::where('mac_address', $mac)->value('tipo_visual'));
+    }
+
+    public function test_la_ruta_de_diagnostico_de_alternancia_funciona()
+    {
+        $zona = $this->crearZona();
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('diagnostico.alternancia', $zona->id))
+            ->assertOk();
     }
 
     public function test_el_portal_no_asocia_campanas_ajenas_a_la_zona()
