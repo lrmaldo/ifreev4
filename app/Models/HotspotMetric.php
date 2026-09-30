@@ -22,6 +22,7 @@ class HotspotMetric extends Model
         'duracion_visual',
         'clic_boton',
         'veces_entradas',
+        'ultimo_contenido',
     ];
 
     protected $casts = [
@@ -316,6 +317,7 @@ class HotspotMetric extends Model
                 'duracion_visual' => $data['duracion_visual'] ?? 0,
                 'clic_boton' => $data['clic_boton'] ?? false,
                 'formulario_id' => $data['formulario_id'] ?? $existingMetric->formulario_id,
+                'ultimo_contenido' => $data['ultimo_contenido'] ?? $existingMetric->ultimo_contenido,
             ]);
 
             return $existingMetric;

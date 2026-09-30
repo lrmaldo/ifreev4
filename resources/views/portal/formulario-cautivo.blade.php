@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>window.PORTAL_TOKEN = @json($portalToken ?? '');</script>
 
     <!-- Fuentes locales (reemplazan Google Fonts para funcionar sin internet) -->
     <link rel="stylesheet" href="{{ asset('css/fonts-local.css') }}">
@@ -1436,7 +1437,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Portal-Token': window.PORTAL_TOKEN || ''
                     },
                     body: JSON.stringify(data)
                 })
@@ -1617,7 +1619,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Portal-Token': window.PORTAL_TOKEN || ''
                     },
                     body: JSON.stringify(metricaData)
                 })
@@ -1704,7 +1707,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Portal-Token': window.PORTAL_TOKEN || ''
                     },
                     body: JSON.stringify({
                         zona_id: {{ $zona->id }},
@@ -1939,7 +1943,8 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Portal-Token': window.PORTAL_TOKEN || ''
                 },
                 body: JSON.stringify(metricaData)
             })
@@ -2390,6 +2395,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': csrfToken,
+                        'X-Portal-Token': window.PORTAL_TOKEN || '',
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({

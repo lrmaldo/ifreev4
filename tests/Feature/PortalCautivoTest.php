@@ -60,6 +60,26 @@ class PortalCautivoTest extends TestCase
             ->assertCookie($cookie, 'video', false);
     }
 
+    public function test_alterna_por_mac_aunque_el_navegador_no_guarde_cookies()
+    {
+        $zona = $this->crearZona();
+        $zona->campanas()->attach([
+            $this->crearCampana('video', 'campanas/promo.mp4')->id,
+            $this->crearCampana('imagen', 'campanas/promo.jpg')->id,
+        ]);
+        $mac = 'AA:BB:CC:DD:EE:05';
+
+        $tipos = [];
+        for ($i = 0; $i < 3; $i++) {
+            // Sin cookies entre visitas, como el navegador de portal cautivo de iOS
+            $this->post('/login_formulario/' . $zona->id, ['mac' => $mac])->assertOk();
+            $tipos[] = HotspotMetric::where('mac_address', $mac)->value('ultimo_contenido');
+        }
+
+        $this->assertNotEquals($tipos[0], $tipos[1]);
+        $this->assertNotEquals($tipos[1], $tipos[2]);
+    }
+
     public function test_cada_visita_cuenta_una_sola_entrada()
     {
         $zona = $this->crearZona();

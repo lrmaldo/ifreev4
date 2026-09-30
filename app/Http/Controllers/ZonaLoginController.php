@@ -126,12 +126,15 @@ class ZonaLoginController extends Controller
             }
         }
 
-        // Último tipo mostrado (video/imagen) para alternar: 1° cookie, 2° sesión
+        // Último tipo mostrado (video/imagen) para alternar: 1° cookie, 2° la métrica de esa MAC.
+        // No se usa la sesión: estas rutas no llevan middleware de sesión y los navegadores
+        // de portal cautivo (p. ej. el CNA de iOS) no conservan cookies.
         $cookieKey = 'ultimo_tipo_zona_' . $zona->id;
-        $sessionKey = 'ultimo_tipo_mostrado_' . $zona->id;
         $ultimoTipoMostrado = request()->cookie($cookieKey);
-        if (!in_array($ultimoTipoMostrado, ['video', 'imagen'], true)) {
-            $ultimoTipoMostrado = session($sessionKey);
+        if (!in_array($ultimoTipoMostrado, ['video', 'imagen'], true) && $macAddress) {
+            $ultimoTipoMostrado = \App\Models\HotspotMetric::where('zona_id', $zona->id)
+                ->where('mac_address', $macAddress)
+                ->value('ultimo_contenido');
         }
         if (!in_array($ultimoTipoMostrado, ['video', 'imagen'], true)) {
             $ultimoTipoMostrado = null;
@@ -147,9 +150,11 @@ class ZonaLoginController extends Controller
             $cookieValue = $seleccion['tipo'];
             // En las métricas las imágenes se registran como 'carrusel'
             $metricaInfo['tipo_visual'] = $seleccion['tipo'] === 'video' ? 'video' : 'carrusel';
-            session([$sessionKey => $seleccion['tipo']]);
-            session()->save();
+            $metricaInfo['ultimo_contenido'] = $seleccion['tipo'];
         }
+
+        // Token firmado para las llamadas del portal a métricas y formulario
+        $portalToken = \App\Services\PortalToken::generar($zona->id, $macAddress);
 
         // Registrar/actualizar la métrica ya con el tipo de contenido que se va a mostrar
         $this->registrarMetricaCompleta($zona->id, $macAddress, $metricaInfo);
@@ -170,7 +175,8 @@ class ZonaLoginController extends Controller
             'campanaSeleccionada',
             'mostrarFormulario',
             'tiempoVisualizacion',
-            'respuestaExistente'
+            'respuestaExistente',
+            'portalToken'
         );
 
         // Verificar si necesitamos establecer la cookie
@@ -235,7 +241,8 @@ class ZonaLoginController extends Controller
             'tipo_visual' => $metricaInfo['tipo_visual'] ?? 'portal_cautivo',
             'duracion_visual' => 0, // Se actualizará desde el frontend
             'clic_boton' => false,  // Se actualizará cuando haga clic
-            'veces_entradas' => 1   // Se incrementará automáticamente si ya existe
+            'veces_entradas' => 1,  // Se incrementará automáticamente si ya existe
+            'ultimo_contenido' => $metricaInfo['ultimo_contenido'] ?? null,
         ];
 
         // Usar el método del modelo para registrar/actualizar la métrica
