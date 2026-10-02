@@ -107,13 +107,36 @@ class PortalTokenTest extends TestCase
         $zona = $this->crearZona();
 
         // Aunque el cuerpo no mande zona ni MAC, se toman del token
-        $this->postJson('/zona/formulario/responder', ['respuestas' => ['nombre' => 'Ana']], [
+        $this->postJson('/zona/formulario/responder', ['respuestas' => ['nombre' => 'Ana'], 'acepta_privacidad' => 1], [
             'X-Portal-Token' => PortalToken::generar($zona->id, self::MAC),
         ])->assertOk()->assertJson(['success' => true]);
 
         $respuesta = FormResponse::first();
         $this->assertEquals($zona->id, $respuesta->zona_id);
         $this->assertEquals(self::MAC, $respuesta->mac_address);
+        $this->assertNotNull($respuesta->acepto_privacidad_at);
+    }
+
+    public function test_el_formulario_exige_aceptar_el_aviso_de_privacidad()
+    {
+        $zona = $this->crearZona();
+
+        $this->postJson('/zona/formulario/responder', ['respuestas' => ['nombre' => 'Ana']], [
+            'X-Portal-Token' => PortalToken::generar($zona->id, self::MAC),
+        ])->assertStatus(422);
+
+        $this->assertDatabaseCount('form_responses', 0);
+    }
+
+    public function test_el_portal_con_formulario_muestra_el_aviso_de_privacidad()
+    {
+        $zona = $this->crearZona();
+        $zona->campos()->create(['campo' => 'nombre', 'etiqueta' => 'Nombre', 'tipo' => 'text', 'obligatorio' => true, 'orden' => 1]);
+
+        $this->post('/login_formulario/' . $zona->id, ['mac' => self::MAC])
+            ->assertOk()
+            ->assertSee('id="acepta_privacidad" required', false)
+            ->assertSee('Aviso de privacidad simplificado');
     }
 
     public function test_el_portal_no_escribe_en_la_tabla_de_sesiones()

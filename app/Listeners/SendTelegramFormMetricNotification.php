@@ -45,6 +45,11 @@ class SendTelegramFormMetricNotification implements ShouldQueue
                 return;
             }
 
+            // En modo resumen la zona se reporta cada N minutos (comando telegram:resumen-zonas)
+            if ($zona->telegram_resumen_minutos) {
+                return;
+            }
+
             if ($zona->tipo_registro !== 'formulario') {
                 Log::debug("Zona {$zona->id} no es de tipo formulario: {$zona->tipo_registro}");
 

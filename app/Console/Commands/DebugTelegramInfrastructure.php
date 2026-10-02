@@ -127,10 +127,10 @@ class DebugTelegramInfrastructure extends Command
             $this->warn("   ⚠️ Evento HotspotMetricCreated no encontrado");
         }
 
-        if (class_exists(\App\Listeners\SendTelegramNotification::class)) {
-            $this->line("   ✅ Listener SendTelegramNotification encontrado");
+        if (class_exists(\App\Listeners\SendTelegramFormMetricNotification::class)) {
+            $this->line("   ✅ Listener SendTelegramFormMetricNotification encontrado");
         } else {
-            $this->warn("   ⚠️ Listener SendTelegramNotification no encontrado");
+            $this->warn("   ⚠️ Listener SendTelegramFormMetricNotification no encontrado");
         }
 
         // Verificar servicios

@@ -293,8 +293,8 @@ class ZonaLoginController extends Controller
         try {
             $zona = \App\Models\Zona::findOrFail($request->zona_id);
 
-            // Validar campos obligatorios del formulario
-            $reglas = [];
+            // Validar campos obligatorios del formulario y la aceptación del aviso de privacidad
+            $reglas = ['acepta_privacidad' => 'accepted'];
             foreach ($zona->campos()->where('obligatorio', true)->get() as $campo) {
                 if ($campo->tipo !== 'checkbox') {
                     $reglas["respuestas.{$campo->campo}"] = 'required';
@@ -314,7 +314,8 @@ class ZonaLoginController extends Controller
                     'navegador' => $request->navegador,
                     'tiempo_activo' => $request->tiempo_activo ?? 0,
                     'formulario_completado' => true,
-                    'respuestas' => $request->respuestas ?? []
+                    'respuestas' => $request->respuestas ?? [],
+                    'acepto_privacidad_at' => now(),
                 ]);
 
                 // Actualizar/crear métrica con la referencia al formulario
@@ -329,7 +330,8 @@ class ZonaLoginController extends Controller
                     'formulario_id' => $formResponse->id
                 ];
 
-                \App\Models\HotspotMetric::registrarMetrica($metricaData);
+                // Enviar el formulario es parte de la misma visita: no cuenta otra entrada
+                \App\Models\HotspotMetric::registrarMetrica($metricaData, false);
             });
 
             return response()->json([

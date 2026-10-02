@@ -468,7 +468,8 @@ class HotspotMetricController extends Controller
                 'sistema_operativo' => $sistemaOperativo ?: 'Desconocido',
             ];
 
-            $metrica = HotspotMetric::registrarMetrica($data);
+            // La entrada ya la contó el servidor al mostrar el portal
+            $metrica = HotspotMetric::registrarMetrica($data, false);
 
             // Registrar un evento de vista en los detalles
             if ($metrica) {

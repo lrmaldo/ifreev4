@@ -27,13 +27,13 @@ use App\Http\Controllers\TelegramController;
 Route::post('/login_formulario/{id}', [ZonaLoginController::class, 'handle'])
     ->name('zona.login.mikrotik')
     ->withoutMiddleware(['web'])  // No requerimos CSRF para esta ruta ya que viene del Mikrotik
-    ->middleware(['throttle:60,1']); // Protección contra abusos
+    ->middleware(['throttle:portal']); // Protección contra abusos
 
 // Ruta para procesar formularios del portal cautivo
 Route::post('/zona/formulario/responder', [ZonaLoginController::class, 'procesarFormulario'])
     ->name('zona.formulario.responder')
     ->withoutMiddleware(['web'])
-    ->middleware(['throttle:30,1', 'portal.token']);
+    ->middleware(['throttle:portal-api', 'portal.token']);
 
 // Rutas para el portal cautivo
 Route::get('/portal-cautivo/{zonaId}/campanas', [\App\Http\Controllers\PortalCautivoController::class, 'obtenerCampanas'])
@@ -91,19 +91,19 @@ Route::post('/portal-cautivo/{zonaId}/video-completado', [\App\Http\Controllers\
 Route::post('/form-responses', [\App\Http\Controllers\FormResponseController::class, 'store'])
     ->name('form-responses.store')
     ->withoutMiddleware(['web'])
-    ->middleware(['throttle:60,1', 'portal.token']);
+    ->middleware(['throttle:portal-api', 'portal.token']);
 
 // Ruta para registrar métricas de hotspot desde el portal cautivo
 Route::post('/hotspot-metrics/track', [\App\Http\Controllers\HotspotMetricController::class, 'track'])
     ->name('hotspot-metrics.track')
     ->withoutMiddleware(['web'])
-    ->middleware(['throttle:120,1', 'portal.token']);
+    ->middleware(['throttle:portal-api', 'portal.token']);
 
 // Ruta para actualizar métricas desde el frontend
 Route::post('/hotspot-metrics/update', [\App\Http\Controllers\ZonaLoginController::class, 'actualizarMetrica'])
     ->name('hotspot-metrics.update')
     ->withoutMiddleware(['web'])
-    ->middleware(['throttle:120,1', 'portal.token']);
+    ->middleware(['throttle:portal-api', 'portal.token']);
 
 // Rutas para el registro de usuarios en zonas WiFi
 Route::get('/zona/{zonaId}/registro/formulario', function($zonaId) {

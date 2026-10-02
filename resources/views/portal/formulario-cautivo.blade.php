@@ -982,11 +982,17 @@
                         </div>
                     @endforeach
 
+                    <label class="aceptar-privacidad">
+                        <input type="checkbox" id="acepta_privacidad" required>
+                        <span>He leído y acepto el <a onclick="document.getElementById('aviso-privacidad').classList.remove('hidden')">aviso de privacidad</a></span>
+                    </label>
+
                     <button type="submit" class="btn-primary mt-6" id="submit-btn">
                         <span class="button-text">Conectar</span>
                         <span class="loading-spinner hidden" id="loading-spinner"></span>
                     </button>
                 </form>
+                @include('portal.partials.aviso-privacidad')
             </div>
             @endif
 
@@ -1426,6 +1432,7 @@
                     zona_id: document.getElementById('zona_id').value,
                     mac_address: document.getElementById('mac_address').value,
                     mikrotik_redirect: document.getElementById('mikrotik_redirect').value,
+                    acepta_privacidad: document.getElementById('acepta_privacidad')?.checked ? 1 : 0,
                     respuestas: formData,
                     tiempo_activo: Math.floor((Date.now() - tiempoInicio) / 1000),
                     dispositivo: navigator.userAgent,

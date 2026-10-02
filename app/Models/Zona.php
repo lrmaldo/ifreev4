@@ -27,7 +27,8 @@ class Zona extends Model
         'script_head',
         'script_body',
         'seleccion_campanas',
-        'tiempo_visualizacion'
+        'tiempo_visualizacion',
+        'telegram_resumen_minutos',
     ];
     protected $casts = [
         'requiere_registro' => 'boolean',
@@ -43,6 +44,8 @@ class Zona extends Model
         'tipo_autenticacion_mikrotik' => 'string',
         'seleccion_campanas' => 'string',
         'tiempo_visualizacion' => 'integer',
+        'telegram_resumen_minutos' => 'integer',
+        'telegram_ultimo_resumen_at' => 'datetime',
     ];
 
     /**

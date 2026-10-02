@@ -289,9 +289,12 @@ class HotspotMetric extends Model
     }
 
     /**
-     * Registra o actualiza una métrica de hotspot
+     * Registra o actualiza una métrica de hotspot.
+     *
+     * Solo la carga del portal cuenta una entrada; las llamadas posteriores de la misma
+     * visita (track del JS, envío del formulario) pasan $contarEntrada = false.
      */
-    public static function registrarMetrica($data)
+    public static function registrarMetrica($data, bool $contarEntrada = true)
     {
         // Aseguramos que tipo_visual sea un valor válido
         if (isset($data['tipo_visual'])) {
@@ -305,8 +308,9 @@ class HotspotMetric extends Model
             ->first();
 
         if ($existingMetric) {
-            // Incrementar veces_entradas
-            $existingMetric->increment('veces_entradas');
+            if ($contarEntrada) {
+                $existingMetric->increment('veces_entradas');
+            }
 
             // Actualizar datos de la visita actual
             $existingMetric->update([

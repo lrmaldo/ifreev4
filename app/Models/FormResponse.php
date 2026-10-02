@@ -16,13 +16,15 @@ class FormResponse extends Model
         'navegador',
         'tiempo_activo',
         'formulario_completado',
-        'respuestas'
+        'respuestas',
+        'acepto_privacidad_at',
     ];
 
     protected $casts = [
         'formulario_completado' => 'boolean',
         'tiempo_activo' => 'integer',
-        'respuestas' => 'array'
+        'respuestas' => 'array',
+        'acepto_privacidad_at' => 'datetime',
     ];
 
     /**

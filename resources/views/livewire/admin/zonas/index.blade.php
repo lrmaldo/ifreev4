@@ -1085,6 +1085,25 @@
                                                 <span class="text-red-500 text-xs">{{ $message }}</span>
                                             @enderror
                                         </div>
+                                        <div>
+                                            <label for="telegram_resumen_minutos" class="block text-sm font-medium text-gray-700">Notificaciones de Telegram</label>
+                                            <select
+                                                wire:model="zona.telegram_resumen_minutos"
+                                                id="telegram_resumen_minutos"
+                                                class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                            >
+                                                <option value="">Al instante (una por dispositivo nuevo)</option>
+                                                <option value="5">Resumen cada 5 minutos</option>
+                                                <option value="10">Resumen cada 10 minutos</option>
+                                                <option value="15">Resumen cada 15 minutos</option>
+                                                <option value="30">Resumen cada 30 minutos</option>
+                                                <option value="60">Resumen cada hora</option>
+                                            </select>
+                                            <p class="mt-1 text-xs text-gray-500">Para zonas con mucho tráfico (eventos) usa resumen: Telegram limita los mensajes por minuto.</p>
+                                            @error('zona.telegram_resumen_minutos')
+                                                <span class="text-red-500 text-xs">{{ $message }}</span>
+                                            @enderror
+                                        </div>
                                         <div class="flex items-center">
                                             <input
                                                 type="checkbox"

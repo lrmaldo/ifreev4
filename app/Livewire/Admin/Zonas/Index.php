@@ -34,7 +34,8 @@ class Index extends Component
         'login_sin_registro' => false,
         'tipo_autenticacion_mikrotik' => 'usuario_password',
         'script_head' => '',
-        'script_body' => ''
+        'script_body' => '',
+        'telegram_resumen_minutos' => null,
     ];
 
     // Propiedades para campo de formulario
@@ -56,6 +57,7 @@ class Index extends Component
         'zona.tipo_autenticacion_mikrotik' => 'required|string|in:pin,usuario_password,sin_autenticacion',
         'zona.script_head' => 'nullable|string',
         'zona.script_body' => 'nullable|string',
+        'zona.telegram_resumen_minutos' => 'nullable|integer|in:5,10,15,30,60',
     ];
 
     protected $formFieldRules = [
@@ -116,7 +118,8 @@ class Index extends Component
                 'login_sin_registro' => false,
                 'tipo_autenticacion_mikrotik' => 'usuario_password',
                 'script_head' => '',
-                'script_body' => ''
+                'script_body' => '',
+                'telegram_resumen_minutos' => null,
             ];
         }
 
@@ -136,6 +139,11 @@ class Index extends Component
             $rules['zona.id_personalizado'] = 'nullable|string|max:50|unique:zonas,id_personalizado,' . $this->activeZona->id . '|regex:/^[a-zA-Z0-9_-]+$/|not_in:admin,login,register,dashboard';
         }
         $this->validate($rules);
+
+        // "Al instante" llega como cadena vacía desde el select
+        if (empty($this->zona['telegram_resumen_minutos'] ?? null)) {
+            $this->zona['telegram_resumen_minutos'] = null;
+        }
 
         // Si el id_personalizado está vacío, establecerlo a NULL para evitar problemas de unicidad
         if (empty(trim($this->zona['id_personalizado']))) {

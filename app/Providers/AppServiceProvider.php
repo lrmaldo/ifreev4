@@ -2,12 +2,11 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Event;
-use App\Events\HotspotMetricCreated;
-use App\Listeners\SendTelegramNotification;
-use App\Listeners\SendTelegramFormMetricNotification;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,16 +25,23 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
 
-        // Registrar eventos y listeners
-        Event::listen(
-            HotspotMetricCreated::class,
-            SendTelegramNotification::class
-        );
+        // Los listeners de app/Listeners se registran solos (event discovery de Laravel).
+        // No registrarlos aquí también: cada notificación se encolaría dos veces.
 
-        // Registrar listener para notificaciones de métricas con formulario
-        Event::listen(
-            HotspotMetricCreated::class,
-            SendTelegramFormMetricNotification::class
-        );
+        // Límites del portal cautivo por dispositivo (IP + MAC), no solo por IP:
+        // todos los clientes de un hotspot salen por la misma IP pública del MikroTik.
+        RateLimiter::for('portal', fn (Request $request) => Limit::perMinute(20)->by('portal|' . $this->dispositivo($request)));
+        RateLimiter::for('portal-api', fn (Request $request) => Limit::perMinute(60)->by('portal-api|' . $this->dispositivo($request)));
+    }
+
+    private function dispositivo(Request $request): string
+    {
+        $mac = $request->input('mac') ?: $request->input('mac_address');
+
+        if (!$mac && $request->header('X-Portal-Token')) {
+            $mac = sha1($request->header('X-Portal-Token'));
+        }
+
+        return $request->ip() . '|' . ($mac ?: 'sin-mac');
     }
 }
