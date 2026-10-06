@@ -625,10 +625,8 @@ class Index extends Component
                 @chmod($carpeta, 0755);
             }
 
+            // El detalle queda en los logs (el script público de diagnóstico se retiró por seguridad)
             session()->flash('message', 'Diagnóstico completado. Se han realizado reparaciones automáticas. Revisa los logs para más detalles.');
-
-            // Sugerir revisar el diagnóstico detallado
-            return redirect(url('/diagnostico-archivos-livewire.php'));
         } catch (\Exception $e) {
             LogFacade::error('Error durante la reparación automática', [
                 'mensaje' => $e->getMessage(),
