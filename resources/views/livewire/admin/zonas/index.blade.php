@@ -903,6 +903,22 @@
                                             </flux:menu.item>
                                         @endif
 
+                                        <!-- Pantalla en vivo para eventos (TV) -->
+                                        <flux:menu.group label="Pantalla en vivo">
+                                            @if($zona->pantalla_token)
+                                                <flux:menu.item icon="tv" :href="route('evento.pantalla', ['token' => $zona->pantalla_token])" target="_blank">
+                                                    Abrir pantalla
+                                                </flux:menu.item>
+                                                <flux:menu.item icon="arrow-path" wire:click="generarLinkPantalla({{ $zona->id }})" wire:confirm="Las pantallas abiertas con el link actual dejarán de funcionar. ¿Generar un link nuevo?">
+                                                    Regenerar link
+                                                </flux:menu.item>
+                                            @else
+                                                <flux:menu.item icon="tv" wire:click="generarLinkPantalla({{ $zona->id }})">
+                                                    Crear link de pantalla
+                                                </flux:menu.item>
+                                            @endif
+                                        </flux:menu.group>
+
                                         <!-- Grupo de Vista previa -->
                                         <flux:menu.group label="Vista previa">
                                             <flux:menu.item icon="eye" :href="route('cliente.zona.preview', ['id' => $zona->id])" target="_blank">

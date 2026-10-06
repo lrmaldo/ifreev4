@@ -21,6 +21,7 @@
         <p><strong>Finalidades adicionales:</strong> elaborar estadísticas de uso de la red y enviarte información o promociones. Si no deseas que tus datos se usen para estas finalidades, puedes indicarlo
             @if($privacidad['contacto']) escribiendo a {{ $privacidad['contacto'] }}@else al responsable @endif;
             tu negativa no impide que te conectes.</p>
+        <p>Si en este lugar hay una rifa o dinámica, al registrarte participas en ella, y tu nombre con la inicial de tu apellido, junto con los últimos 4 dígitos de tu teléfono, podrán mostrarse en una pantalla del evento.</p>
         <p>Además de lo que escribas en el formulario, se registran datos técnicos de tu dispositivo (dirección MAC, modelo, sistema operativo y navegador).</p>
         <p>Puedes ejercer tus derechos de acceso, rectificación, cancelación y oposición (ARCO)
             @if($privacidad['contacto']) en {{ $privacidad['contacto'] }}@else con el responsable @endif.

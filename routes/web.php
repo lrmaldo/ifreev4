@@ -118,6 +118,15 @@ Route::get('/zona/{zonaId}/registro/redes', function($zonaId) {
     return view('auth.mikrotik.redes-sociales', compact('zona', 'mikrotikData'));
 })->name('zona.registro.redes');
 
+// Pantalla en vivo de una zona (TV del stand). Se abre con el link secreto, sin iniciar sesión.
+Route::get('/pantalla/{token}', function (string $token) {
+    $zona = \App\Models\Zona::where('pantalla_token', $token)->firstOrFail();
+
+    return view('evento.pantalla', compact('zona', 'token'));
+})->where('token', '[A-Za-z0-9]{40,64}')
+  ->middleware('throttle:60,1')
+  ->name('evento.pantalla');
+
 Route::get('/', function () {
     return view('welcome');
 })->name('home');

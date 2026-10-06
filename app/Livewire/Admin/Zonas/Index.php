@@ -164,6 +164,22 @@ class Index extends Component
         $this->reset(['zona']);
     }
 
+    /**
+     * Crea (o reemplaza) el link secreto de la pantalla en vivo de la zona.
+     */
+    public function generarLinkPantalla($zonaId)
+    {
+        $zona = Zona::findOrFail($zonaId);
+
+        if (!Auth::user()->hasRole('admin') && (int) $zona->user_id !== (int) Auth::id()) {
+            abort(403);
+        }
+
+        $zona->forceFill(['pantalla_token' => \Illuminate\Support\Str::random(48)])->save();
+
+        session()->flash('message', 'Link de la pantalla en vivo: ' . route('evento.pantalla', ['token' => $zona->pantalla_token]));
+    }
+
     public function confirmZonaDeletion($zonaId)
     {
         $this->confirmingZonaDeletion = $zonaId;
