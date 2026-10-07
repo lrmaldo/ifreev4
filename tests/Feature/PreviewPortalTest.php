@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\Admin\Zonas\Index as AdminZonas;
+use App\Livewire\Admin\Zonas\Form as FormularioZona;
 use App\Models\Campana;
 use App\Models\FormResponse;
 use App\Models\HotspotMetric;
@@ -142,7 +142,7 @@ class PreviewPortalTest extends TestCase
         $this->get("/zonas/{$zona->id}/preview/conectado?dst=https%3A%2F%2Fwww.google.com%2F")->assertOk();
     }
 
-    public function test_la_casilla_de_logos_aparece_aunque_otra_zona_del_listado_sea_clasica()
+    public function test_la_casilla_de_logos_solo_aparece_con_el_tema_evento()
     {
         Role::create(['name' => 'admin']);
         $admin = User::factory()->create();
@@ -150,8 +150,7 @@ class PreviewPortalTest extends TestCase
         $evento = $this->crearZona(['portal_tema' => 'evento']);
         $this->crearZona(['nombre' => 'Otra zona clásica']);
 
-        Livewire::actingAs($admin)->test(AdminZonas::class)
-            ->call('openModal', true, $evento->id)
+        Livewire::actingAs($admin)->test(FormularioZona::class, ['zonaId' => $evento->id])
             ->assertSee('id="portal_marca_evento"', false)
             ->set('zona.portal_tema', 'clasico')
             ->assertDontSee('id="portal_marca_evento"', false);

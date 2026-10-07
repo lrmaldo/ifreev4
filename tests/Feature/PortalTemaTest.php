@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\Admin\Zonas\Index as AdminZonas;
+use App\Livewire\Admin\Zonas\Form as FormularioZona;
 use App\Models\User;
 use App\Models\Zona;
 use App\Support\SociosEvento;
@@ -97,15 +97,15 @@ class PortalTemaTest extends TestCase
         $admin->assignRole('admin');
         $zona = $this->crearZona();
 
-        Livewire::actingAs($admin)->test(AdminZonas::class)
-            ->call('openModal', true, $zona->id)
+        Livewire::actingAs($admin)->test(FormularioZona::class, ['zonaId' => $zona->id])
             ->set('zona.portal_tema', 'evento')
             ->set('zona.portal_mensaje', '  Bienvenidos  ')
             ->set('zona.portal_marca_evento', true)
             ->set('zona.portal_rifa', true)
             ->set('zona.portal_socios', true)
-            ->call('saveZona')
-            ->assertHasNoErrors();
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('admin.zonas.index'));
 
         $zona->refresh();
         $this->assertEquals('evento', $zona->portal_tema);
@@ -120,10 +120,9 @@ class PortalTemaTest extends TestCase
         $admin->assignRole('admin');
         $zona = $this->crearZona();
 
-        Livewire::actingAs($admin)->test(AdminZonas::class)
-            ->call('openModal', true, $zona->id)
+        Livewire::actingAs($admin)->test(FormularioZona::class, ['zonaId' => $zona->id])
             ->set('zona.portal_tema', 'hackeado')
-            ->call('saveZona')
+            ->call('save')
             ->assertHasErrors(['zona.portal_tema']);
     }
 }

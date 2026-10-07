@@ -164,6 +164,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/zonas', function() {
             return view('zonas');
         })->name('admin.zonas.index');
+        Route::get('/zonas/crear', \App\Livewire\Admin\Zonas\Form::class)->name('admin.zonas.crear');
+        Route::get('/zonas/{zonaId}/editar', \App\Livewire\Admin\Zonas\Form::class)->whereNumber('zonaId')->name('admin.zonas.editar');
         Route::get('/zonas/download/{zonaId}/{fileType}', function ($zonaId, $fileType) {
             return app()->call([app()->make(App\Livewire\Admin\Zonas\Index::class), 'downloadMikrotikFile'], ['zonaId' => $zonaId, 'fileType' => $fileType]);
         })->name('admin.zonas.download');

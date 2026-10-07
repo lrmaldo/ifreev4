@@ -2,182 +2,50 @@
 
 namespace App\Livewire\Admin\Zonas;
 
-use App\Models\FormField;
 use App\Models\Zona;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+/**
+ * Listado de zonas del admin. Crear/editar vive en Admin\Zonas\Form (página propia)
+ * y los campos del formulario en AdminFormFields.
+ */
 class Index extends Component
 {
     use WithPagination;
 
-    public $showModal = false;
-    public $showFieldModal = false;
-    public $showInstructionsModal = false;
-    public $isEditing = false;
-    public $isEditingField = false;
-    public $activeZona = null;
-    public $activeField = null;
-    public $activeZonaForInstructions = null;
-    public $confirmingZonaDeletion = false;
-    public $confirmingFieldDeletion = false;
     public $search = '';
     public $perPage = 10;
-
-    // Propiedades para zona
-    public $zona = [
-        'nombre' => '',
-        'id_personalizado' => '', // ID personalizado para login.html
-        'segundos' => 15,
-        'tipo_registro' => 'formulario',
-        'login_sin_registro' => false,
-        'tipo_autenticacion_mikrotik' => 'usuario_password',
-        'script_head' => '',
-        'script_body' => '',
-        'telegram_resumen_minutos' => null,
-        'portal_tema' => 'clasico',
-        'portal_mensaje' => '',
-        'portal_marca_evento' => false,
-        'portal_rifa' => false,
-        'portal_socios' => false,
-    ];
-
-    // Propiedades para campo de formulario
-    public $formField = [
-        'zona_id' => null,
-        'campo' => '',
-        'etiqueta' => '',
-        'tipo' => 'text',
-        'obligatorio' => true,
-        'orden' => 0
-    ];
-
-    protected $rules = [
-        'zona.nombre' => 'required|string|max:255',
-        'zona.id_personalizado' => 'nullable|string|max:50|unique:zonas,id_personalizado|regex:/^[a-zA-Z0-9_-]+$/|not_in:admin,login,register,dashboard',
-        'zona.segundos' => 'required|integer|min:5',
-        'zona.tipo_registro' => 'required|string|in:formulario,redes,sin_registro',
-        'zona.login_sin_registro' => 'boolean',
-        'zona.tipo_autenticacion_mikrotik' => 'required|string|in:pin,usuario_password,sin_autenticacion',
-        'zona.script_head' => 'nullable|string',
-        'zona.script_body' => 'nullable|string',
-        'zona.telegram_resumen_minutos' => 'nullable|integer|in:5,10,15,30,60',
-        'zona.portal_tema' => 'required|in:clasico,evento',
-        'zona.portal_mensaje' => 'nullable|string|max:160',
-        'zona.portal_marca_evento' => 'boolean',
-        'zona.portal_rifa' => 'boolean',
-        'zona.portal_socios' => 'boolean',
-    ];
-
-    protected $formFieldRules = [
-        'formField.campo' => 'required|string|max:255',
-        'formField.etiqueta' => 'required|string|max:255',
-        'formField.tipo' => 'required|string|in:text,email,tel,number,select,radio,checkbox',
-        'formField.obligatorio' => 'boolean',
-        'formField.orden' => 'integer|min:0',
-    ];
-
-    protected $listeners = ['refresh' => '$refresh', 'openZonaModal' => 'openModal'];
-
-    // Método adicional para debugging y comunicación directa
-    public function openNewZonaModal()
-    {
-        $this->openModal();
-    }
+    public $confirmingZonaDeletion = false;
+    public $showInstructionsModal = false;
+    public $activeZonaForInstructions = null;
 
     public function render()
     {
         $user = Auth::user();
-        $query = Zona::query()
-            ->when($this->search, function ($query) {
-                return $query->where('nombre', 'like', '%' . $this->search . '%');
-            })
-            ->when(!$user->hasRole('admin'), function ($query) use ($user) {
-                return $query->where('user_id', $user->id);
-            })
-            ->latest();
 
-        $zonas = $query->paginate($this->perPage);
+        $zonas = Zona::query()
+            ->with('user:id,name')
+            ->withCount(['campos', 'campanas'])
+            ->when($this->search, fn ($q) => $q->where(fn ($w) => $w
+                ->where('nombre', 'like', '%' . $this->search . '%')
+                ->orWhere('id_personalizado', 'like', '%' . $this->search . '%')))
+            ->when(!$user->hasRole('admin'), fn ($q) => $q->where('user_id', $user->id))
+            ->latest()
+            ->paginate($this->perPage);
 
-        return view('livewire.admin.zonas.index', [
-            'zonas' => $zonas,
-            'tipoRegistroOptions' => (new Zona)->getTipoRegistroOptions(),
-            'tipoAutenticacionMikrotikOptions' => (new Zona)->getTipoAutenticacionMikrotikOptions(),
-            'tipoFieldOptions' => (new FormField)->getTipoOptions(),
-        ]);
+        return view('livewire.admin.zonas.index', ['zonas' => $zonas]);
     }
 
-    public function openModal($isEditing = false, $zonaId = null)
+    public function updatingSearch()
     {
-        $this->resetValidation();
-        $this->isEditing = $isEditing;
-
-        if ($isEditing && $zonaId) {
-            $zona = Zona::findOrFail($zonaId);
-            $this->activeZona = $zona;
-            $this->zona = $zona->toArray();
-            $this->zona['login_sin_registro'] = (bool) $zona->login_sin_registro;
-        } else {
-            $this->activeZona = null;
-            $this->zona = [
-                'nombre' => '',
-                'id_personalizado' => '',
-                'segundos' => 15,
-                'tipo_registro' => 'formulario',
-                'login_sin_registro' => false,
-                'tipo_autenticacion_mikrotik' => 'usuario_password',
-                'script_head' => '',
-                'script_body' => '',
-                'telegram_resumen_minutos' => null,
-                'portal_tema' => 'clasico',
-                'portal_mensaje' => '',
-                'portal_marca_evento' => false,
-                'portal_rifa' => false,
-                'portal_socios' => false,
-            ];
-        }
-
-        $this->showModal = true;
+        $this->resetPage();
     }
 
-    public function closeModal()
+    public function updatingPerPage()
     {
-        $this->showModal = false;
-    }
-
-    public function saveZona()
-    {
-        // Validación personalizada para id_personalizado
-        $rules = $this->rules;
-        if ($this->isEditing && $this->activeZona) {
-            $rules['zona.id_personalizado'] = 'nullable|string|max:50|unique:zonas,id_personalizado,' . $this->activeZona->id . '|regex:/^[a-zA-Z0-9_-]+$/|not_in:admin,login,register,dashboard';
-        }
-        $this->validate($rules);
-
-        // "Al instante" llega como cadena vacía desde el select
-        if (empty($this->zona['telegram_resumen_minutos'] ?? null)) {
-            $this->zona['telegram_resumen_minutos'] = null;
-        }
-        $this->zona['portal_mensaje'] = trim($this->zona['portal_mensaje'] ?? '') ?: null;
-
-        // Si el id_personalizado está vacío, establecerlo a NULL para evitar problemas de unicidad
-        if (empty(trim($this->zona['id_personalizado']))) {
-            $this->zona['id_personalizado'] = null;
-        }
-
-        if ($this->isEditing && $this->activeZona) {
-            $this->activeZona->update($this->zona);
-            session()->flash('message', 'Zona actualizada correctamente.');
-        } else {
-            $zona = new Zona($this->zona);
-            $zona->user_id = Auth::id();
-            $zona->save();
-            session()->flash('message', 'Zona creada correctamente.');
-        }
-
-        $this->closeModal();
-        $this->reset(['zona']);
+        $this->resetPage();
     }
 
     /**
@@ -205,12 +73,10 @@ class Index extends Component
     {
         $zona = Zona::findOrFail($this->confirmingZonaDeletion);
 
-        // Solo el admin puede eliminar zonas que no son suyas
-        if (Auth::user()->hasRole('admin') || $zona->user_id === Auth::id()) {
-            // Eliminar los campos de formulario asociados
+        if (Auth::user()->hasRole('admin') || (int) $zona->user_id === (int) Auth::id()) {
             $zona->campos()->delete();
             $zona->delete();
-            session()->flash('message', 'Zona eliminada correctamente.');
+            session()->flash('message', "Zona \"{$zona->nombre}\" eliminada.");
         } else {
             session()->flash('error', 'No tienes permisos para eliminar esta zona.');
         }
@@ -218,107 +84,10 @@ class Index extends Component
         $this->confirmingZonaDeletion = false;
     }
 
-    // MÉTODOS PARA FORM FIELDS
-
-    public function openFieldModal($zonaId, $isEditing = false, $fieldId = null)
-    {
-        // Verificar que la zona no sea de tipo 'sin_registro'
-        $zona = Zona::findOrFail($zonaId);
-        if ($zona->tipo_registro === 'sin_registro') {
-            session()->flash('error', 'No se pueden agregar campos a zonas con tipo de registro "Sin registro".');
-            return;
-        }
-
-        $this->resetValidation();
-        $this->isEditingField = $isEditing;
-        $this->formField['zona_id'] = $zonaId;
-
-        if ($isEditing && $fieldId) {
-            $field = FormField::findOrFail($fieldId);
-            $this->activeField = $field;
-            $this->formField = $field->toArray();
-            $this->formField['obligatorio'] = (bool) $field->obligatorio;
-        } else {
-            $this->activeField = null;
-            $this->formField = [
-                'zona_id' => $zonaId,
-                'campo' => '',
-                'etiqueta' => '',
-                'tipo' => 'text',
-                'obligatorio' => true,
-                'orden' => $this->getNextFieldOrder($zonaId)
-            ];
-        }
-
-        $this->showFieldModal = true;
-    }
-
-    public function closeFieldModal()
-    {
-        $this->showFieldModal = false;
-    }
-
-    public function getNextFieldOrder($zonaId)
-    {
-        $maxOrder = FormField::where('zona_id', $zonaId)->max('orden');
-        return is_null($maxOrder) ? 0 : $maxOrder + 1;
-    }
-
-    public function saveField()
-    {
-        $this->validate([
-            'formField.campo' => 'required|string|max:255',
-            'formField.etiqueta' => 'required|string|max:255',
-            'formField.tipo' => 'required|string|in:text,email,tel,number,select,radio,checkbox',
-            'formField.obligatorio' => 'boolean',
-            'formField.orden' => 'integer|min:0',
-        ]);
-
-        if ($this->isEditingField && $this->activeField) {
-            $this->activeField->update($this->formField);
-            session()->flash('message', 'Campo actualizado correctamente.');
-        } else {
-            FormField::create($this->formField);
-            session()->flash('message', 'Campo creado correctamente.');
-        }
-
-        $this->closeFieldModal();
-        $this->reset(['formField']);
-    }
-
-    public function confirmFieldDeletion($fieldId)
-    {
-        $this->confirmingFieldDeletion = $fieldId;
-    }
-
-    public function deleteField()
-    {
-        $field = FormField::findOrFail($this->confirmingFieldDeletion);
-        $field->delete();
-        session()->flash('message', 'Campo eliminado correctamente.');
-        $this->confirmingFieldDeletion = false;
-    }
-
-    public function updatingSearch()
-    {
-        $this->resetPage();
-    }
-
     public function openInstructionsModal($zonaId)
     {
-        try {
-            $zona = Zona::findOrFail($zonaId);
-            $this->activeZonaForInstructions = $zona;
-            $this->showInstructionsModal = true;
-
-            // Emitir evento para JavaScript
-            $this->dispatch('showInstructionsModal');
-
-            // Debug para confirmar que el método se está llamando
-            session()->flash('message', "Modal de instrucciones abierto para zona: {$zona->nombre}");
-        } catch (\Exception $e) {
-            session()->flash('error', "Error al abrir instrucciones: {$e->getMessage()}");
-        }
+        $this->activeZonaForInstructions = Zona::findOrFail($zonaId);
+        $this->showInstructionsModal = true;
     }
 
     public function closeInstructionsModal()
@@ -335,6 +104,11 @@ class Index extends Component
         if (!auth()->user()->hasRole('admin') && $zona->user_id !== auth()->id()) {
             session()->flash('error', 'No tienes permisos para acceder a esta zona.');
             return redirect()->back();
+        }
+
+        // Solo los archivos de plantilla conocidos
+        if (!in_array($fileType, ['login', 'alogin'], true)) {
+            abort(404);
         }
 
         $fileName = $fileType . '.html';

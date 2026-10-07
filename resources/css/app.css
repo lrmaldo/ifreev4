@@ -81,6 +81,13 @@
     @apply !mb-0 !leading-tight;
 }
 
+/*
+ * Estilos por defecto de elementos de formulario y botones.
+ * Van en @layer base para que las clases de Tailwind escritas en el elemento les ganen
+ * (fuera de capa, estas reglas sobrescribían cualquier utilidad: label siempre block,
+ * input/select siempre w-full, button[type=button] con padding fijo, etc.).
+ */
+@layer base {
 /* Estilos para los campos de entrada con enfoque */
 input:focus[data-flux-control],
 textarea:focus[data-flux-control],
@@ -136,9 +143,10 @@ label {
 }
 
 /* Estilos para los botones */
+/* Los componentes de Flux (botones, opciones de menú y navegación) traen su propio diseño */
 .btn,
-button[type="submit"],
-button[type="button"] {
+button[type="submit"]:not([data-flux-button], [data-flux-menu-item], [data-flux-navlist-item]),
+button[type="button"]:not([data-flux-button], [data-flux-menu-item], [data-flux-navlist-item]) {
     @apply inline-flex items-center justify-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-150 ease-in-out;
 }
 
@@ -195,6 +203,36 @@ select {
     appearance: none;
 }
 
+/* Estilos para campos deshabilitados */
+input:disabled,
+select:disabled,
+textarea:disabled {
+    @apply bg-gray-100 text-gray-500 cursor-not-allowed;
+}
+
+/* Estilos específicos para los componentes x-input y modales */
+[x-dialog-modal] input,
+[x-dialog-modal] select,
+[x-dialog-modal] textarea {
+    @apply border-gray-300 focus:border-primary-600 focus:ring-primary-600 rounded-md shadow-sm transition-colors duration-150 w-full;
+}
+
+/* Overrides para Livewire/Flux modal inputs */
+.dialog-modal input,
+.dialog-modal select,
+.dialog-modal textarea,
+dialog input,
+dialog select,
+dialog textarea {
+    @apply border-gray-300 focus:border-primary-600 focus:ring-primary-600;
+}
+
+/* Aseguramos que los bordes de inputs sean visibles */
+input, select, textarea {
+    @apply border border-gray-300;
+}
+} /* fin @layer base */
+
 @layer utilities {
   .animate-fade-in { animation: fade-in 1s ease; }
   .animate-fade-in-delay { animation: fade-in-delay 1.5s ease; }
@@ -224,13 +262,6 @@ select {
 @keyframes carousel-2 { 0%, 33% { opacity: 0; } 34%, 66% { opacity: 1; } 67%, 100% { opacity: 0; } }
 @keyframes carousel-3 { 0%, 66% { opacity: 0; } 67%, 100% { opacity: 1; } }
 @keyframes pulse-slow { 0%, 100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.6; } }
-
-/* Estilos para campos deshabilitados */
-input:disabled,
-select:disabled,
-textarea:disabled {
-    @apply bg-gray-100 text-gray-500 cursor-not-allowed;
-}
 
 /* Estilos con el color primario para elementos interactivos */
 .text-primary {
@@ -273,13 +304,6 @@ textarea:disabled {
 .focus\:ring-blue-500:focus,
 .focus\:border-blue-500:focus {
     @apply focus:ring-primary-500 focus:border-primary-500;
-}
-
-/* Estilos específicos para los componentes x-input y modales */
-[x-dialog-modal] input,
-[x-dialog-modal] select,
-[x-dialog-modal] textarea {
-    @apply border-gray-300 focus:border-primary-600 focus:ring-primary-600 rounded-md shadow-sm transition-colors duration-150 w-full;
 }
 
 /* Estilos personalizados para el buscador */
@@ -331,19 +355,4 @@ textarea:disabled {
     .search-container {
         width: 33.333333%;
     }
-}
-
-/* Overrides para Livewire/Flux modal inputs */
-.dialog-modal input,
-.dialog-modal select,
-.dialog-modal textarea,
-dialog input,
-dialog select,
-dialog textarea {
-    @apply border-gray-300 focus:border-primary-600 focus:ring-primary-600;
-}
-
-/* Aseguramos que los bordes de inputs sean visibles */
-input, select, textarea {
-    @apply border border-gray-300;
 }
