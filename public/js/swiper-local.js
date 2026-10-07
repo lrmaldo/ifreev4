@@ -211,6 +211,11 @@ class SwiperLocal {
         }
 
         this.updatePagination();
+
+        // Aviso opcional al cambiar de slide (el portal lo usa para el título de cada campaña)
+        if (typeof this.options.onSlideChange === 'function') {
+            this.options.onSlideChange(index, this.slides[index]);
+        }
     }
 
     slideNext() {

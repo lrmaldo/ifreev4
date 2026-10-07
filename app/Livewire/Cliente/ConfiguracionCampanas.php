@@ -131,7 +131,7 @@ class ConfiguracionCampanas extends Component
     public function crearCampana()
     {
         $this->validate([
-            'titulo' => 'required|string|max:255',
+            'titulo' => 'nullable|string|max:255',
             'descripcion' => 'nullable|string',
             'tipo' => 'required|in:imagen,video',
             'archivo' => 'required|file|mimes:jpg,jpeg,png,gif,mp4,mov,avi|max:51200', // 50MB
@@ -145,7 +145,7 @@ class ConfiguracionCampanas extends Component
 
             // Crear campaña
             $campana = Campana::create([
-                'titulo' => $this->titulo,
+                'titulo' => trim((string) $this->titulo) ?: null,
                 'descripcion' => $this->descripcion,
                 'tipo' => $this->tipo,
                 'archivo_path' => $path,

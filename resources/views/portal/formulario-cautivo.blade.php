@@ -1019,13 +1019,7 @@
             @if($mostrarFormulario)
             <div id="step-form" class="portal-step fade-in">
                 <h1 class="text-2xl font-bold mb-6 text-center">Accede a nuestra WiFi</h1>
-                <p class="text-gray-600 mb-6 text-center">
-                    @if($campanaSeleccionada)
-                        {{ $campanaSeleccionada->titulo ?? $campanaSeleccionada->nombre }}
-                    @else
-                        Completa el formulario para conectarte a internet
-                    @endif
-                </p>
+                <p class="text-gray-600 mb-6 text-center">Completa el formulario para conectarte a internet</p>
 
                 @if ($zona->portal_rifa)
                     <div class="portal-rifa">
@@ -1079,29 +1073,15 @@
             <div id="step-content" class="portal-step {{ $mostrarFormulario ? 'hidden' : 'fade-in' }}">
                 @if(!$mostrarFormulario)
                     <h1 class="text-2xl font-bold mb-6 text-center">{{ $zona->nombre }}</h1>
-                    <p class="text-gray-600 mb-6 text-center">
-                        @if($campanaSeleccionada)
-                            {{ $campanaSeleccionada->titulo ?? $campanaSeleccionada->nombre }}
-                        @else
-                            Preparando tu conexión WiFi...
-                        @endif
-                    </p>
+                    @if(!$campanaSeleccionada)
+                        <p class="text-gray-600 mb-6 text-center">Preparando tu conexión WiFi...</p>
+                    @endif
+                @endif
 
-                <!-- DEBUG: Información de campaña (temporal) -->
-                   {{--  @if(config('app.debug'))
-                        <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; font-size: 12px; border-radius: 4px;">
-                            <strong>DEBUG - Información de campaña (sin formulario):</strong><br>
-                            Campaña seleccionada: {{ $campanaSeleccionada ? 'SÍ' : 'NO' }}<br>
-                            @if($campanaSeleccionada)
-                                ID: {{ $campanaSeleccionada->id ?? 'N/A' }}<br>
-                                Título: {{ $campanaSeleccionada->titulo ?? 'N/A' }}<br>
-                                Enlace: {{ $campanaSeleccionada->enlace ?? 'NO HAY ENLACE' }}<br>
-                                Tipo: {{ $campanaSeleccionada->tipo ?? 'N/A' }}<br>
-                            @endif
-                        </div>
-                    @endif --}}
-
-
+                {{-- Título de la campaña en pantalla; en el carrusel cambia con cada imagen (vacío = se oculta) --}}
+                @if($campanaSeleccionada)
+                    @php $tituloInicial = $titulosCampanas[0] ?? ''; @endphp
+                    <p id="titulo-campana" class="text-gray-600 mb-6 text-center" @if($tituloInicial === '') hidden @endif>{{ $tituloInicial }}</p>
                 @endif
 
                 @if($videoUrl)
@@ -1131,8 +1111,8 @@
                     <div class="content-carousel">
                         <div class="swiper-container">
                             <div class="swiper-wrapper">
-                                @foreach($imagenes as $imagen)
-                                    <div class="swiper-slide">
+                                @foreach($imagenes as $indiceImagen => $imagen)
+                                    <div class="swiper-slide" data-titulo="{{ $titulosCampanas[$indiceImagen] ?? '' }}">
                                         <img src="{{ $imagen }}" alt="Promoción" loading="lazy"
                                              onerror="this.src='/storage/campanas/imagenes/default.jpg'">
                                     </div>
@@ -1482,6 +1462,13 @@
                 effect: 'fade',
                 fadeEffect: {
                     crossFade: true
+                },
+                // El título de arriba sigue a la imagen visible
+                onSlideChange: (indice, slide) => {
+                    const titulo = document.getElementById('titulo-campana');
+                    if (!titulo || !slide) return;
+                    titulo.textContent = slide.dataset.titulo || '';
+                    titulo.hidden = !slide.dataset.titulo;
                 }
             });
 

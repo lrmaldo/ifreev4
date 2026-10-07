@@ -152,6 +152,7 @@ class ZonaLoginController extends Controller
         $campanaSeleccionada = $seleccion['campana'];
         $videoUrl = $seleccion['videoUrl'];
         $imagenes = $seleccion['imagenes'];
+        $titulosCampanas = $seleccion['titulos'];
 
         if ($seleccion['tipo'] && !$modoPreview) {
             $cookieValue = $seleccion['tipo'];
@@ -186,7 +187,8 @@ class ZonaLoginController extends Controller
             'tiempoVisualizacion',
             'respuestaExistente',
             'portalToken',
-            'modoPreview'
+            'modoPreview',
+            'titulosCampanas'
         );
 
         // Verificar si necesitamos establecer la cookie

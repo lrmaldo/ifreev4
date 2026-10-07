@@ -105,7 +105,7 @@ class CampanasIndex extends Component
     public function save()
     {
         $rules = [
-            'titulo' => 'required|string|max:255',
+            'titulo' => 'nullable|string|max:255',
             'descripcion' => 'nullable|string',
             'enlace' => 'nullable|url',
             'tipo' => 'required|in:imagen,video',
@@ -149,7 +149,7 @@ class CampanasIndex extends Component
                 $campana = new Campana();
             }
 
-            $campana->titulo = $this->titulo;
+            $campana->titulo = trim((string) $this->titulo) ?: null;
             $campana->descripcion = $this->descripcion;
             $campana->enlace = $this->enlace;
             $campana->tipo = $this->tipo;

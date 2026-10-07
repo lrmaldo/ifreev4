@@ -55,7 +55,7 @@ class Index extends Component
     protected function rules()
     {
         $rules = [
-            'titulo' => 'required|string|max:255',
+            'titulo' => 'nullable|string|max:255',
             'descripcion' => 'nullable|string',
             'enlace' => 'nullable|url',
             'fecha_inicio' => 'required|date',
@@ -239,7 +239,7 @@ class Index extends Component
 
             // Crear o actualizar la campaña
             $data = [
-                'titulo' => $this->titulo,
+                'titulo' => trim((string) $this->titulo) ?: null,
                 'descripcion' => $this->descripcion,
                 'enlace' => $this->enlace,
                 'fecha_inicio' => $this->fecha_inicio,

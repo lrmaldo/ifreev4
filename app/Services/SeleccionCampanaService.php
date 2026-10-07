@@ -48,7 +48,8 @@ class SeleccionCampanaService
      * Selecciona el contenido a mostrar.
      *
      * @param  string|null  $ultimoTipo  'video' o 'imagen' mostrado en la visita anterior
-     * @return array{tipo: ?string, campana: ?Campana, videoUrl: string, imagenes: array<int, string>}
+     * @return array{tipo: ?string, campana: ?Campana, videoUrl: string, imagenes: array<int, string>, titulos: array<int, string>}
+     *   titulos va en el mismo orden que imagenes (vacío = campaña sin título)
      */
     public function seleccionar(Zona $zona, ?string $ultimoTipo = null): array
     {
@@ -60,7 +61,7 @@ class SeleccionCampanaService
      */
     public function seleccionarDe(Collection $campanas, string $modo, ?string $ultimoTipo = null): array
     {
-        $resultado = ['tipo' => null, 'campana' => null, 'videoUrl' => '', 'imagenes' => []];
+        $resultado = ['tipo' => null, 'campana' => null, 'videoUrl' => '', 'imagenes' => [], 'titulos' => []];
 
         $videos = $campanas->where('tipo', 'video')->filter(fn ($c) => !empty($c->archivo_path));
         $imagenes = $campanas->where('tipo', 'imagen')->filter(fn ($c) => !empty($c->archivo_path));
@@ -82,6 +83,7 @@ class SeleccionCampanaService
                 'campana' => $campana,
                 'videoUrl' => Storage::url($campana->archivo_path),
                 'imagenes' => [],
+                'titulos' => [trim((string) $campana->titulo)],
             ];
         }
 
@@ -95,6 +97,7 @@ class SeleccionCampanaService
             'campana' => $seleccionadas->first(),
             'videoUrl' => '',
             'imagenes' => $seleccionadas->map(fn ($c) => Storage::url($c->archivo_path))->values()->all(),
+            'titulos' => $seleccionadas->map(fn ($c) => trim((string) $c->titulo))->values()->all(),
         ];
     }
 

@@ -85,7 +85,7 @@
                                         @endif
                                     </div>
                                     <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $campana->titulo }}</div>
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $campana->titulo ?: 'Sin título' }}</div>
                                         <div class="text-sm text-gray-500 dark:text-gray-300">{{ Str::limit($campana->descripcion, 50) }}</div>
                                         @if ($campana->enlace)
                                             <a href="{{ $campana->enlace }}" target="_blank" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">{{ Str::limit($campana->enlace, 30) }}</a>
@@ -176,7 +176,7 @@
                                 <div class="mt-4 space-y-4">
                                     <!-- Título -->
                                     <div>
-                                        <label for="titulo" class="block text-sm font-medium text-gray-700">Título</label>
+                                        <label for="titulo" class="block text-sm font-medium text-gray-700">Título <span class="text-gray-400 font-normal">(opcional, se muestra en el portal)</span></label>
                                         <input type="text" wire:model="titulo" id="titulo" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                         @error('titulo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>

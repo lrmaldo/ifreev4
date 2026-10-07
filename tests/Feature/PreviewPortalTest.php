@@ -70,6 +70,40 @@ class PreviewPortalTest extends TestCase
         $this->assertEquals(1, FormResponse::count());
     }
 
+    public function test_cada_imagen_del_carrusel_lleva_su_propio_titulo()
+    {
+        $zona = $this->crearZona(['tipo_registro' => 'sin_registro', 'seleccion_campanas' => 'aleatorio']);
+        foreach ([['LA OTRA BAIA RENACER', 'baia.jpg'], ['KONECTA', 'konecta.jpg'], [null, 'sin-titulo.jpg']] as [$titulo, $archivo]) {
+            $zona->campanas()->attach(Campana::create([
+                'titulo' => $titulo, 'fecha_inicio' => now()->subDay()->toDateString(), 'fecha_fin' => now()->addDay()->toDateString(),
+                'visible' => true, 'siempre_visible' => true, 'tipo' => 'imagen', 'archivo_path' => "campanas/{$archivo}",
+            ])->id);
+        }
+
+        $html = $this->get("/zonas/{$zona->id}/preview/carrusel")->assertOk()->getContent();
+
+        // Cada slide trae el título de SU campaña; la de sin título va vacía
+        preg_match_all('/<div class="swiper-slide" data-titulo="([^"]*)">\s*<img src="[^"]*\/campanas\/([^"]+)"/', $html, $m, PREG_SET_ORDER);
+        $porArchivo = collect($m)->mapWithKeys(fn ($x) => [$x[2] => $x[1]]);
+        $this->assertEquals(['baia.jpg' => 'LA OTRA BAIA RENACER', 'konecta.jpg' => 'KONECTA', 'sin-titulo.jpg' => ''], $porArchivo->sortKeys()->all());
+
+        // El título visible arranca con el de la primera imagen y el carrusel lo actualiza
+        preg_match('/<p id="titulo-campana"[^>]*>([^<]*)<\/p>/', $html, $t);
+        $this->assertEquals($m[0][1], $t[1] ?? null);
+        $this->assertStringContainsString('onSlideChange', $html);
+    }
+
+    public function test_una_campana_sin_titulo_oculta_el_subtitulo()
+    {
+        $zona = $this->crearZona(['tipo_registro' => 'sin_registro']);
+        $this->campana($zona, 'imagen', 'campanas/solo.jpg');
+        Campana::query()->update(['titulo' => null]);
+
+        $this->get("/zonas/{$zona->id}/preview")
+            ->assertOk()
+            ->assertSee('<p id="titulo-campana" class="text-gray-600 mb-6 text-center"  hidden ></p>', false);
+    }
+
     public function test_ninguna_preview_asigna_campanas_a_la_zona()
     {
         // Zona sin campañas asignadas + campañas globales: las previews viejas las guardaban en campana_zona
