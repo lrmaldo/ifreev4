@@ -11,7 +11,9 @@
 // Variables:
 //   BASE_URL    URL del sistema (sin / al final)
 //   ZONA        id o id_personalizado de la zona de prueba
-//   FORMULARIO  1 = también envía el formulario (la zona debe tener campos; usa uno llamado "nombre")
+//   FORMULARIO  1 = también envía el formulario
+//   RESPUESTAS  JSON con los campos del formulario de la zona (usa el nombre interno de cada campo).
+//               Default: {"nombre":"Prueba"}. Ej: -e RESPUESTAS='{"nombre":"Prueba","telefono":"5512345678"}'
 //   PICO        usuarios virtuales simultáneos en el pico (default 200)
 
 import http from 'k6/http';
@@ -21,6 +23,8 @@ const BASE_URL = __ENV.BASE_URL || 'http://localhost:8000';
 const ZONA = __ENV.ZONA || '1';
 const FORMULARIO = __ENV.FORMULARIO === '1';
 const PICO = parseInt(__ENV.PICO || '200', 10);
+const RESPUESTAS = JSON.parse(__ENV.RESPUESTAS || '{"nombre":"Prueba"}');
+let erroresMostrados = 0;
 
 export const options = {
     stages: [
@@ -80,10 +84,15 @@ export default function () {
     if (FORMULARIO) {
         sleep(5 + Math.random() * 10); // tiempo que tarda una persona en llenarlo
         const form = http.post(`${BASE_URL}/zona/formulario/responder`, JSON.stringify({
-            respuestas: { nombre: `Prueba ${mac}` },
+            respuestas: RESPUESTAS,
             acepta_privacidad: 1,
         }), Object.assign({ tags: { paso: 'formulario' } }, params));
-        check(form, { 'formulario responde 200': (r) => r.status === 200 });
+        const formOk = check(form, { 'formulario responde 200': (r) => r.status === 200 });
+        // Muestra las primeras respuestas fallidas para saber por qué (p. ej. 422 = falta un campo obligatorio)
+        if (!formOk && erroresMostrados < 3) {
+            erroresMostrados++;
+            console.warn(`formulario HTTP ${form.status}: ${String(form.body).slice(0, 300)}`);
+        }
     }
 
     // 4. Al terminar de ver la campaña se actualiza la duración
