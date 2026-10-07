@@ -92,17 +92,21 @@ class ZonaLoginController extends Controller
      * @param  \App\Models\Zona  $zona
      * @param  array  $mikrotikData
      * @param  array  $metricaInfo
+     * @param  array  $opciones  ['preview' => bool, 'forzarTipo' => 'video'|'imagen'|null]
+     *   En preview no se registran métricas, no hay token ni cookie y siempre se muestra el formulario.
      * @return \Illuminate\Http\Response
      */
-    public function mostrarPortalCautivo($zona, $mikrotikData, $metricaInfo)
+    public function mostrarPortalCautivo($zona, $mikrotikData, $metricaInfo, array $opciones = [])
     {
+        $modoPreview = (bool) ($opciones['preview'] ?? false);
+        $forzarTipo = $opciones['forzarTipo'] ?? null;
         $macAddress = $mikrotikData['mac'] ?? '';
 
         // Verificar si la MAC ya tiene respuesta de formulario
         $respuestaExistente = null;
         $mostrarFormulario = false;
 
-        if ($macAddress) {
+        if ($macAddress && !$modoPreview) {
             $respuestaExistente = \App\Models\FormResponse::where('zona_id', $zona->id)
                 ->where('mac_address', $macAddress)
                 ->first();
@@ -141,12 +145,15 @@ class ZonaLoginController extends Controller
         }
 
         // Seleccionar la campaña a mostrar (ver App\Services\SeleccionCampanaService)
-        $seleccion = app(SeleccionCampanaService::class)->seleccionar($zona, $ultimoTipoMostrado);
+        $servicioCampanas = app(SeleccionCampanaService::class);
+        $seleccion = in_array($forzarTipo, ['video', 'imagen'], true)
+            ? $servicioCampanas->seleccionarDe($servicioCampanas->campanasActivas($zona), $forzarTipo)
+            : $servicioCampanas->seleccionar($zona, $ultimoTipoMostrado);
         $campanaSeleccionada = $seleccion['campana'];
         $videoUrl = $seleccion['videoUrl'];
         $imagenes = $seleccion['imagenes'];
 
-        if ($seleccion['tipo']) {
+        if ($seleccion['tipo'] && !$modoPreview) {
             $cookieValue = $seleccion['tipo'];
             // En las métricas las imágenes se registran como 'carrusel'
             $metricaInfo['tipo_visual'] = $seleccion['tipo'] === 'video' ? 'video' : 'carrusel';
@@ -154,10 +161,12 @@ class ZonaLoginController extends Controller
         }
 
         // Token firmado para las llamadas del portal a métricas y formulario
-        $portalToken = \App\Services\PortalToken::generar($zona->id, $macAddress);
+        $portalToken = $modoPreview ? '' : \App\Services\PortalToken::generar($zona->id, $macAddress);
 
         // Registrar/actualizar la métrica ya con el tipo de contenido que se va a mostrar
-        $this->registrarMetricaCompleta($zona->id, $macAddress, $metricaInfo);
+        if (!$modoPreview) {
+            $this->registrarMetricaCompleta($zona->id, $macAddress, $metricaInfo);
+        }
 
         // Tiempo de visualización
         $tiempoVisualizacion = $zona->tiempo_visualizacion ?? 15;
@@ -176,7 +185,8 @@ class ZonaLoginController extends Controller
             'mostrarFormulario',
             'tiempoVisualizacion',
             'respuestaExistente',
-            'portalToken'
+            'portalToken',
+            'modoPreview'
         );
 
         // Verificar si necesitamos establecer la cookie

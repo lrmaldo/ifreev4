@@ -23,6 +23,11 @@ use App\Http\Controllers\TelegramController;
         Route::get('/zonas/{id}/preview/campana', [\App\Http\Controllers\ZonaController::class, 'previewCampana'])
             ->name('cliente.zona.preview.campana');
 
+        // Final de la vista previa: el formulario de login del portal envía aquí (sin CSRF, como al MikroTik)
+        Route::match(['get', 'post'], '/zonas/{id}/preview/conectado', [\App\Http\Controllers\ZonaController::class, 'previewConectado'])
+            ->withoutMiddleware(['web'])
+            ->name('cliente.zona.preview.conectado');
+
 // Ruta para manejar las solicitudes de login del Mikrotik
 Route::post('/login_formulario/{id}', [ZonaLoginController::class, 'handle'])
     ->name('zona.login.mikrotik')

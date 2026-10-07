@@ -6,6 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script>window.PORTAL_TOKEN = @json($portalToken ?? '');</script>
+    @if (!empty($modoPreview))
+        <script>
+            // Vista previa: las llamadas de métricas y formulario no llegan al servidor (no se guarda nada)
+            window.PORTAL_PREVIEW = true;
+            (function () {
+                const fetchOriginal = window.fetch.bind(window);
+                window.fetch = function (url, opciones) {
+                    if (/\/(hotspot-metrics|zona\/formulario|form-responses)\b/.test(String(url))) {
+                        return Promise.resolve(new Response(JSON.stringify({ success: true, message: 'Vista previa' }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+                    }
+                    return fetchOriginal(url, opciones);
+                };
+            })();
+        </script>
+    @endif
 
     <!-- Fuentes locales (reemplazan Google Fonts para funcionar sin internet) -->
     <link rel="stylesheet" href="{{ asset('css/fonts-local.css') }}">
@@ -921,6 +936,8 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
+        .aviso-preview { position: sticky; top: 0; z-index: 50; padding: 6px 12px; text-align: center; font-size: 12px; font-weight: 600; background: #1f2937; color: #fff; letter-spacing: .02em; }
+
         /* El spinner solo aparece al enviar (su display propio le ganaba a .hidden) */
         .loading-spinner { border-color: rgba(255, 255, 255, .35); border-top-color: #ffffff; vertical-align: middle; margin-left: 8px; }
         .loading-spinner.hidden { display: none; }
@@ -979,6 +996,9 @@
     {!! $zona->script_head ?? '' !!}
 </head>
 <body class="tema-{{ $zona->portal_tema === 'evento' ? 'evento' : 'clasico' }}">
+    @if (!empty($modoPreview))
+        <div class="aviso-preview" role="status">Vista previa · no se guarda ningún dato</div>
+    @endif
 
 
     <div class="portal-container">

@@ -1137,7 +1137,7 @@
                                                 <input type="text" wire:model="zona.portal_mensaje" id="portal_mensaje" maxlength="160" placeholder="Ej. Bienvenido · WiFi cortesía de i-Free y Sattlink" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                 @error('zona.portal_mensaje') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                             </div>
-                                            @if (($zona['portal_tema'] ?? 'clasico') === 'evento')
+                                            @if (($this->zona['portal_tema'] ?? 'clasico') === 'evento')
                                                 <div class="flex items-center">
                                                     <input type="checkbox" wire:model="zona.portal_marca_evento" id="portal_marca_evento" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                                                     <label for="portal_marca_evento" class="ml-2 block text-sm text-gray-900">Logos del evento en el encabezado (i-Free, WISPMX, Expo MX-ISP)</label>
