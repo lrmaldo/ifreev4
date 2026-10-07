@@ -921,28 +921,80 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
+        /* El spinner solo aparece al enviar (su display propio le ganaba a .hidden) */
+        .loading-spinner { border-color: rgba(255, 255, 255, .35); border-top-color: #ffffff; vertical-align: middle; margin-left: 8px; }
+        .loading-spinner.hidden { display: none; }
+
+        /* Mensaje de bienvenida y aviso de rifa (configurables por zona) */
+        .portal-bienvenida { margin: 0 0 1.25rem; text-align: center; font-weight: 500; color: var(--color-text); }
+        .portal-rifa { display: grid; gap: 2px; margin: 0 0 1.5rem; padding: .85rem 1rem; border-radius: var(--radius-md); background: var(--color-primary-light); border: 1px solid var(--color-primary); text-align: center; }
+        .portal-rifa strong { color: var(--color-primary); font-size: 1rem; }
+        .portal-rifa span { font-size: .85rem; color: var(--color-text-light); }
+
+        /* ===== Tema "evento": azul marino y dorado (Expo MX-ISP) ===== */
+        @font-face { font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 800 900; font-display: swap; src: url('{{ asset('fonts/plus-jakarta-sans-800-latin.woff2') }}') format('woff2'); }
+        body.tema-evento {
+            --color-background: #071229;
+            --color-primary: #f5b82e;
+            --color-primary-light: rgba(245, 184, 46, .12);
+            --color-secondary: #e0922e;
+            --color-secondary-light: rgba(245, 184, 46, .10);
+            --color-secondary-dark: #cf7818;
+            --color-text: #ffffff;
+            --color-text-light: #c7d2ea;
+            --color-border: rgba(255, 255, 255, .18);
+            --color-input-focus: rgba(245, 184, 46, .25);
+            --color-button-hover: #ffd56b;
+            background: radial-gradient(ellipse at top, #13306b 0%, #071229 65%) fixed;
+            min-height: 100vh;
+        }
+        .tema-evento .portal-container { border-color: rgba(255, 255, 255, .08); box-shadow: 0 20px 40px rgba(0, 0, 0, .45); }
+        .tema-evento .portal-header { background: #0b1a3d; border-bottom: 1px solid rgba(245, 184, 46, .35); padding: 14px 12px 10px; text-shadow: none; }
+        .tema-evento .portal-content { background: #0f2148; color: var(--color-text); }
+        .tema-evento .portal-content::before { display: none; }
+        .tema-evento .text-gray-500, .tema-evento .text-gray-600 { color: var(--color-text-light) !important; }
+        .tema-evento .form-field input, .tema-evento .form-field select, .tema-evento .form-field textarea { background: #15295a; color: #ffffff; }
+        .tema-evento .form-field input::placeholder { color: #8fa0c4; }
+        .tema-evento .form-field input[type="radio"], .tema-evento .form-field input[type="checkbox"] { background-color: #15295a; }
+        .tema-evento .form-field input[type="radio"]:checked::before { background-color: #1a1300; }
+        .tema-evento .form-field input[type="checkbox"]:checked::before { color: #1a1300; }
+        .tema-evento .btn-primary, .tema-evento .btn-connection { background: linear-gradient(#ffd75a, #f5b82e 45%, #e0922e); color: #1a1300; }
+        .tema-evento .btn-primary:hover { background: #ffd56b; }
+        .tema-evento .loading-spinner { border-color: rgba(26, 19, 0, .3); border-top-color: #1a1300; }
+        .tema-evento .countdown { color: #1a1300; background: var(--color-primary); }
+        .tema-evento .aceptar-privacidad, .tema-evento .aceptar-privacidad a { color: var(--color-text-light); }
+        .tema-evento .portal-socios p { color: #c7d2ea; }
+
+        /* Encabezado con logos y marca "EXPO MX-ISP 2026" (como en wisp.mx) */
+        .marca-evento { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .marca-evento-logo { height: 36px; width: auto; }
+        .marca-evento-titulo { display: inline-flex; align-items: center; gap: 4px; font-family: 'Plus Jakarta Sans', 'Poppins', sans-serif; font-weight: 900; font-size: 24px; line-height: 1; letter-spacing: -.04em; color: #ffffff; }
+        .marca-evento-expo { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 8px; letter-spacing: .16em; }
+        .marca-evento-mxisp { background: linear-gradient(#ffd75a, #dbac2f 35%, #e0922e 75%, #cf7818); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
+        .marca-evento-sub { margin: 6px 0 0; font-size: 12px; color: #c7d2ea; letter-spacing: .04em; }
+
     </style>
 
     <!-- Scripts de configuración para Mikrotik -->
     {!! $zona->script_head ?? '' !!}
 </head>
-<body>
+<body class="tema-{{ $zona->portal_tema === 'evento' ? 'evento' : 'clasico' }}">
 
 
     <div class="portal-container">
         <div class="portal-header">
-            {{ $zona->nombre }} - Portal WiFi
-
-            <!-- Indicadores visuales mejorados del tipo de contenido -->
-            <div class="content-type-indicator video-indicator">
-                📹 Video
-            </div>
-            <div class="content-type-indicator image-indicator">
-                🖼️ Imágenes ({{ count($imagenes ?? []) }})
-            </div>
+            @if ($zona->portal_tema === 'evento' && $zona->portal_marca_evento)
+                @include('portal.partials.marca-evento')
+            @else
+                {{ $zona->nombre }} - Portal WiFi
+            @endif
         </div>
 
         <div class="portal-content">
+            @if ($zona->portal_mensaje)
+                <p class="portal-bienvenida">{{ $zona->portal_mensaje }}</p>
+            @endif
+
             <!-- Paso 1: Formulario (si aplica) -->
             @if($mostrarFormulario)
             <div id="step-form" class="portal-step fade-in">
@@ -954,6 +1006,13 @@
                         Completa el formulario para conectarte a internet
                     @endif
                 </p>
+
+                @if ($zona->portal_rifa)
+                    <div class="portal-rifa">
+                        <strong>🎁 Regístrate y participa en la rifa</strong>
+                        <span>Al registrarte participas automáticamente. ¡Los ganadores se anuncian en vivo!</span>
+                    </div>
+                @endif
 
                 <!-- DEBUG: Información de campaña (temporal) -->
                {{--  @if(config('app.debug'))
@@ -1008,7 +1067,7 @@
                         @endif
                     </p>
 
-                    <!-- DEBUG: Información de campaña (temporal) -->
+                <!-- DEBUG: Información de campaña (temporal) -->
                    {{--  @if(config('app.debug'))
                         <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; font-size: 12px; border-radius: 4px;">
                             <strong>DEBUG - Información de campaña (sin formulario):</strong><br>
@@ -1178,6 +1237,10 @@
             </div>
         </div>
     </div>
+
+    @if ($zona->portal_socios)
+        @include('portal.partials.carrusel-socios')
+    @endif
 
     <!-- Formulario oculto para autenticación CHAP con Mikrotik -->
     <form name="sendin" action="{{ $mikrotikData['link-login-only'] ?? '' }}" method="post" style="display: none;">

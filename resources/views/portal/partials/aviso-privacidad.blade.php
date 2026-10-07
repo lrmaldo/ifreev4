@@ -10,7 +10,7 @@
     .aviso-privacidad-contenido h2 { margin: 0 0 12px; font-size: 18px; font-weight: 700; }
     .aviso-privacidad-contenido p { margin: 0 0 10px; }
     .aceptar-privacidad { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
-    .aceptar-privacidad input { margin-top: 3px; }
+    .aceptar-privacidad input { margin-top: 3px; width: 18px; height: 18px; flex: none; accent-color: var(--color-primary, #ff5e2c); }
     .aceptar-privacidad a { text-decoration: underline; cursor: pointer; }
 </style>
 <div id="aviso-privacidad" class="aviso-privacidad hidden" role="dialog" aria-modal="true" aria-labelledby="aviso-privacidad-titulo">

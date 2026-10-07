@@ -76,26 +76,7 @@ class PantallaEnVivo extends Component
             'ganadores' => RifaGanador::where('zona_id', $zona->id)->latest()->limit(5)->get(),
             // El logo de la asociación organizadora; "EXPO MX-ISP 2026" se dibuja con CSS
             'logoWispmx' => file_exists(public_path('img/evento/logo-wispmx.webp')) ? asset('img/evento/logo-wispmx.webp') : null,
-            'socios' => $this->socios(),
+            'socios' => \App\Support\SociosEvento::lista(),
         ]);
-    }
-
-    /**
-     * Logos para el carrusel de socios: public/img/evento/socios/socios.json
-     * con [{"nombre": "...", "archivo": "..."}]. Sin ese archivo no se muestra el carrusel.
-     */
-    protected function socios(): array
-    {
-        $manifiesto = public_path('img/evento/socios/socios.json');
-        $lista = file_exists($manifiesto) ? json_decode(file_get_contents($manifiesto), true) : null;
-
-        return collect(is_array($lista) ? $lista : [])
-            ->filter(fn ($s) => !empty($s['archivo']) && file_exists(public_path('img/evento/socios/' . basename($s['archivo']))))
-            ->map(fn ($s) => [
-                'nombre' => $s['nombre'] ?? pathinfo($s['archivo'], PATHINFO_FILENAME),
-                'url' => asset('img/evento/socios/' . basename($s['archivo'])),
-            ])
-            ->values()
-            ->all();
     }
 }

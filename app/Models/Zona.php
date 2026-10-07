@@ -29,6 +29,11 @@ class Zona extends Model
         'seleccion_campanas',
         'tiempo_visualizacion',
         'telegram_resumen_minutos',
+        'portal_tema',
+        'portal_mensaje',
+        'portal_marca_evento',
+        'portal_rifa',
+        'portal_socios',
     ];
     protected $casts = [
         'requiere_registro' => 'boolean',
@@ -46,6 +51,9 @@ class Zona extends Model
         'tiempo_visualizacion' => 'integer',
         'telegram_resumen_minutos' => 'integer',
         'telegram_ultimo_resumen_at' => 'datetime',
+        'portal_marca_evento' => 'boolean',
+        'portal_rifa' => 'boolean',
+        'portal_socios' => 'boolean',
     ];
 
     /**

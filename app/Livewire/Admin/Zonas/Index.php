@@ -36,6 +36,11 @@ class Index extends Component
         'script_head' => '',
         'script_body' => '',
         'telegram_resumen_minutos' => null,
+        'portal_tema' => 'clasico',
+        'portal_mensaje' => '',
+        'portal_marca_evento' => false,
+        'portal_rifa' => false,
+        'portal_socios' => false,
     ];
 
     // Propiedades para campo de formulario
@@ -58,6 +63,11 @@ class Index extends Component
         'zona.script_head' => 'nullable|string',
         'zona.script_body' => 'nullable|string',
         'zona.telegram_resumen_minutos' => 'nullable|integer|in:5,10,15,30,60',
+        'zona.portal_tema' => 'required|in:clasico,evento',
+        'zona.portal_mensaje' => 'nullable|string|max:160',
+        'zona.portal_marca_evento' => 'boolean',
+        'zona.portal_rifa' => 'boolean',
+        'zona.portal_socios' => 'boolean',
     ];
 
     protected $formFieldRules = [
@@ -120,6 +130,11 @@ class Index extends Component
                 'script_head' => '',
                 'script_body' => '',
                 'telegram_resumen_minutos' => null,
+                'portal_tema' => 'clasico',
+                'portal_mensaje' => '',
+                'portal_marca_evento' => false,
+                'portal_rifa' => false,
+                'portal_socios' => false,
             ];
         }
 
@@ -144,6 +159,7 @@ class Index extends Component
         if (empty($this->zona['telegram_resumen_minutos'] ?? null)) {
             $this->zona['telegram_resumen_minutos'] = null;
         }
+        $this->zona['portal_mensaje'] = trim($this->zona['portal_mensaje'] ?? '') ?: null;
 
         // Si el id_personalizado está vacío, establecerlo a NULL para evitar problemas de unicidad
         if (empty(trim($this->zona['id_personalizado']))) {

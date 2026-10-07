@@ -1120,6 +1120,38 @@
                                                 <span class="text-red-500 text-xs">{{ $message }}</span>
                                             @enderror
                                         </div>
+
+                                        <!-- Apariencia del portal cautivo -->
+                                        <fieldset class="border border-gray-200 rounded-md p-3 space-y-3">
+                                            <legend class="px-1 text-sm font-medium text-gray-700">Apariencia del portal</legend>
+                                            <div>
+                                                <label for="portal_tema" class="block text-sm font-medium text-gray-700">Tema</label>
+                                                <select wire:model.live="zona.portal_tema" id="portal_tema" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                                    <option value="clasico">Clásico (naranja, fondo claro)</option>
+                                                    <option value="evento">Evento (azul marino y dorado)</option>
+                                                </select>
+                                                @error('zona.portal_tema') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                            </div>
+                                            <div>
+                                                <label for="portal_mensaje" class="block text-sm font-medium text-gray-700">Mensaje de bienvenida <span class="text-gray-400 font-normal">(opcional)</span></label>
+                                                <input type="text" wire:model="zona.portal_mensaje" id="portal_mensaje" maxlength="160" placeholder="Ej. Bienvenido · WiFi cortesía de i-Free y Sattlink" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                @error('zona.portal_mensaje') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                            </div>
+                                            @if (($zona['portal_tema'] ?? 'clasico') === 'evento')
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" wire:model="zona.portal_marca_evento" id="portal_marca_evento" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                    <label for="portal_marca_evento" class="ml-2 block text-sm text-gray-900">Logos del evento en el encabezado (i-Free, WISPMX, Expo MX-ISP)</label>
+                                                </div>
+                                            @endif
+                                            <div class="flex items-center">
+                                                <input type="checkbox" wire:model="zona.portal_rifa" id="portal_rifa" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                <label for="portal_rifa" class="ml-2 block text-sm text-gray-900">Aviso "Regístrate y participa en la rifa"</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input type="checkbox" wire:model="zona.portal_socios" id="portal_socios" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                <label for="portal_socios" class="ml-2 block text-sm text-gray-900">Carrusel de socios al pie</label>
+                                            </div>
+                                        </fieldset>
                                         <div class="flex items-center">
                                             <input
                                                 type="checkbox"
