@@ -70,6 +70,22 @@ class PreviewPortalTest extends TestCase
         $this->assertEquals(1, FormResponse::count());
     }
 
+    public function test_ninguna_preview_asigna_campanas_a_la_zona()
+    {
+        // Zona sin campañas asignadas + campañas globales: las previews viejas las guardaban en campana_zona
+        $zona = $this->crearZona();
+        Campana::create([
+            'titulo' => 'Global', 'fecha_inicio' => now()->subDay()->toDateString(), 'fecha_fin' => now()->addDay()->toDateString(),
+            'visible' => true, 'siempre_visible' => true, 'tipo' => 'imagen', 'archivo_path' => 'campanas/global.jpg',
+        ]);
+
+        foreach (['', '/carrusel', '/video', '/campana'] as $variante) {
+            $this->get("/zonas/{$zona->id}/preview{$variante}")->assertOk();
+        }
+
+        $this->assertDatabaseCount('campana_zona', 0);
+    }
+
     public function test_las_previews_de_video_e_imagen_fuerzan_el_tipo()
     {
         $zona = $this->crearZona(['seleccion_campanas' => 'aleatorio']);
