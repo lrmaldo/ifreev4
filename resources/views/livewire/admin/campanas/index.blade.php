@@ -1,648 +1,162 @@
-<div>
-    <div class="bg-white shadow overflow-hidden sm:rounded-lg dark:bg-zinc-800 dark:border dark:border-zinc-700">
+@php
+    $colorEstado = [
+        'activa' => 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-500/10 dark:text-green-300',
+        'programada' => 'bg-sky-50 text-sky-700 ring-sky-600/20 dark:bg-sky-500/10 dark:text-sky-300',
+        'vencida' => 'bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-300',
+        'oculta' => 'bg-zinc-100 text-zinc-600 ring-zinc-500/20 dark:bg-zinc-700 dark:text-zinc-300',
+    ];
+    $badge = 'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset';
+    $control = 'w-auto rounded-lg border border-zinc-300 bg-white py-2 pl-3 pr-8 text-sm text-zinc-700 shadow-xs dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200';
+@endphp
 
-        <!-- Mensajes Flash -->
-        @if (session()->has('message'))
-            <div class="bg-green-100 border border-green-400 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300 px-4 py-3 rounded relative m-4" role="alert">
-                <span class="block sm:inline">{{ session('message') }}</span>
-            </div>
-        @endif
-
-        @if (session()->has('warning'))
-            <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 dark:bg-yellow-900 dark:border-yellow-700 dark:text-yellow-300 px-4 py-3 rounded relative m-4" role="alert">
-                <span class="block sm:inline">{{ session('warning') }}</span>
-            </div>
-        @endif
-
-        @if (session()->has('error'))
-            <div class="bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-300 px-4 py-3 rounded relative m-4" role="alert">
-                <span class="block sm:inline">{{ session('error') }}</span>
-            </div>
-        @endif
-
-        <!-- Filtros -->
-        <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 dark:bg-zinc-900 dark:border-zinc-700">
-            <div class="flex flex-wrap gap-4">
-                <div class="flex-1">
-                    <input type="text" wire:model.debounce.300ms="search" placeholder="Buscar por título o descripción..." class="block w-full p-2 border border-gray-300 rounded-md shadow-sm">
-                </div>
-                <div>
-                    <select wire:model="filtroTipo" class="block w-full p-2 border border-gray-300 rounded-md shadow-sm">
-                        <option value="">Todos los tipos</option>
-                        <option value="imagen">Solo imágenes</option>
-                        <option value="video">Solo videos</option>
-                    </select>
-                </div>
-                <div class="flex items-center">
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" wire:model="mostrarSoloActivas" class="form-checkbox h-5 w-5 text-indigo-600">
-                        <span class="ml-2 text-sm text-gray-700">Solo activas</span>
-                    </label>
-                </div>
-                @if(auth()->user()->hasRole('admin'))
-                <div>
-                    <button wire:click="ejecutarDiagnostico" class="px-3 py-2 text-sm bg-yellow-600 hover:bg-yellow-700 text-white rounded-md flex items-center" title="Ejecutar diagnóstico de subida de archivos">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                        Diagnóstico
-                    </button>
-                </div>
-                @endif
-            </div>
+<div class="w-full">
+    {{-- Encabezado --}}
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-semibold text-zinc-900 dark:text-white">Campañas</h1>
+            <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Imágenes y videos del portal cautivo · {{ $campanas->total() }} {{ $campanas->total() === 1 ? 'campaña' : 'campañas' }}{{ $hayFiltros ? ' con estos filtros' : '' }}</p>
         </div>
-
-        <!-- Tabla de Campañas -->
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
-                <thead class="bg-gray-50 dark:bg-zinc-800">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Campaña</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Periodo</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tipo</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cliente</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Prioridad</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Estado</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-zinc-700">
-                    @forelse ($campanas as $campana)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-zinc-700">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10">
-                                        @if ($campana->tipo === 'imagen')
-                                            <img class="h-10 w-10 rounded object-cover" src="{{ Storage::url($campana->archivo_path) }}" alt="{{ $campana->titulo }}">
-                                        @else
-                                            <div class="h-10 w-10 rounded bg-gray-100 dark:bg-zinc-700 flex items-center justify-center">
-                                                <svg class="h-6 w-6 text-gray-500 dark:text-gray-300" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                                                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
-                                            </div>
-                                        @endif
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $campana->titulo ?: 'Sin título' }}</div>
-                                        <div class="text-sm text-gray-500 dark:text-gray-300">{{ Str::limit($campana->descripcion, 50) }}</div>
-                                        @if ($campana->enlace)
-                                            <a href="{{ $campana->enlace }}" target="_blank" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">{{ Str::limit($campana->enlace, 30) }}</a>
-                                        @endif
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @if($campana->siempre_visible)
-                                    <div class="text-sm text-gray-900 dark:text-gray-200">
-                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                            Siempre visible
-                                        </span>
-                                    </div>
-                                @else
-                                    <div class="text-sm text-gray-900 dark:text-gray-200">
-                                        {{ $campana->fecha_inicio->format('d/m/Y') }} - {{ $campana->fecha_fin->format('d/m/Y') }}
-                                        @if($campana->dias_visibles)
-                                            <div class="text-xs text-gray-500 mt-1">
-                                                Solo en días específicos
-                                            </div>
-                                        @endif
-                                    </div>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $campana->tipo === 'imagen' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' }}">
-                                    {{ $campana->tipo }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                {{ $campana->cliente ? $campana->cliente->razon_social : 'Global' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                                    {{ $campana->prioridad ?? 'N/A' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <button wire:click="toggleVisibility({{ $campana->id }})" class="relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 {{ $campana->visible ? 'bg-green-500' : 'bg-gray-200' }} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                    <span class="sr-only">Toggle visibility</span>
-                                    <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200 {{ $campana->visible ? 'translate-x-5' : 'translate-x-0' }}"></span>
-                                </button>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button wire:click="edit({{ $campana->id }})" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3">
-                                    <svg class="h-5 w-5" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                    </svg>
-                                </button>
-                                <button wire:click="delete({{ $campana->id }})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" onclick="return confirm('¿Está seguro de eliminar esta campaña?')">
-                                    <svg class="h-5 w-5" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                </button>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                No hay campañas disponibles.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Paginación -->
-        <div class="px-4 py-3 bg-white dark:bg-zinc-800 border-t border-gray-200 dark:border-zinc-700 sm:px-6">
-            {{ $campanas->links() }}
-        </div>
+        <a href="{{ route('admin.campanas.crear') }}" wire:navigate class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500">
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/></svg>
+            Nueva campaña
+        </a>
     </div>
 
-    <!-- Modal de creación/edición -->
-    @if($showModal)
-        <div class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                    {{ $editando ? 'Editar Campaña' : 'Nueva Campaña' }}
-                                </h3>
-                                <div class="mt-4 space-y-4">
-                                    <!-- Título -->
-                                    <div>
-                                        <label for="titulo" class="block text-sm font-medium text-gray-700">Título <span class="text-gray-400 font-normal">(opcional, se muestra en el portal)</span></label>
-                                        <input type="text" wire:model="titulo" id="titulo" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        @error('titulo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                    </div>
-                                    <!-- Descripción -->
-                                    <div>
-                                        <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción</label>
-                                        <textarea wire:model="descripcion" id="descripcion" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
-                                        @error('descripcion') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                    </div>
-                                    <!-- Enlace -->
-                                    <div>
-                                        <label for="enlace" class="block text-sm font-medium text-gray-700">Enlace (opcional)</label>
-                                        <input type="url" wire:model="enlace" id="enlace" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        @error('enlace') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                    </div>
-                                    <!-- Fechas -->
-                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2" x-data x-show="!$wire.siempre_visible">
-                                        <div>
-                                            <label for="fecha_inicio" class="block text-sm font-medium text-gray-700">Fecha de inicio</label>
-                                            <input type="date" wire:model="fecha_inicio" id="fecha_inicio" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                            @error('fecha_inicio') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                        </div>
-                                        <div>
-                                            <label for="fecha_fin" class="block text-sm font-medium text-gray-700">Fecha de fin</label>
-                                            <input type="date" wire:model="fecha_fin" id="fecha_fin" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                            @error('fecha_fin') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                        </div>
-                                    </div>
-                                    <!-- Tipo -->
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Tipo de campaña</label>
-                                        <div class="mt-2 space-x-4">
-                                            <label class="inline-flex items-center">
-                                                <input type="radio" wire:model.live="tipo" value="imagen" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                                <span class="ml-2 text-sm text-gray-700">Imagen</span>
-                                            </label>
-                                            <label class="inline-flex items-center">
-                                                <input type="radio" wire:model.live="tipo" value="video" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                                <span class="ml-2 text-sm text-gray-700">Video</span>
-                                            </label>
-                                        </div>
-                                        @error('tipo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                    </div>
+    {{-- Mensajes --}}
+    @if (session()->has('message'))
+        <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-900/30 dark:text-green-200" role="status">{{ session('message') }}</div>
+    @endif
+    @if (session()->has('error'))
+        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200" role="alert">{{ session('error') }}</div>
+    @endif
 
-                                    <!-- Prioridad -->
-                                    <div>
-                                        <label for="prioridad" class="block text-sm font-medium text-gray-700">Prioridad</label>
-                                        <div class="flex items-center">
-                                            <input type="number" wire:model="prioridad" id="prioridad" min="1" max="100"
-                                                class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                                style="max-width: 100px;">
-                                            <span class="ml-2 text-xs text-gray-500">Menor número = Mayor prioridad</span>
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-1">Cuando la selección es por prioridad, se muestra la campaña con el menor valor.</p>
-                                        @error('prioridad') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                    </div>
+    {{-- Filtros --}}
+    <div class="mb-5 flex flex-wrap items-center gap-3">
+        <label class="flex w-full max-w-sm items-center gap-2 rounded-lg border border-zinc-300 bg-white px-3 shadow-xs focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/30 dark:border-zinc-600 dark:bg-zinc-800">
+            <svg class="h-4 w-4 shrink-0 text-zinc-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd"/></svg>
+            <span class="sr-only">Buscar campañas</span>
+            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Buscar por título o descripción…" class="h-9 w-full rounded-none border-0 bg-transparent px-0 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-none focus:outline-none focus:ring-0 dark:text-zinc-100">
+        </label>
+        <select wire:model.live="filtroEstado" aria-label="Estado" class="{{ $control }}">
+            <option value="">Todos los estados</option>
+            <option value="activas">Activas</option>
+            <option value="programadas">Programadas</option>
+            <option value="vencidas">Vencidas</option>
+            <option value="ocultas">Ocultas</option>
+        </select>
+        <select wire:model.live="filtroTipo" aria-label="Tipo" class="{{ $control }}">
+            <option value="">Imágenes y videos</option>
+            <option value="imagen">Solo imágenes</option>
+            <option value="video">Solo videos</option>
+        </select>
+        <select wire:model.live="filtroCliente" aria-label="Cliente" class="{{ $control }}">
+            <option value="">Todos los clientes</option>
+            <option value="global">Global (Sattlink / i-Free)</option>
+            @foreach ($clientes as $cliente)
+                <option value="{{ $cliente->id }}">{{ $cliente->nombre }}</option>
+            @endforeach
+        </select>
+        @if ($hayFiltros)
+            <button type="button" wire:click="limpiarFiltros" class="border-0 bg-transparent px-1 py-0 text-sm font-medium text-indigo-600 shadow-none hover:text-indigo-500">Quitar filtros</button>
+        @endif
+        <button type="button" wire:click="ejecutarDiagnostico" class="ml-auto border-0 bg-transparent px-1 py-0 text-sm text-zinc-500 shadow-none hover:text-zinc-700 dark:text-zinc-400" title="Revisa carpetas y permisos para subir archivos">
+            <span wire:loading.remove wire:target="ejecutarDiagnostico">Diagnóstico de archivos</span>
+            <span wire:loading wire:target="ejecutarDiagnostico">Revisando…</span>
+        </button>
+    </div>
 
-                                    <!-- Archivo -->
-                                    <div>
-                                        <label for="archivo-input" class="block text-sm font-medium text-gray-700">
-                                            {{ $tipo === 'imagen' ? 'Imagen' : 'Video' }}
-                                            @if($editando && $archivo_actual)
-                                                <span class="text-xs text-gray-500">(Dejar en blanco para mantener el actual)</span>
-                                            @endif
-                                        </label>
-                                        <!-- Usamos un ID fijo para simplificar el manejo del input -->
-                                        <input type="file"
-                                            wire:model="archivo"
-                                            id="archivo-input"
-                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                            accept="{{ $tipo === 'imagen' ? 'image/*' : '.mp4,.mov,.ogg,.qt,.webm,.mpeg,.avi,video/*' }}">
+    {{-- Cuadrícula de campañas --}}
+    @if ($campanas->isEmpty())
+        <div class="rounded-xl border border-dashed border-zinc-300 px-4 py-16 text-center dark:border-zinc-600">
+            <p class="text-sm text-zinc-500">{{ $hayFiltros ? 'Ninguna campaña coincide con estos filtros.' : 'Aún no hay campañas.' }}</p>
+            @unless ($hayFiltros)
+                <a href="{{ route('admin.campanas.crear') }}" wire:navigate class="mt-3 inline-flex text-sm font-medium text-indigo-600 hover:text-indigo-500">Crear la primera campaña →</a>
+            @endunless
+        </div>
+    @else
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            @foreach ($campanas as $campana)
+                @php $estado = $campana->estado; @endphp
+                <article wire:key="campana-{{ $campana->id }}" @class(['flex flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xs dark:border-zinc-700 dark:bg-zinc-800', 'opacity-70' => $estado['clave'] === 'oculta'])>
+                    {{-- Miniatura --}}
+                    <a href="{{ route('admin.campanas.editar', ['campanaId' => $campana->id]) }}" wire:navigate class="relative block aspect-video overflow-hidden bg-zinc-100 dark:bg-zinc-900">
+                        @if ($campana->tipo === 'imagen')
+                            <img src="{{ Storage::url($campana->archivo_path) }}" alt="{{ $campana->titulo ?: 'Campaña sin título' }}" loading="lazy" class="absolute inset-0 h-full w-full object-cover">
+                        @else
+                            <video src="{{ Storage::url($campana->archivo_path) }}#t=1" preload="metadata" muted playsinline class="absolute inset-0 h-full w-full object-cover"></video>
+                            <span class="absolute inset-0 flex items-center justify-center" aria-hidden="true">
+                                <span class="flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white"><svg class="ml-0.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M6.3 2.84A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.27l9.344-5.891a1.5 1.5 0 000-2.538L6.3 2.841z"/></svg></span>
+                            </span>
+                        @endif
+                        <span class="absolute left-2 top-2 rounded-md bg-black/60 px-2 py-0.5 text-xs font-medium text-white">{{ $campana->tipo === 'imagen' ? 'Imagen' : 'Video' }}</span>
+                    </a>
 
-                                        <div class="mt-2">
-                                            @if ($archivo)
-                                                <div wire:loading wire:target="archivo" class="text-sm text-blue-600">
-                                                    Cargando archivo... Por favor espere.
-                                                </div>
-                                                <div wire:loading.remove wire:target="archivo">
-                                                    @if($tipo === 'imagen')
-                                                        <img src="{{ $archivo->temporaryUrl() }}" class="h-20 w-auto">
-                                                    @else
-                                                        <span class="text-sm text-gray-500">Video seleccionado: {{ $archivo->getClientOriginalName() }} ({{ round($archivo->getSize() / 1048576, 2) }} MB)</span>
-                                                    @endif
-                                                </div>
-                                            @elseif($editando && $archivo_actual)
-                                                @if($tipo === 'imagen')
-                                                    <img src="{{ Storage::url($archivo_actual) }}" class="h-20 w-auto">
-                                                @else
-                                                    <span class="text-sm text-gray-500">Video actual: {{ basename($archivo_actual) }}</span>
-                                                @endif
-                                            @endif
-                                        </div>
-
-                                        @if ($tipo === 'video')
-                                            <div class="mt-2 text-xs text-gray-500">
-                                                Formatos permitidos: MP4, MOV, OGG, WebM, MPEG, AVI (máx. 100MB)
-                                            </div>
-                                            @if ($errors->has('archivo'))
-                                                <div class="mt-2 p-2 bg-red-100 text-red-700 text-xs rounded">
-                                                    <strong>Problema con el archivo:</strong> {{ $errors->first('archivo') }}
-                                                    <br>
-                                                    Si el archivo es muy grande (más de 100MB), considera usar el
-                                                    <a href="{{ url('/') }}/video-compressor.php" target="_blank" class="underline">compresor de videos</a>.
-                                                </div>
-                                            @endif
-                                        @else
-                                            @error('archivo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                        @endif
-                                    </div>
-                                    <!-- Visibilidad -->
-                                    <div class="space-y-3">
-                                        <div class="flex items-center">
-                                            <input type="checkbox" wire:model="visible" id="visible" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                            <label for="visible" class="ml-2 block text-sm text-gray-700">Visible</label>
-                                        </div>
-
-                                        <div class="flex items-center">
-                                            <input type="checkbox" wire:model="siempre_visible" id="siempre_visible" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                            <label for="siempre_visible" class="ml-2 block text-sm text-gray-700">Siempre visible (ignorar fechas y días)</label>
-                                        </div>
-
-                                        <!-- Días visibles -->
-                                        <div class="mt-3" x-data="{showDays: {{ !$siempre_visible ? 'true' : 'false' }}}" x-show="!$wire.siempre_visible">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">Días visibles (opcional)</label>
-                                            <div class="grid grid-cols-7 gap-2">
-                                                <div class="flex flex-col items-center">
-                                                    <label for="dia-0" class="block text-xs font-medium text-gray-700">Dom</label>
-                                                    <input type="checkbox" wire:model="dias_visibles" value="0" id="dia-0" class="mt-1 focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                                </div>
-                                                <div class="flex flex-col items-center">
-                                                    <label for="dia-1" class="block text-xs font-medium text-gray-700">Lun</label>
-                                                    <input type="checkbox" wire:model="dias_visibles" value="1" id="dia-1" class="mt-1 focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                                </div>
-                                                <div class="flex flex-col items-center">
-                                                    <label for="dia-2" class="block text-xs font-medium text-gray-700">Mar</label>
-                                                    <input type="checkbox" wire:model="dias_visibles" value="2" id="dia-2" class="mt-1 focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                                </div>
-                                                <div class="flex flex-col items-center">
-                                                    <label for="dia-3" class="block text-xs font-medium text-gray-700">Mié</label>
-                                                    <input type="checkbox" wire:model="dias_visibles" value="3" id="dia-3" class="mt-1 focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                                </div>
-                                                <div class="flex flex-col items-center">
-                                                    <label for="dia-4" class="block text-xs font-medium text-gray-700">Jue</label>
-                                                    <input type="checkbox" wire:model="dias_visibles" value="4" id="dia-4" class="mt-1 focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                                </div>
-                                                <div class="flex flex-col items-center">
-                                                    <label for="dia-5" class="block text-xs font-medium text-gray-700">Vie</label>
-                                                    <input type="checkbox" wire:model="dias_visibles" value="5" id="dia-5" class="mt-1 focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                                </div>
-                                                <div class="flex flex-col items-center">
-                                                    <label for="dia-6" class="block text-xs font-medium text-gray-700">Sáb</label>
-                                                    <input type="checkbox" wire:model="dias_visibles" value="6" id="dia-6" class="mt-1 focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                                </div>
-                                            </div>
-                                            <p class="text-xs text-gray-500 mt-1">Si no selecciona ningún día, se mostrará todos los días dentro del rango de fechas.</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Cliente -->
-                                    <div>
-                                        <label for="cliente_id" class="block text-sm font-medium text-gray-700">Cliente (opcional)</label>
-                                        <select wire:model="cliente_id" id="cliente_id" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                            <option value="">Global (todos los clientes)</option>
-                                            @foreach($clientes as $cliente)
-                                                <option value="{{ $cliente->id }}">{{ $cliente->razon_social }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('cliente_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                    </div>
-
-                                    <!-- Zonas -->
-                                    <div>
-                                        <label for="zonas_search" class="block text-sm font-medium text-gray-700">Zonas donde mostrar esta campaña</label>
-
-                                        <!-- Buscador de zonas con checkboxes -->
-                                        <div class="relative">
-                                            <div class="flex">
-                                                <div class="relative flex-grow">
-                                                    <input type="text"
-                                                        wire:model.live="zonaSearch"
-                                                        wire:click="$set('mostrarDropdownZonas', true)"
-                                                        id="zonas_search"
-                                                        placeholder="Buscar zonas..."
-                                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10">
-
-                                                    <!-- Icono de búsqueda -->
-                                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 mt-1 pointer-events-none">
-                                                        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                                        </svg>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Dropdown con checkboxes -->
-                                            @if($mostrarDropdownZonas)
-                                            <div
-                                                data-zonas-dropdown
-                                                class="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-sm border border-gray-300 max-h-60 overflow-y-auto"
-                                                x-data
-                                                @click.outside="$wire.cerrarDropdownZonas()"
-                                            >
-                                                @if($zonasFiltradas->count() > 0)
-                                                    @foreach($zonasFiltradas as $zona)
-                                                        <div class="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer" wire:click="toggleZona({{ $zona->id }})">
-                                                            <input
-                                                                type="checkbox"
-                                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-2"
-                                                                @if(in_array($zona->id, $zonas_ids ?? [])) checked @endif
-                                                            >
-                                                            <span>{{ $zona->nombre }}</span>
-                                                        </div>
-                                                    @endforeach
-                                                @else
-                                                    <div class="px-3 py-2 text-gray-500">No hay resultados para "{{ $zonaSearch }}"</div>
-                                                @endif
-                                            </div>
-                                            @endif
-                                        </div>
-
-                                        <!-- Resumen de las zonas seleccionadas -->
-                                        <div class="mt-2">
-                                            <p class="text-sm font-medium text-gray-700">Zonas seleccionadas ({{ count($zonas_ids) }})</p>
-                                            <div class="mt-1 flex flex-wrap gap-2">
-                                                @if(!empty($zonas_ids))
-                                                    @foreach(collect($zonas)->whereIn('id', $zonas_ids) as $zonaSeleccionada)
-                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
-                                                            {{ $zonaSeleccionada->nombre }}
-                                                            <button type="button" wire:click="toggleZona({{ $zonaSeleccionada->id }})" class="ml-1 inline-flex items-center">
-                                                                <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                                </svg>
-                                                            </button>
-                                                        </span>
-                                                    @endforeach
-                                                @else
-                                                    <span class="text-xs text-gray-500">Ninguna zona seleccionada</span>
-                                                @endif
-                                            </div>
-                                        </div>
-
-                                        @error('zonas_ids') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                    </div>
-                                </div>
+                    {{-- Datos --}}
+                    <div class="flex flex-1 flex-col gap-2 p-4">
+                        <div class="flex items-start justify-between gap-2">
+                            <a href="{{ route('admin.campanas.editar', ['campanaId' => $campana->id]) }}" wire:navigate @class(['line-clamp-2 font-medium hover:text-indigo-600', 'text-zinc-900 dark:text-white' => $campana->titulo, 'italic text-zinc-400' => !$campana->titulo])>{{ $campana->titulo ?: 'Sin título' }}</a>
+                            <span class="{{ $badge }} {{ $colorEstado[$estado['clave']] }} shrink-0">{{ $estado['etiqueta'] }}</span>
+                        </div>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400">{{ $estado['detalle'] }}</p>
+                        <dl class="mt-auto grid grid-cols-3 gap-2 border-t border-zinc-100 pt-3 text-xs dark:border-zinc-700">
+                            <div>
+                                <dt class="text-zinc-400">Cliente</dt>
+                                <dd class="truncate text-zinc-700 dark:text-zinc-200" title="{{ $campana->cliente?->nombre ?? 'Global' }}">{{ $campana->cliente?->nombre ?? 'Global' }}</dd>
                             </div>
+                            <div>
+                                <dt class="text-zinc-400">Zonas</dt>
+                                <dd @class(['text-zinc-700 dark:text-zinc-200' => $campana->zonas_count, 'font-medium text-amber-700 dark:text-amber-400' => !$campana->zonas_count])>{{ $campana->zonas_count ?: 'Ninguna' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-zinc-400">Prioridad</dt>
+                                <dd class="text-zinc-700 dark:text-zinc-200">{{ $campana->prioridad ?? '—' }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    {{-- Acciones --}}
+                    <div class="flex items-center justify-between gap-2 border-t border-zinc-100 px-4 py-3 dark:border-zinc-700">
+                        <button type="button" wire:click="toggleVisibility({{ $campana->id }})" role="switch" aria-checked="{{ $campana->visible ? 'true' : 'false' }}" class="flex items-center gap-2 border-0 bg-transparent p-0 text-sm text-zinc-600 shadow-none dark:text-zinc-300">
+                            <span @class(['relative inline-flex h-5 w-9 shrink-0 rounded-full transition', 'bg-green-500' => $campana->visible, 'bg-zinc-300 dark:bg-zinc-600' => !$campana->visible])>
+                                <span @class(['absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition', 'left-[1.125rem]' => $campana->visible, 'left-0.5' => !$campana->visible])></span>
+                            </span>
+                            {{ $campana->visible ? 'Publicada' : 'Pausada' }}
+                        </button>
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('admin.campanas.editar', ['campanaId' => $campana->id]) }}" wire:navigate class="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200">Editar</a>
+                            <flux:dropdown position="bottom" align="end">
+                                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-300 bg-white p-0 text-zinc-600 shadow-none hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300" aria-label="Más acciones">
+                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM8.5 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM15.5 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/></svg>
+                                </button>
+                                <flux:menu>
+                                    <flux:menu.item icon="arrow-top-right-on-square" :href="Storage::url($campana->archivo_path)" target="_blank">Ver archivo</flux:menu.item>
+                                    @if ($campana->enlace)
+                                        <flux:menu.item icon="link" :href="$campana->enlace" target="_blank">Abrir enlace</flux:menu.item>
+                                    @endif
+                                    <flux:menu.separator />
+                                    <flux:menu.item icon="trash" variant="danger" wire:click="confirmarEliminar({{ $campana->id }})">Eliminar</flux:menu.item>
+                                </flux:menu>
+                            </flux:dropdown>
                         </div>
                     </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button wire:click="save" wire:loading.attr="disabled" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                            <span wire:loading.remove wire:target="save">Guardar</span>
-                            <span wire:loading wire:target="save">
-                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Guardando...
-                            </span>
-                        </button>
-                        <button wire:click="closeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Cancelar
-                        </button>
-                    </div>
+                </article>
+            @endforeach
+        </div>
+    @endif
+
+    <div class="mt-6">{{ $campanas->links() }}</div>
+
+    {{-- Confirmar eliminación --}}
+    @if ($confirmandoEliminar)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="titulo-eliminar">
+            <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-zinc-800">
+                <h3 id="titulo-eliminar" class="text-lg font-semibold text-zinc-900 dark:text-white">¿Eliminar esta campaña?</h3>
+                <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">Se borra también su archivo y deja de mostrarse en todas sus zonas. Si solo quieres detenerla un tiempo, mejor páusala.</p>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" wire:click="$set('confirmandoEliminar', null)" class="rounded-lg border border-zinc-300 bg-white px-4 py-1.5 text-sm font-medium text-zinc-700 shadow-none hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200">Cancelar</button>
+                    <button type="button" wire:click="eliminar" class="rounded-lg border-0 bg-red-600 px-4 py-1.5 text-sm font-semibold text-white shadow-none hover:bg-red-500">Eliminar</button>
                 </div>
             </div>
         </div>
     @endif
 </div>
-
-@push('scripts')
-<script src="{{ asset('js/zonas-selector.js') }}"></script>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Script para manejar el cambio de tipo de archivo
-        document.addEventListener('livewire:initialized', function() {
-            Livewire.on('tipo-changed', function(data) {
-                // Limpiamos el input file para que refleje el nuevo tipo
-                const tipoActual = data.tipo;
-                console.log('Tipo cambiado a:', tipoActual);
-
-                setTimeout(() => {
-                    // Usamos el ID fijo ahora
-                    const inputFile = document.getElementById('archivo-input');
-                    if (inputFile) {
-                        console.log('Limpiando el input file');
-                        inputFile.value = '';
-
-                        // Actualizar el atributo accept según el tipo
-                        if (tipoActual === 'imagen') {
-                            inputFile.setAttribute('accept', 'image/*');
-                        } else {
-                            inputFile.setAttribute('accept', '.mp4,.mov,.ogg,.qt,.webm,.mpeg,.avi,video/*');
-                        }
-                    } else {
-                        console.error('No se encontró el input file');
-                    }
-                }, 100);
-            });
-        });
-    });
-</script>
-@endpush
-
-@push('scripts')
-<!-- jQuery y Select2 desde CDN (temporal hasta resolver Vite) -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-
-<!-- Asegurarse que jQuery está disponible antes de cargar Select2 -->
-<script>
-    if (typeof jQuery === 'undefined') {
-        console.error('jQuery no está disponible! Cargando jQuery de respaldo...');
-        document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"><\/script>');
-    }
-
-    // Script para manejar el cambio de tipo de archivo
-    document.addEventListener('livewire:initialized', function() {
-        Livewire.on('tipo-changed', function(data) {
-            // Limpiamos el input file para que refleje el nuevo tipo
-            const tipoActual = data.tipo;
-            console.log('Tipo cambiado a:', tipoActual);
-
-            setTimeout(() => {
-                // Usamos el ID fijo ahora
-                const inputFile = document.getElementById('archivo-input');
-                if (inputFile) {
-                    console.log('Limpiando el input file');
-                    inputFile.value = '';
-
-                    // Actualizar el atributo accept según el tipo
-                    if (tipoActual === 'imagen') {
-                        inputFile.setAttribute('accept', 'image/*');
-                    } else {
-                        inputFile.setAttribute('accept', '.mp4,.mov,.ogg,.qt,.webm,.mpeg,.avi,video/*');
-                    }
-                } else {
-                    console.error('No se encontró el input file');
-                }
-            }, 100);
-        });
-    });
-</script>
-
-<!-- Select2 CSS y JS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-<!-- Verificar que Select2 esté disponible -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof jQuery !== 'undefined') {
-            console.log('✅ jQuery está disponible: ' + jQuery.fn.jquery);
-
-            if (typeof jQuery.fn.select2 !== 'undefined') {
-                console.log('✅ Select2 está disponible');
-            } else {
-                console.error('❌ Select2 no está disponible! Cargando Select2 de respaldo...');
-                var select2Script = document.createElement('script');
-                select2Script.src = 'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js';
-                document.head.appendChild(select2Script);
-            }
-        }
-    });
-
-    // Implementación simplificada usando hooks de Livewire 3
-    document.addEventListener("livewire:init", function() {
-        console.log('🚀 Inicializando integración Select2 con Livewire 3');
-
-        function initializeZonasSelect2() {
-            const element = $("#zonas_select");
-
-            if (!element.length) {
-                console.log('❌ Elemento #zonas_select no encontrado');
-                return;
-            }
-
-            // Destruir Select2 existente si ya está inicializado
-            if (element.hasClass('select2-hidden-accessible')) {
-                console.log('🔄 Destruyendo Select2 existente');
-                element.select2('destroy');
-            }
-
-            console.log('✅ Inicializando Select2');
-            element.select2({
-                placeholder: "Seleccione zonas...",
-                allowClear: true,
-                width: '100%'
-            }).on("change", function() {
-                const values = $(this).val() || [];
-                console.log('📤 Select2 cambió, enviando a Livewire:', values);
-
-                // Utilizar Livewire de manera segura
-                try {
-                    if (window.Livewire) {
-                        const livewireEl = element.closest('[wire\\:id]');
-                        if (livewireEl) {
-                            const wireId = livewireEl.getAttribute('wire:id');
-                            if (wireId) {
-                                const component = window.Livewire.find(wireId);
-                                if (component) {
-                                    component.set('zonas_ids', values);
-                                    console.log('✅ Valores enviados a Livewire:', values);
-                                    return;
-                                }
-                            }
-                        }
-                    }
-
-                    // Fallback para $wire o métodos directos
-                    if (typeof $wire !== 'undefined') {
-                        $wire.set('zonas_ids', values);
-                        console.log('✅ Valores enviados usando $wire:', values);
-                    } else {
-                        console.error('❌ No se pudo encontrar Livewire ni $wire');
-                    }
-                } catch (error) {
-                    console.error('❌ Error al actualizar zonas en Livewire:', error);
-                }
-            });
-
-            // Aplicar valores iniciales
-            const initialValues = element.attr('data-livewire-values');
-            if (initialValues) {
-                try {
-                    const values = JSON.parse(initialValues);
-                    if (Array.isArray(values) && values.length > 0) {
-                        console.log('📝 Aplicando valores iniciales:', values);
-                        element.val(values).trigger('change.select2');
-                    }
-                } catch (e) {
-                    console.error('❌ Error al parsear valores iniciales:', e);
-                }
-            }
-        }
-
-        // Inicializar de manera más segura
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-            setTimeout(initializeZonasSelect2, 100);
-        } else {
-            document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(initializeZonasSelect2, 100);
-            });
-        }
-
-        // Re-inicializar después de cada actualización de Livewire
-        Livewire.hook("morph", () => {
-            console.log('🔄 Hook morph - Reinicializando Select2');
-            setTimeout(initializeZonasSelect2, 100);
-        });
-
-        // También escuchar el evento específico de edición de campaña
-        Livewire.on('campanEditLoaded', (data) => {
-            console.log('🎯 Evento campanEditLoaded - Configurando para edición:', data);
-            setTimeout(() => {
-                initializeZonasSelect2();
-
-                // Aplicar valores específicos de la campaña
-                if (data && data.zonasIds && data.zonasIds.length > 0) {
-                    const element = $("#zonas_select");
-                    if (element.length) {
-                        console.log('📝 Aplicando zonas de la campaña:', data.zonasIds);
-                        element.val(data.zonasIds).trigger('change.select2');
-                    }
-                }
-            }, 200);
-        });
-    });
-</script>
-@endpush
-
-

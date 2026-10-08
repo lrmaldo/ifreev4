@@ -161,6 +161,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/campanas', function() {
             return view('campanas');
         })->name('admin.campanas.index');
+        Route::get('/campanas/crear', \App\Livewire\Admin\Campanas\Form::class)->name('admin.campanas.crear');
+        Route::get('/campanas/{campanaId}/editar', \App\Livewire\Admin\Campanas\Form::class)->whereNumber('campanaId')->name('admin.campanas.editar');
         Route::get('/zonas', function() {
             return view('zonas');
         })->name('admin.zonas.index');
