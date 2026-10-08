@@ -3,165 +3,117 @@
 namespace App\Livewire\Admin\Users;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Livewire\Attributes\Computed;
-use Livewire\Attributes\Layout;
-use Livewire\Attributes\Rule;
-use Livewire\Attributes\Title;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
 
-#[Layout('components.layouts.admin-dashboard')]
-#[Title('Administración de Usuarios')]
+/**
+ * Listado de usuarios. Crear y editar se hace en su propia página (Admin\Users\Form).
+ */
 class Index extends Component
 {
     use WithPagination;
 
-    public function mount()
-    {
-        if (!auth()->user()->hasRole('admin')) {
-            abort(403, 'No tienes permiso para acceder a esta página.');
-        }
-    }
+    #[Url(as: 'q', except: '')]
+    public string $search = '';
 
-    // Variables para el buscador
-    public $search = '';
-    public $perPage = 10;
-    public $sortField = 'name';
-    public $sortDirection = 'asc';
+    #[Url(as: 'rol', except: '')]
+    public string $filtroRol = '';
 
-    // Variables para el formulario de edición/creación
-    public $userId;
-    public $name = '';
-    public $email = '';
-    public $password = '';
-    public $cliente_id = null;
-    public $selectedRoles = [];
+    public ?int $eliminandoId = null;
 
-    // Estado del modal
-    public $showModal = false;
-    public $isEditing = false;
-    public $confirmingUserDeletion = false;
-
-    // Validación de campos (reglas aplicadas a las propiedades ya definidas)
-    public function rules()
-    {
-        $passwordRule = $this->userId ? 'nullable|min:8' : 'required|min:8';
-
-        return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $this->userId,
-            'password' => $passwordRule,
-            'cliente_id' => 'nullable|exists:clientes,id',
-            'selectedRoles' => 'array',
-        ];
-    }
-
-    // Reset paginación cuando cambia la búsqueda
-    public function updatingSearch()
+    public function updatingSearch(): void
     {
         $this->resetPage();
     }
 
-    #[Computed]
-    public function users()
+    public function updatingFiltroRol(): void
     {
-        return User::where('name', 'like', '%' . $this->search . '%')
-                    ->orWhere('email', 'like', '%' . $this->search . '%')
-                    ->orderBy($this->sortField, $this->sortDirection)
-                    ->paginate($this->perPage);
+        $this->resetPage();
     }
 
-    #[Computed]
-    public function roles()
+    public function limpiarFiltros(): void
     {
-        return Role::orderBy('name')->get();
+        $this->reset(['search', 'filtroRol']);
+        $this->resetPage();
     }
 
-    public function sortBy($field)
+    public function confirmarEliminar(int $userId): void
     {
-        if($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
-            $this->sortDirection = 'asc';
-        }
+        $this->eliminandoId = $userId;
     }
 
-    public function openModal($userId = null)
+    public function eliminar(): void
     {
-        $this->resetValidation();
-        $this->reset(['name', 'email', 'password', 'cliente_id', 'selectedRoles']);
+        $user = User::withCount('zonas')->find($this->eliminandoId);
+        $this->eliminandoId = null;
 
-        $this->isEditing = !is_null($userId);
-
-        if($this->isEditing) {
-            $user = User::findOrFail($userId);
-            $this->userId = $user->id;
-            $this->name = $user->name;
-            $this->email = $user->email;
-            $this->cliente_id = $user->cliente_id;
-            $this->selectedRoles = $user->roles()->pluck('id')->toArray();
+        if (!$user) {
+            return;
         }
 
-        $this->showModal = true;
-    }
-
-    public function save()
-    {
-        $validatedData = $this->validate();
-
-        if($this->isEditing || $this->userId) {
-            $user = User::findOrFail($this->userId);
-            $user->update([
-                'name' => $this->name,
-                'email' => $this->email,
-                'cliente_id' => $this->cliente_id,
-            ]);
-
-            if(!empty($this->password)) {
-                $user->update([
-                    'password' => Hash::make($this->password),
-                ]);
-            }
-        } else {
-            $user = User::create([
-                'name' => $this->name,
-                'email' => $this->email,
-                'cliente_id' => $this->cliente_id,
-                'password' => Hash::make($this->password),
-            ]);
+        if ($motivo = $this->motivoNoEliminar($user)) {
+            session()->flash('error', $motivo);
+            return;
         }
 
-        // Sincronizar roles
-        if (!empty($this->selectedRoles)) {
-            // Asegurarse de que estamos pasando los roles como IDs y no como nombres
-            $roles = Role::whereIn('id', $this->selectedRoles)->get();
-            $user->syncRoles($roles);
-        } else {
-            $user->syncRoles([]);
-        }
-
-        $this->showModal = false;
-        $this->dispatch('user-saved');
-    }
-
-    public function confirmUserDeletion($userId)
-    {
-        $this->confirmingUserDeletion = $userId;
-    }
-
-    public function deleteUser()
-    {
-        $user = User::findOrFail($this->confirmingUserDeletion);
+        $nombre = $user->name;
         $user->delete();
-        $this->confirmingUserDeletion = false;
-        $this->dispatch('user-deleted');
+        session()->flash('message', "Usuario \"{$nombre}\" eliminado.");
+    }
+
+    /**
+     * Las zonas tienen ON DELETE CASCADE hacia users: borrar al dueño borraría sus zonas,
+     * campos, respuestas y métricas. Por eso no se permite mientras tenga zonas.
+     */
+    public function motivoNoEliminar(User $user): ?string
+    {
+        if ($user->id === Auth::id()) {
+            return 'No puedes eliminar tu propia cuenta desde aquí.';
+        }
+
+        if ($user->zonas_count > 0) {
+            return "{$user->name} tiene {$user->zonas_count} " . ($user->zonas_count === 1 ? 'zona' : 'zonas')
+                . ' a su nombre. Asígnalas a otro usuario antes de eliminarlo.';
+        }
+
+        if ($user->hasRole('admin') && User::role('admin')->count() <= 1) {
+            return 'Es el único administrador; no se puede eliminar.';
+        }
+
+        return null;
     }
 
     public function render()
     {
-        return view('livewire.admin.users.index');
+        $roles = Role::withCount('users')->orderBy('name')->get();
+
+        // Un rol inexistente en la URL haría fallar el scope role()
+        if ($this->filtroRol !== '' && $this->filtroRol !== 'sin_rol' && !$roles->contains('name', $this->filtroRol)) {
+            $this->filtroRol = '';
+        }
+
+        $usuarios = User::query()
+            ->with(['roles', 'cliente'])
+            ->withCount('zonas')
+            ->when($this->search !== '', function ($q) {
+                $q->where(fn ($q) => $q->where('name', 'like', "%{$this->search}%")
+                    ->orWhere('email', 'like', "%{$this->search}%"));
+            })
+            ->when($this->filtroRol === 'sin_rol', fn ($q) => $q->doesntHave('roles'))
+            ->when($this->filtroRol !== '' && $this->filtroRol !== 'sin_rol', fn ($q) => $q->role($this->filtroRol))
+            ->orderBy('name')
+            ->paginate(15);
+
+        return view('livewire.admin.users.index', [
+            'usuarios' => $usuarios,
+            'roles' => $roles,
+            'total' => User::count(),
+            'sinRol' => User::doesntHave('roles')->count(),
+            'hayFiltros' => $this->search !== '' || $this->filtroRol !== '',
+            'eliminando' => $this->eliminandoId ? User::withCount('zonas')->find($this->eliminandoId) : null,
+        ]);
     }
 }

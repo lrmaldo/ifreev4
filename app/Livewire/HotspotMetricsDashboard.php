@@ -2,218 +2,166 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use Livewire\WithPagination;
 use App\Models\HotspotMetric;
 use App\Models\Zona;
+use App\Services\MetricasHotspotService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Url;
+use Livewire\Component;
+use Livewire\WithPagination;
 
+/**
+ * Página de Métricas: resumen del periodo, gráficas y lista de dispositivos.
+ * Un cliente solo ve sus propias zonas; admin y técnico ven todas.
+ */
 class HotspotMetricsDashboard extends Component
 {
     use WithPagination;
 
-    public $zona_id = '';
-    public $mac_address = '';
-    public $fecha_inicio = '';
-    public $fecha_fin = '';
-    public $order_by = 'created_at';
-    public $order_direction = 'desc';
+    public const PERIODOS = ['hoy' => 'Hoy', '7' => '7 días', '30' => '30 días', '90' => '90 días', 'rango' => 'Fechas'];
 
-    // Estadísticas
-    public $estadisticas = [];
-    public $visitasPorDia = [];
-    public $dispositivosPopulares = [];
-    public $navegadoresPopulares = [];
-    public $sistemasOperativosPopulares = [];
-    public $tiposVisuales = [];
+    #[Url(as: 'zona', except: '')]
+    public string $zona_id = '';
 
-    protected $queryString = [
-        'zona_id',
-        'mac_address',
-        'fecha_inicio',
-        'fecha_fin',
-        'page'
-    ];
+    #[Url(except: '30')]
+    public string $periodo = '30';
 
-    public function mount()
+    #[Url(except: '')]
+    public string $desde = '';
+
+    #[Url(except: '')]
+    public string $hasta = '';
+
+    #[Url(as: 'mac', except: '')]
+    public string $mac_address = '';
+
+    public string $order_by = 'updated_at';
+    public string $order_direction = 'desc';
+
+    public function mount(): void
     {
-        // Establecer fechas por defecto (últimos 30 días)
-        $this->fecha_fin = now()->addDay()->format('Y-m-d');
-        $this->fecha_inicio = now()->subDays(30)->format('Y-m-d');
-
-        $this->loadAnalytics();
-    }
-
-    public function updated($property)
-    {
-        if (in_array($property, ['zona_id', 'fecha_inicio', 'fecha_fin'])) {
-            $this->resetPage();
-            $this->loadAnalytics();
-
-            // Emitir evento para actualizar gráfico
-            $this->js('window.dispatchEvent(new CustomEvent("chartDataUpdated", { detail: ' . json_encode($this->visitasPorDia) . ' }))');
+        if (!array_key_exists($this->periodo, self::PERIODOS)) {
+            $this->periodo = '30';
         }
     }
 
-    public function loadAnalytics()
+    /** Al elegir "Fechas" se parte de los últimos 30 días; los demás periodos no usan desde/hasta. */
+    public function updatedPeriodo(): void
     {
-        $fechaInicio = $this->fecha_inicio ? Carbon::parse($this->fecha_inicio) : Carbon::now()->subDays(30);
-        $fechaFin = $this->fecha_fin ? Carbon::parse($this->fecha_fin) : Carbon::now();
-
-        $query = HotspotMetric::query()
-            ->byZona($this->zona_id)
-            ->byDateRange($fechaInicio, $fechaFin);
-
-        // Estadísticas generales
-        $totalVisitas = $query->sum('veces_entradas');
-        $dispositivosUnicos = $query->distinct('mac_address')->count();
-        $formulariosCompletados = $query->whereNotNull('formulario_id')->count();
-        $tasaConversion = $dispositivosUnicos > 0 ? round(($formulariosCompletados / $dispositivosUnicos) * 100, 2) : 0;
-
-        // Duración promedio
-        $duracionPromedio = HotspotMetric::byZona($this->zona_id)
-            ->byDateRange($fechaInicio, $fechaFin)
-            ->avg('duracion_visual');
-
-        // Clicks en botones CTA
-        $clicsBoton = HotspotMetric::byZona($this->zona_id)
-            ->byDateRange($fechaInicio, $fechaFin)
-            ->where('clic_boton', true)
-            ->count();
-
-        // Usuarios recurrentes
-        $usuariosRecurrentes = HotspotMetric::byZona($this->zona_id)
-            ->byDateRange($fechaInicio, $fechaFin)
-            ->where('veces_entradas', '>', 1)
-            ->count();
-
-        $this->estadisticas = [
-            'total_visitas' => $totalVisitas,
-            'dispositivos_unicos' => $dispositivosUnicos,
-            'formularios_completados' => $formulariosCompletados,
-            'tasa_conversion' => $tasaConversion,
-            'duracion_promedio' => round($duracionPromedio ?? 0, 2),
-            'clics_boton' => $clicsBoton,
-            'usuarios_recurrentes' => $usuariosRecurrentes
-        ];
-
-        // Visitas por día (últimos 30 días)
-        $this->visitasPorDia = HotspotMetric::selectRaw('DATE(created_at) as fecha, SUM(veces_entradas) as total')
-            ->byZona($this->zona_id)
-            ->byDateRange($fechaInicio, $fechaFin)
-            ->groupBy('fecha')
-            ->orderBy('fecha')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                return [$item->fecha => $item->total];
-            })
-            ->toArray();
-
-        // Dispositivos populares
-        $this->dispositivosPopulares = HotspotMetric::selectRaw('dispositivo, COUNT(*) as total')
-            ->byZona($this->zona_id)
-            ->byDateRange($fechaInicio, $fechaFin)
-            ->groupBy('dispositivo')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get()
-            ->toArray();
-
-        // Navegadores populares
-        $this->navegadoresPopulares = HotspotMetric::selectRaw('navegador, COUNT(*) as total')
-            ->byZona($this->zona_id)
-            ->byDateRange($fechaInicio, $fechaFin)
-            ->groupBy('navegador')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get()
-            ->toArray();
-
-        // Sistemas operativos populares
-        $this->sistemasOperativosPopulares = HotspotMetric::selectRaw('sistema_operativo, COUNT(*) as total')
-            ->byZona($this->zona_id)
-            ->byDateRange($fechaInicio, $fechaFin)
-            ->whereNotNull('sistema_operativo')
-            ->groupBy('sistema_operativo')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get()
-            ->toArray();
-
-        // Tipos visuales
-        $this->tiposVisuales = HotspotMetric::selectRaw('tipo_visual, COUNT(*) as total')
-            ->byZona($this->zona_id)
-            ->byDateRange($fechaInicio, $fechaFin)
-            ->groupBy('tipo_visual')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                return [$item->tipo_visual => $item->total];
-            })
-            ->toArray();
+        if ($this->periodo === 'rango') {
+            $this->desde = $this->desde ?: now()->subDays(29)->toDateString();
+            $this->hasta = $this->hasta ?: now()->toDateString();
+        } else {
+            $this->desde = '';
+            $this->hasta = '';
+        }
     }
 
-    public function sortBy($column)
+    public function updated($propiedad): void
     {
-        if ($this->order_by === $column) {
+        if (in_array($propiedad, ['zona_id', 'periodo', 'desde', 'hasta', 'mac_address'], true)) {
+            $this->resetPage();
+        }
+    }
+
+    public function sortBy(string $columna): void
+    {
+        if (!in_array($columna, ['updated_at', 'created_at', 'veces_entradas'], true)) {
+            return;
+        }
+
+        if ($this->order_by === $columna) {
             $this->order_direction = $this->order_direction === 'asc' ? 'desc' : 'asc';
         } else {
-            $this->order_by = $column;
-            $this->order_direction = 'asc';
+            $this->order_by = $columna;
+            $this->order_direction = 'desc';
         }
 
         $this->resetPage();
     }
 
-    public function clearFilters()
+    public function clearFilters(): void
     {
-        $this->zona_id = '';
-        $this->mac_address = '';
-        $this->fecha_inicio = now()->subDays(30)->format('Y-m-d');
-        $this->fecha_fin = now()->format('Y-m-d');
-
+        $this->reset(['zona_id', 'mac_address', 'periodo', 'desde', 'hasta']);
         $this->resetPage();
-        $this->loadAnalytics();
     }
 
-    public function exportData()
+    /**
+     * Inicio y fin del periodo elegido (el rango libre se limita a un año).
+     *
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    public function rango(): array
     {
-        $queryParams = http_build_query([
-            'zona_id' => $this->zona_id,
-            'fecha_inicio' => $this->fecha_inicio,
-            'fecha_fin' => $this->fecha_fin,
-            'mac_address' => $this->mac_address
-        ]);
+        if ($this->periodo === 'hoy') {
+            return [now()->startOfDay(), now()->endOfDay()];
+        }
 
-        return redirect()->to('/hotspot-metrics/export?' . $queryParams);
+        if ($this->periodo === 'rango') {
+            try {
+                $desde = Carbon::parse($this->desde ?: now()->subDays(29)->toDateString())->startOfDay();
+                $hasta = Carbon::parse($this->hasta ?: now()->toDateString())->endOfDay();
+            } catch (\Throwable) {
+                $desde = now()->subDays(29)->startOfDay();
+                $hasta = now()->endOfDay();
+            }
+            if ($desde->gt($hasta)) {
+                [$desde, $hasta] = [$hasta->copy()->startOfDay(), $desde->copy()->endOfDay()];
+            }
+            if ($desde->diffInDays($hasta) > 366) {
+                $desde = $hasta->copy()->subDays(365)->startOfDay();
+            }
+
+            return [$desde, $hasta];
+        }
+
+        return [now()->subDays(((int) $this->periodo) - 1)->startOfDay(), now()->endOfDay()];
     }
 
-    public function render()
+    public function render(MetricasHotspotService $servicio)
     {
-        $fechaInicio = $this->fecha_inicio ? Carbon::parse($this->fecha_inicio) : Carbon::now()->subDays(30);
-        $fechaFin = $this->fecha_fin ? Carbon::parse($this->fecha_fin) : Carbon::now();
+        $user = Auth::user();
+        $permitidas = $servicio->zonasPermitidas($user);
 
-        // Consulta de métricas con paginación
-        $metricas = HotspotMetric::with(['zona', 'formulario'])
-            ->byZona($this->zona_id)
-            ->byDateRange($fechaInicio, $fechaFin)
+        $zonas = Zona::query()
+            ->when($permitidas !== null, fn ($q) => $q->whereIn('id', $permitidas))
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
+
+        // Una zona ajena (o inexistente) en la URL no debe filtrar datos de nadie
+        if ($this->zona_id !== '' && !$zonas->contains('id', (int) $this->zona_id)) {
+            $this->zona_id = '';
+        }
+
+        $zonaIds = $this->zona_id !== '' ? [(int) $this->zona_id] : $permitidas;
+        [$desde, $hasta] = $this->rango();
+
+        $resumen = $servicio->resumen($zonaIds, $desde, $hasta);
+        $porDia = $servicio->porDia($zonaIds, $desde, $hasta);
+
+        $dispositivos = $servicio->dispositivos($zonaIds)
+            ->with('zona:id,nombre')
+            ->whereBetween('updated_at', [$desde, $hasta])
             ->byMac($this->mac_address)
             ->orderBy($this->order_by, $this->order_direction)
             ->paginate(15);
 
-        // Obtener zonas disponibles para el usuario
-        $zonas = collect();
-        if (Auth::user()->hasRole('admin')) {
-            $zonas = Zona::all();
-        } elseif (Auth::user()->hasRole('cliente')) {
-            $zonas = Auth::user()->zonas ?? collect();
-        } elseif (Auth::user()->hasRole('tecnico')) {
-            $zonas = Zona::all();
-        }
-
         return view('livewire.hotspot-metrics-dashboard', [
-            'metricas' => $metricas,
             'zonas' => $zonas,
+            'zonaActual' => $this->zona_id !== '' ? $zonas->firstWhere('id', (int) $this->zona_id) : null,
+            'desdeFecha' => $desde,
+            'hastaFecha' => $hasta,
+            'resumen' => $resumen,
+            'variacion' => $servicio->variacion($zonaIds, $desde, $hasta, $resumen),
+            'porDia' => $porDia,
+            'maxDia' => max(1, collect($porDia)->max('visitas'), collect($porDia)->max('nuevos')),
+            'plataformas' => $servicio->plataformas($zonaIds, $desde, $hasta),
+            'topDispositivos' => $servicio->top($zonaIds, $desde, $hasta, 'dispositivo'),
+            'topNavegadores' => $servicio->top($zonaIds, $desde, $hasta, 'navegador'),
+            'rankingZonas' => $this->zona_id === '' && $zonas->count() > 1 ? $servicio->rankingZonas($zonaIds, $desde, $hasta) : [],
+            'dispositivos' => $dispositivos,
+            'periodos' => self::PERIODOS,
         ]);
     }
 }

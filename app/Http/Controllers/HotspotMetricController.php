@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\HotspotMetric;
 use App\Models\MetricaDetalle;
 use App\Models\Zona;
+use App\Services\MetricasHotspotService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -140,136 +141,48 @@ class HotspotMetricController extends Controller
     }
 
     /**
-     * Obtener estadísticas para el dashboard
+     * Estadísticas en JSON (mismos cálculos que la página de Métricas), limitadas
+     * a las zonas que puede ver el usuario.
      */
-    public function analytics(Request $request)
+    public function analytics(Request $request, MetricasHotspotService $servicio)
     {
-        $zona_id = $request->zona_id;
-        $fecha_inicio = $request->fecha_inicio ? Carbon::parse($request->fecha_inicio) : Carbon::now()->subDays(30);
-        $fecha_fin = $request->fecha_fin ? Carbon::parse($request->fecha_fin) : Carbon::now();
-
-        $query = HotspotMetric::query()
-            ->byZona($zona_id)
-            ->byDateRange($fecha_inicio, $fecha_fin);
-
-        // Estadísticas generales
-        $totalVisitas = $query->sum('veces_entradas');
-        $dispositivosUnicos = $query->distinct('mac_address')->count();
-        $formulariosCompletados = $query->whereNotNull('formulario_id')->count();
-        $tasaConversion = $dispositivosUnicos > 0 ? round(($formulariosCompletados / $dispositivosUnicos) * 100, 2) : 0;
-
-        // Visitas por día (últimos 30 días)
-        $visitasPorDia = HotspotMetric::selectRaw('DATE(created_at) as fecha, SUM(veces_entradas) as total')
-            ->byZona($zona_id)
-            ->where('created_at', '>=', Carbon::now()->subDays(30))
-            ->groupBy('fecha')
-            ->orderBy('fecha')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                return [$item->fecha => $item->total];
-            });
-
-        // Dispositivos más utilizados
-        $dispositivosPopulares = HotspotMetric::selectRaw('dispositivo, COUNT(*) as total')
-            ->byZona($zona_id)
-            ->byDateRange($fecha_inicio, $fecha_fin)
-            ->groupBy('dispositivo')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
-
-        // Navegadores más utilizados
-        $navegadoresPopulares = HotspotMetric::selectRaw('navegador, COUNT(*) as total')
-            ->byZona($zona_id)
-            ->byDateRange($fecha_inicio, $fecha_fin)
-            ->groupBy('navegador')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
-
-        // Sistemas operativos más utilizados
-        $sistemasOperativosPopulares = HotspotMetric::selectRaw('sistema_operativo, COUNT(*) as total')
-            ->byZona($zona_id)
-            ->byDateRange($fecha_inicio, $fecha_fin)
-            ->whereNotNull('sistema_operativo')
-            ->groupBy('sistema_operativo')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
-
-        // Tipos de contenido visual
-        $tiposVisuales = HotspotMetric::selectRaw('tipo_visual, COUNT(*) as total')
-            ->byZona($zona_id)
-            ->byDateRange($fecha_inicio, $fecha_fin)
-            ->groupBy('tipo_visual')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                return [$item->tipo_visual => $item->total];
-            });
-
-        // Duración promedio de visualización
-        $duracionPromedio = HotspotMetric::byZona($zona_id)
-            ->byDateRange($fecha_inicio, $fecha_fin)
-            ->avg('duracion_visual');
-
-        // Clicks en botones CTA
-        $clicsBoton = HotspotMetric::byZona($zona_id)
-            ->byDateRange($fecha_inicio, $fecha_fin)
-            ->where('clic_boton', true)
-            ->count();
-
-        // Usuarios recurrentes (con más de 1 entrada)
-        $usuariosRecurrentes = HotspotMetric::byZona($zona_id)
-            ->byDateRange($fecha_inicio, $fecha_fin)
-            ->where('veces_entradas', '>', 1)
-            ->count();
+        $zonaIds = $this->zonasDeLaPeticion($request, $servicio);
+        $desde = $request->fecha_inicio ? Carbon::parse($request->fecha_inicio)->startOfDay() : now()->subDays(29)->startOfDay();
+        $hasta = $request->fecha_fin ? Carbon::parse($request->fecha_fin)->endOfDay() : now()->endOfDay();
 
         return response()->json([
-            'estadisticas_generales' => [
-                'total_visitas' => $totalVisitas,
-                'dispositivos_unicos' => $dispositivosUnicos,
-                'formularios_completados' => $formulariosCompletados,
-                'tasa_conversion' => $tasaConversion,
-                'duracion_promedio' => round($duracionPromedio ?? 0, 2),
-                'clics_boton' => $clicsBoton,
-                'usuarios_recurrentes' => $usuariosRecurrentes
-            ],
-            'visitas_por_dia' => $visitasPorDia,
-            'dispositivos_populares' => $dispositivosPopulares,
-            'navegadores_populares' => $navegadoresPopulares,
-            'sistemas_operativos_populares' => $sistemasOperativosPopulares,
-            'tipos_visuales' => $tiposVisuales,
-            'fecha_inicio' => $fecha_inicio->format('Y-m-d'),
-            'fecha_fin' => $fecha_fin->format('Y-m-d')
+            'resumen' => $servicio->resumen($zonaIds, $desde, $hasta),
+            'por_dia' => $servicio->porDia($zonaIds, $desde, $hasta),
+            'plataformas' => $servicio->plataformas($zonaIds, $desde, $hasta),
+            'dispositivos_populares' => $servicio->top($zonaIds, $desde, $hasta, 'dispositivo'),
+            'navegadores_populares' => $servicio->top($zonaIds, $desde, $hasta, 'navegador'),
+            'fecha_inicio' => $desde->toDateString(),
+            'fecha_fin' => $hasta->toDateString(),
         ]);
     }
 
     /**
-     * Obtener métricas detalladas con paginación
+     * Zonas a consultar: la pedida (si el usuario puede verla) o todas las permitidas.
+     * null = sin restricción (admin y técnico sin zona elegida).
      */
-    public function show(Request $request)
+    private function zonasDeLaPeticion(Request $request, MetricasHotspotService $servicio): ?array
     {
-        $query = HotspotMetric::with(['zona', 'formulario'])
-            ->byZona($request->zona_id)
-            ->byDateRange($request->fecha_inicio, $request->fecha_fin)
-            ->byMac($request->mac_address);
+        if ($request->filled('zona_id')) {
+            abort_unless($servicio->puedeVerZona($request->user(), $request->zona_id), 403);
 
-        // Ordenamiento
-        $orderBy = $request->get('order_by', 'created_at');
-        $orderDirection = $request->get('order_direction', 'desc');
-        $query->orderBy($orderBy, $orderDirection);
+            return [(int) $request->zona_id];
+        }
 
-        $metricas = $query->paginate(20);
-
-        return response()->json($metricas);
+        return $servicio->zonasPermitidas($request->user());
     }
 
     /**
      * Obtener detalles de una métrica específica
      */
-    public function detalles(Request $request, $id)
+    public function detalles(Request $request, $id, MetricasHotspotService $servicio)
     {
         $metrica = HotspotMetric::with(['zona', 'formulario'])->findOrFail($id);
+        abort_unless($servicio->puedeVerZona($request->user(), $metrica->zona_id), 403);
 
         // Cargamos los detalles relacionados
         $detalles = MetricaDetalle::where('metrica_id', $id)
@@ -496,13 +409,19 @@ class HotspotMetricController extends Controller
     /**
      * Exportar métricas a CSV
      */
-    public function export(Request $request)
+    public function export(Request $request, MetricasHotspotService $servicio)
     {
         Gate::authorize('gestionar metricas hotspot');
 
-        $query = HotspotMetric::with(['zona', 'formulario'])
-            ->byZona($request->zona_id)
-            ->byDateRange($request->fecha_inicio, $request->fecha_fin)
+        $zonaIds = $this->zonasDeLaPeticion($request, $servicio);
+        $desde = $request->fecha_inicio ? Carbon::parse($request->fecha_inicio)->startOfDay() : null;
+        $hasta = $request->fecha_fin ? Carbon::parse($request->fecha_fin)->endOfDay() : null;
+
+        // Mismo criterio que la tabla de Métricas: dispositivos con actividad en el periodo
+        $query = $servicio->dispositivos($zonaIds)->with(['zona', 'formulario'])
+            ->when($desde, fn ($q) => $q->where('updated_at', '>=', $desde))
+            ->when($hasta, fn ($q) => $q->where('updated_at', '<=', $hasta))
+            ->byMac($request->mac_address)
             ->orderBy('created_at', 'desc');
 
         $metricas = $query->get();
