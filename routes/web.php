@@ -152,6 +152,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/users', function() {
             return view('users');
         })->name('admin.users.index');
+        Route::get('/users/crear', \App\Livewire\Admin\Users\Form::class)->name('admin.users.crear');
+        Route::get('/users/{userId}/editar', \App\Livewire\Admin\Users\Form::class)->whereNumber('userId')->name('admin.users.editar');
         Route::get('/roles', function() {
             return view('roles');
         })->name('admin.roles.index');
