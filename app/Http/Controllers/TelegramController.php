@@ -28,8 +28,8 @@ class TelegramController extends Controller
      */
     public function __construct(Api $telegram)
     {
-        // Especificamos el bot 'ifree' que está configurado en config/telegram.php
-        $this->telegram = new Api(config('telegram.bots.ifree.token'));
+        // El SDK resuelve Api con el bot por defecto ('ifree' en config/telegram.php)
+        $this->telegram = $telegram;
     }
 
     /**
@@ -39,23 +39,22 @@ class TelegramController extends Controller
      */
     public function webhook(Request $request)
     {
-        // Registrar la solicitud para diagnóstico
-        Log::info('Webhook de Telegram recibido', [
-            'content' => $request->getContent(),
-            'headers' => $request->headers->all(),
-            'ip' => $request->ip(),
-            'timestamp' => now()->toDateTimeString(),
-        ]);
+        // Solo Telegram conoce el secreto (se le entrega con telegram:setup-webhook).
+        // Sin él, cualquiera podría mandar "mensajes" falsos al bot.
+        $secreto = (string) config('telegram.webhook_secret');
+        if ($secreto === '' || !hash_equals($secreto, (string) $request->header('X-Telegram-Bot-Api-Secret-Token'))) {
+            Log::warning('Webhook de Telegram rechazado: secreto ausente o incorrecto', ['ip' => $request->ip()]);
+
+            return response()->json(['status' => 'forbidden'], 403);
+        }
 
         try {
-            // Procesar el webhook
-            $update = $this->telegram->getWebhookUpdate();
+            $update = $request->json()->all();
 
-            // Log para ver qué recibimos
-            Log::info('Webhook procesado con éxito', [
-                'update_id' => $update['update_id'] ?? 'no disponible',
-                'tiene_mensaje' => isset($update['message']),
-                'tiene_callback_query' => isset($update['callback_query']),
+            // Sin contenido ni cabeceras: los mensajes traen datos personales
+            Log::debug('Webhook de Telegram', [
+                'update_id' => $update['update_id'] ?? null,
+                'chat_id' => $update['message']['chat']['id'] ?? $update['callback_query']['message']['chat']['id'] ?? null,
             ]);
 
             // Si es un mensaje
@@ -349,15 +348,15 @@ class TelegramController extends Controller
 Este bot te notificará sobre eventos importantes del sistema de hotspots y te proporciona estadísticas en tiempo real.
 
 📋 <b>Comandos disponibles:</b>
-/zonas - Ver zonas disponibles
-/registrar [zona_id] - Asociar chat con una zona
+/zonas - Ver las zonas de este chat
+/registrar CODIGO - Ligar este chat a una zona
 /estadisticas - Ver estadísticas
 /estado - Ver estado del sistema
 /ayuda - Ver todos los comandos disponibles
 
 🚀 <b>¿Cómo empezar?</b>
-1. Usa /zonas para ver las zonas disponibles
-2. Usa /registrar [ID] para suscribirte a una zona
+1. Pide un código de vinculación en el panel de i-Free
+2. Envía /registrar CODIGO
 3. ¡Recibe notificaciones automáticas!
 
 💡 Usa /ayuda para ver todos los comandos disponibles
@@ -382,201 +381,88 @@ HTML;
     }
 
     /**
-     * Maneja el comando /zonas
-     *
-     * @param  int|string  $chatId
-     * @return \Illuminate\Http\Response
+     * /zonas: las zonas ligadas a ESTE chat. Nunca la lista completa del sistema.
      */
     protected function handleZonasCommand($chatId)
     {
         try {
-            $zonas = Zona::get();
+            $chat = TelegramChat::where('chat_id', $chatId)->first();
+            $zonas = $chat ? $chat->zonas()->orderBy('nombre')->get() : collect();
 
-            if ($zonas->isEmpty()) {
-                $mensaje = '⚠️ No hay zonas disponibles en este momento.';
-                $this->telegram->sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => $mensaje,
-                ]);
-
-                return response()->json(['status' => 'success']);
-            }
-
-            $mensaje = "<b>📍 Zonas disponibles:</b>\n\n";
-
-            // Crear botones inline para cada zona
-            $keyboard = [];
-            $row = [];
-            $count = 0;
-
-            foreach ($zonas as $zona) {
-                // Agregar a la lista
-                $mensaje .= "- <b>ID {$zona->id}:</b> {$zona->nombre}\n";
-
-                // Agregar botón
-                $row[] = [
-                    'text' => $zona->nombre,
-                    'callback_data' => "zona:{$zona->id}",
-                ];
-
-                $count++;
-
-                // Crear nueva fila cada 2 botones
-                if ($count % 2 == 0 || $count == $zonas->count()) {
-                    $keyboard[] = $row;
-                    $row = [];
-                }
-            }
-
-            $mensaje .= "\nPara registrar una zona, usa el comando /registrar [ID] o selecciona un botón";
+            $mensaje = $zonas->isEmpty()
+                ? "Este chat todavía no está ligado a ninguna zona.\n\nPide un código de vinculación en el panel de i-Free y envía <code>/registrar CODIGO</code>."
+                : "<b>📍 Zonas de este chat:</b>\n\n" . $zonas->map(fn ($z) => '- <b>ID ' . $z->id . ':</b> ' . e($z->nombre))->implode("\n");
 
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => $mensaje,
                 'parse_mode' => 'HTML',
-                'reply_markup' => json_encode([
-                    'inline_keyboard' => $keyboard,
-                ]),
             ]);
 
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
-            Log::error('Error enviando mensaje de zonas', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Error enviando mensaje de zonas', ['error' => $e->getMessage()]);
 
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            return response()->json(['status' => 'error'], 500);
         }
     }
 
     /**
-     * Maneja el comando /registrar
-     *
-     * @param  int|string  $chatId
-     * @return \Illuminate\Http\Response
+     * /registrar CODIGO: liga el chat a la zona del código que generó el panel.
      */
     protected function handleRegistrarCommand($chatId, array $params)
     {
         try {
-            if (empty($params)) {
-                $mensaje = '⚠️ Por favor especifica el ID de la zona: /registrar [ID]';
+            $codigo = implode('', $params);
+
+            if ($codigo === '' || ctype_digit($codigo)) {
+                // Antes era "/registrar [ID]"; ahora se pide un código que genera el panel
                 $this->telegram->sendMessage([
                     'chat_id' => $chatId,
-                    'text' => $mensaje,
+                    'text' => "🔐 Para ligar este chat a una zona necesitas un <b>código de vinculación</b>.\n\n"
+                        . "Pídelo al administrador de i-Free (panel → Zonas → menú ⋯ → Vincular Telegram) y envía:\n"
+                        . '<code>/registrar CODIGO</code>',
+                    'parse_mode' => 'HTML',
                 ]);
 
                 return response()->json(['status' => 'success']);
             }
 
-            $zonaId = intval($params[0]);
-
-            return $this->registrarZona($chatId, $zonaId);
-        } catch (\Exception $e) {
-            Log::error('Error procesando comando registrar', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Registra una zona para un chat
-     *
-     * @param  int|string  $chatId
-     * @return \Illuminate\Http\Response
-     */
-    protected function registrarZona($chatId, int $zonaId)
-    {
-        try {
-            // Buscar la zona
-            $zona = Zona::find($zonaId);
-
-            if (! $zona) {
-                $mensaje = "⚠️ Zona con ID {$zonaId} no encontrada";
-                $this->telegram->sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => $mensaje,
-                ]);
-
-                return response()->json(['status' => 'success']);
-            }
-
-            // Buscar el chat
-            $chat = TelegramChat::where('chat_id', $chatId)->first();
-
-            if (! $chat) {
-                Log::error('Chat no encontrado al registrar zona', [
-                    'chat_id' => $chatId,
-                    'zona_id' => $zonaId,
-                ]);
-
-                $mensaje = '⚠️ Error: Chat no encontrado en el sistema';
-                $this->telegram->sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => $mensaje,
-                ]);
-
-                return response()->json(['status' => 'error', 'message' => 'Chat no encontrado'], 400);
-            }
-
-            // Verificar si ya está asociado
-            if ($chat->zonas()->where('zona_id', $zonaId)->exists()) {
-                $mensaje = "ℹ️ Este chat ya está asociado con la zona {$zona->nombre}";
-            } else {
-                // Asociar la zona al chat
-                $chat->zonas()->attach($zonaId);
-                $mensaje = "✅ Chat asociado correctamente con la zona <b>{$zona->nombre}</b>";
-            }
+            $chat = TelegramChat::where('chat_id', $chatId)->firstOrFail();
+            $resultado = app(\App\Services\TelegramVinculoService::class)->vincular($chat, $codigo);
 
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
-                'text' => $mensaje,
+                'text' => $resultado instanceof Zona
+                    ? '✅ Chat ligado a la zona <b>' . e($resultado->nombre) . '</b>. Aquí llegarán sus avisos.'
+                    : $resultado,
                 'parse_mode' => 'HTML',
             ]);
 
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
-            Log::error('Error registrando zona', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'chat_id' => $chatId,
-                'zona_id' => $zonaId,
-            ]);
+            Log::error('Error procesando comando registrar', ['error' => $e->getMessage()]);
 
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            return response()->json(['status' => 'error'], 500);
         }
     }
 
     /**
-     * Maneja el callback query para zonas
-     *
-     * @param  int|string  $chatId
-     * @param  string  $zonaId
-     * @return \Illuminate\Http\Response
+     * Botones "zona:ID" de mensajes viejos de /zonas: ya no ligan el chat (se usa un código).
      */
     protected function handleZonaCallback($chatId, $zonaId, array $callbackQuery)
     {
         try {
-            // Responder al callback query
             $this->telegram->answerCallbackQuery([
                 'callback_query_id' => $callbackQuery['id'],
-                'text' => "Procesando zona {$zonaId}...",
+                'text' => 'Para ligar una zona usa /registrar CODIGO con el código del panel.',
+                'show_alert' => true,
             ]);
-
-            // Registrar la zona
-            return $this->registrarZona($chatId, intval($zonaId));
         } catch (\Exception $e) {
-            Log::error('Error procesando callback de zona', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'zona_id' => $zonaId,
-            ]);
-
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            Log::error('Error respondiendo callback de zona', ['error' => $e->getMessage()]);
         }
+
+        return response()->json(['status' => 'success']);
     }
 
     /**
@@ -596,9 +482,9 @@ Este bot te permite recibir notificaciones sobre eventos importantes del sistema
 
 /start - Inicia la conversación con el bot y muestra el mensaje de bienvenida
 
-/zonas - Muestra la lista de zonas disponibles para suscribirse
+/zonas - Muestra las zonas ligadas a este chat
 
-/registrar [ID] - Asocia este chat con una zona específica. Ej: /registrar 1
+/registrar CODIGO - Liga este chat a una zona con el código del panel
 
 /ayuda - Muestra este mensaje de ayuda
 
@@ -661,11 +547,11 @@ Este bot te permite recibir notificaciones sobre eventos importantes del sistema
 <b>🎯 MODO DE USO RÁPIDO:</b>
 
 1️⃣ Usa /zonas para ver las zonas disponibles
-2️⃣ Usa /registrar [ID] para asociar el chat con una zona
+2️⃣ Pide un código en el panel y envía /registrar CODIGO
 3️⃣ ¡Listo! Recibirás notificaciones automáticas
 
 <b>💡 EJEMPLOS:</b>
-• /registrar 1
+• /registrar K7QF-2MXP
 • /estadisticas
 • /dispositivos
 • /reporte
@@ -709,8 +595,8 @@ HTML;
 No reconozco este comando, pero puedo ayudarte con:
 
 <b>📋 COMANDOS BÁSICOS:</b>
-/zonas - Ver zonas disponibles
-/registrar [zona_id] - Suscribirse a una zona
+/zonas - Ver las zonas de este chat
+/registrar CODIGO - Ligar este chat a una zona
 /estado - Ver estado del sistema
 
 <b>📊 ESTADÍSTICAS:</b>
@@ -767,7 +653,7 @@ HTML;
 Recibí tu mensaje, pero espero <b>comandos</b> del bot.
 
 <b>📋 COMANDOS POPULARES:</b>
-/zonas - Ver zonas disponibles
+/zonas - Ver las zonas de este chat
 /estadisticas - Ver estadísticas
 /estado - Ver estado del sistema
 /ayuda - Ver todos los comandos
@@ -814,7 +700,7 @@ HTML;
             $zonas = $chat->zonas()->get();
 
             if ($zonas->isEmpty()) {
-                $mensaje = '⚠️ No tienes zonas suscritas. Usa /registrar [ID] para suscribirte';
+                $mensaje = '⚠️ No tienes zonas suscritas. Pide un código en el panel y usa /registrar CODIGO';
                 $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
 
                 return response()->json(['status' => 'success']);
@@ -949,7 +835,7 @@ HTML;
                 $mensaje .= 'Sin conexiones registradas';
             } else {
                 foreach ($dispositivos as $idx => $disp) {
-                    $count = \App\Models\HotspotMetric::where('dispositivo', $disp->dispositivo)->count();
+                    $count = \App\Models\HotspotMetric::whereIn('zona_id', $zonaIds)->where('dispositivo', $disp->dispositivo)->count();
                     $mensaje .= ''.($idx + 1).". {$disp->dispositivo} ({$count} conexiones)\n";
                 }
             }
@@ -1008,7 +894,7 @@ HTML;
                 $mensaje .= 'Sin datos disponibles';
             } else {
                 foreach ($navegadores as $idx => $nav) {
-                    $count = \App\Models\HotspotMetric::where('navegador', $nav->navegador)->count();
+                    $count = \App\Models\HotspotMetric::whereIn('zona_id', $zonaIds)->where('navegador', $nav->navegador)->count();
                     $mensaje .= ''.($idx + 1).". {$nav->navegador} ({$count})\n";
                 }
             }
@@ -1157,16 +1043,13 @@ HTML;
                 return response()->json(['status' => 'success']);
             }
 
-            $totalZonas = Zona::count();
+            // Solo datos de las zonas de este chat: nada del resto del sistema
             $zonasUsuario = $chat->zonas()->count();
-            $totalMetricas = \App\Models\HotspotMetric::count();
-            $totalChats = TelegramChat::where('activo', true)->count();
+            $totalMetricas = \App\Models\HotspotMetric::whereIn('zona_id', $chat->zonas()->pluck('zonas.id'))->count();
 
-            $mensaje = "<b>🟢 Estado del Sistema:</b>\n\n";
-            $mensaje .= "Zonas totales: {$totalZonas}\n";
+            $mensaje = "<b>🟢 Estado del bot:</b> en línea\n\n";
             $mensaje .= "Tus zonas: {$zonasUsuario}\n";
-            $mensaje .= "Conexiones totales: {$totalMetricas}\n";
-            $mensaje .= "Chats activos: {$totalChats}\n";
+            $mensaje .= "Conexiones en tus zonas: {$totalMetricas}\n";
             $mensaje .= "\n<b>Tu chat:</b> {$chat->nombre}\n";
             $mensaje .= 'Activo: '.($chat->activo ? '✅' : '❌')."\n";
 
@@ -1474,10 +1357,11 @@ HTML;
             }
 
             $zonaId = intval($params[0]);
-            $zona = Zona::find($zonaId);
+            // Solo zonas ligadas a este chat
+            $zona = TelegramChat::where('chat_id', $chatId)->first()?->zonas()->where('zonas.id', $zonaId)->first();
 
             if (! $zona) {
-                $mensaje = "⚠️ Zona con ID {$zonaId} no encontrada";
+                $mensaje = "⚠️ La zona {$zonaId} no está ligada a este chat";
                 $this->telegram->sendMessage(['chat_id' => $chatId, 'text' => $mensaje]);
 
                 return response()->json(['status' => 'success']);
