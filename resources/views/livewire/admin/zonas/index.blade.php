@@ -183,6 +183,32 @@
     @endif
 
     {{-- Instrucciones de instalación en el MikroTik --}}
+    @if ($vinculoTelegram)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="titulo-telegram" wire:keydown.escape.window="cerrarVinculoTelegram">
+            <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-zinc-800">
+                <h3 id="titulo-telegram" class="text-lg font-semibold text-zinc-900 dark:text-white">Vincular Telegram · {{ $vinculoTelegram['zona'] }}</h3>
+                <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">En el chat o grupo que recibirá los avisos, envía al bot de i-Free:</p>
+                <div class="mt-4 flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900" x-data="{ copiado: false }">
+                    <code class="select-all font-mono text-lg font-semibold tracking-wider text-zinc-900 dark:text-white">/registrar {{ $vinculoTelegram['codigo'] }}</code>
+                    <button type="button" class="shrink-0 rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 shadow-none hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200"
+                        x-on:click="navigator.clipboard.writeText(@js('/registrar ' . $vinculoTelegram['codigo'])); copiado = true; setTimeout(() => copiado = false, 2000)"
+                        x-text="copiado ? 'Copiado' : 'Copiar'"></button>
+                </div>
+                <ul class="mt-4 list-disc space-y-1 pl-5 text-sm text-zinc-600 dark:text-zinc-300">
+                    <li>Sirve una sola vez y vence en {{ $vinculoTelegram['minutos'] }} minutos.</li>
+                    <li>En un grupo, primero agrega al bot al grupo.</li>
+                    <li>Compártelo solo con quien deba recibir los registros de esta zona.</li>
+                </ul>
+                @if (!empty($vinculoTelegram['chats']))
+                    <p class="mt-4 text-sm text-zinc-500 dark:text-zinc-400">Ya ligados: {{ implode(', ', $vinculoTelegram['chats']) }}</p>
+                @endif
+                <div class="mt-6 flex justify-end">
+                    <button type="button" wire:click="cerrarVinculoTelegram" class="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-none hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200">Listo</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if ($showInstructionsModal && $activeZonaForInstructions)
         @php $zi = $activeZonaForInstructions; @endphp
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="titulo-instrucciones">

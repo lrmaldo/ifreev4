@@ -21,6 +21,9 @@ class Index extends Component
     public $showInstructionsModal = false;
     public $activeZonaForInstructions = null;
 
+    /** Código de vinculación de Telegram recién generado: [zona => nombre, codigo, expira] */
+    public ?array $vinculoTelegram = null;
+
     public function render()
     {
         $user = Auth::user();
@@ -62,6 +65,30 @@ class Index extends Component
         $zona->forceFill(['pantalla_token' => \Illuminate\Support\Str::random(48)])->save();
 
         session()->flash('message', 'Link de la pantalla en vivo: ' . route('evento.pantalla', ['token' => $zona->pantalla_token]));
+    }
+
+    /**
+     * Código de un solo uso para ligar un chat de Telegram a la zona (/registrar CODIGO).
+     */
+    public function generarCodigoTelegram($zonaId): void
+    {
+        $zona = Zona::findOrFail($zonaId);
+
+        if (!Auth::user()->hasRole('admin') && (int) $zona->user_id !== (int) Auth::id()) {
+            abort(403);
+        }
+
+        $this->vinculoTelegram = [
+            'zona' => $zona->nombre,
+            'codigo' => app(\App\Services\TelegramVinculoService::class)->generarCodigo($zona),
+            'minutos' => \App\Services\TelegramVinculoService::MINUTOS_VIGENCIA,
+            'chats' => $zona->telegramChats()->pluck('nombre')->all(),
+        ];
+    }
+
+    public function cerrarVinculoTelegram(): void
+    {
+        $this->vinculoTelegram = null;
     }
 
     public function confirmZonaDeletion($zonaId)
@@ -121,50 +148,18 @@ class Index extends Component
 
         // Si es el archivo login.html, personalizar con el ID de la zona (real o personalizado)
         if ($fileType === 'login') {
-            $content = file_get_contents($filePath);
-
             // Usamos el ID personalizado si existe, si no, usamos el ID real
             $zonaId = $zona->login_form_id; // Usa el accessor ya definido en el modelo
 
-            // Para el archivo de referencia, necesitamos crear un formulario que apunte a nuestra URL
-            $html = <<<HTML
-<html>
-    <head> <title>Redirecting...</title></head>
-        <body>
-            $(if chap-id)
-                <noscript>
-                <center><b>JavaScript required. Enable JavaScript to continue.</b></center>
-                </noscript>
-            $(endif)
-        <center>Si no se redirecciona en unos segundos haga clic en 'continue'<br>
-            <form name="redirect" action="https://v3.i-free.com.mx/login_formulario/{$zonaId}" method="post">
-                <input type="hidden" name="mac" value="$(mac)">
-                <input type="hidden" name="ip" value="$(ip)">
-                <input type="hidden" name="username" value="$(username)">
-                <input type="hidden" name="link-login" value="$(link-login)">
-                <input type="hidden" name="link-orig" value="$(link-orig)">
-                <input type="hidden" name="error" value="$(error)">
-                <input type="hidden" name="chap-id" value="$(chap-id)">
-                <input type="hidden" name="chap-challenge" value="$(chap-challenge)">
-                <input type="hidden" name="link-login-only" value="$(link-login-only)">
-                <input type="hidden" name="link-orig-esc" value="$(link-orig-esc)">
-                <input type="hidden" name="mac-esc" value="$(mac-esc)">
-                <input type="submit" value="continue">
-            </form>
-        <script language="JavaScript">
-        <!--
-            document.redirect.submit();
-            //-->
-        </script></center>
-        </body>
-    </html>
-HTML;
+            // login.html con respaldo: si el servidor no responde, conecta directo (ver la plantilla)
+            $html = view('mikrotik.login', [
+                'zonaId' => $zonaId,
+                'portalUrl' => config('ifree.portal_url'),
+                'timeout' => max(2, (int) config('ifree.respaldo_timeout')),
+                'trial' => $zona->tipo_autenticacion_mikrotik === 'sin_autenticacion',
+            ])->render();
 
-            // Guardar el contenido en un archivo temporal y devolverlo como descarga
-            $tempFilePath = sys_get_temp_dir() . '/' . $fileName;
-            file_put_contents($tempFilePath, $html);
-
-            return response()->download($tempFilePath, $fileName)->deleteFileAfterSend(true);
+            return response()->streamDownload(fn () => print($html), $fileName, ['Content-Type' => 'text/html; charset=UTF-8']);
         }
 
         // Si es otro archivo (como alogin.html), se devuelve sin modificaciones

@@ -30,6 +30,12 @@ return [
     |                       Acme\Project\Commands\BotFather\ByeCommand::class,
     |             ]
     */
+    /*
+    | Secreto que Telegram manda en cada webhook (cabecera X-Telegram-Bot-Api-Secret-Token).
+    | Sin él, /telegram/webhook rechaza todo. Se registra con: php artisan telegram:setup-webhook
+    */
+    'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET', ''),
+
     'bots' => [
         'ifree' => [
             'token' => env('TELEGRAM_BOT_TOKEN', 'YOUR-BOT-TOKEN'),

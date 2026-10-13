@@ -11,3 +11,6 @@ Artisan::command('inspire', function () {
 // Resúmenes de Telegram para zonas en modo resumen (cada zona define su intervalo).
 // Requiere en el servidor: * * * * * php artisan schedule:run
 Schedule::command('telegram:resumen-zonas')->everyMinute()->withoutOverlapping();
+
+// Alertas por Telegram durante eventos: portal caído o lento, errores, zonas sin visitas o sin registros
+Schedule::command('evento:vigilar')->everyMinute()->withoutOverlapping();

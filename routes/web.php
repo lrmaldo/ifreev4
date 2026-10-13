@@ -28,6 +28,11 @@ use App\Http\Controllers\TelegramController;
             ->withoutMiddleware(['web'])
             ->name('cliente.zona.preview.conectado');
 
+// El login.html del MikroTik pregunta aquí si el servidor responde antes de mandar al portal
+Route::get('/portal/ping', \App\Http\Controllers\PortalPingController::class)
+    ->withoutMiddleware(['web'])
+    ->name('portal.ping');
+
 // Ruta para manejar las solicitudes de login del Mikrotik
 Route::post('/login_formulario/{id}', [ZonaLoginController::class, 'handle'])
     ->name('zona.login.mikrotik')
@@ -332,7 +337,7 @@ Route::post('/telegram/webhook', [TelegramController::class, 'webhook'])
 
 Route::post('/telegram/enviar-notificacion', [TelegramController::class, 'enviarNotificacion'])
     ->name('telegram.notificacion')
-    ->middleware(['auth:sanctum']);
+    ->middleware(['auth', 'role:admin']);
 
 // Ruta pública para la guía de anuncios (sin autenticación)
 Route::view('/guia-anuncios', 'guia-anuncios')->name('guia.anuncios');

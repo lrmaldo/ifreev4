@@ -31,7 +31,14 @@ class SetupTelegramWebhook extends Command
         }
 
         // Obtener URL del webhook
-        $webhookUrl = $this->option('url') ?: $this->ask('Ingresa la URL del webhook (ej: https://tudominio.com/telegram/webhook)');
+        $webhookUrl = $this->option('url') ?: config('telegram.bots.ifree.webhook_url');
+
+        // Telegram lo manda en cada webhook (X-Telegram-Bot-Api-Secret-Token) y el servidor lo exige
+        $secreto = (string) config('telegram.webhook_secret');
+        if (!preg_match('/^[A-Za-z0-9_-]{16,256}$/', $secreto)) {
+            $this->error('❌ Define TELEGRAM_WEBHOOK_SECRET en el .env (16 a 256 caracteres: letras, números, _ o -) y ejecuta php artisan optimize.');
+            return 1;
+        }
 
         if (!$webhookUrl) {
             $this->error('❌ URL del webhook es requerida');
@@ -44,8 +51,9 @@ class SetupTelegramWebhook extends Command
             // Configurar el webhook
             $response = Http::post("https://api.telegram.org/bot{$token}/setWebhook", [
                 'url' => $webhookUrl,
-                'allowed_updates' => ['message', 'edited_message', 'callback_query'],
-                'drop_pending_updates' => true
+                'allowed_updates' => ['message', 'callback_query'],
+                'drop_pending_updates' => true,
+                'secret_token' => $secreto,
             ]);
 
             $result = $response->json();
@@ -87,11 +95,11 @@ class SetupTelegramWebhook extends Command
             ],
             [
                 'command' => 'zonas',
-                'description' => 'Listar zonas disponibles del sistema'
+                'description' => 'Ver las zonas ligadas a este chat'
             ],
             [
                 'command' => 'registrar',
-                'description' => 'Asociar chat con una zona específica'
+                'description' => 'Ligar este chat a una zona con el código del panel'
             ],
             [
                 'command' => 'ayuda',

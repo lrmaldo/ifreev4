@@ -20,5 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Cuenta errores por minuto para las alertas del evento (evento:vigilar)
+        $exceptions->report(function (\Throwable $e) {
+            \App\Services\AlertasEventoService::contarError();
+        });
     })->create();

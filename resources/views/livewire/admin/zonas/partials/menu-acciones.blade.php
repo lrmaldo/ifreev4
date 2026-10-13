@@ -29,6 +29,10 @@
             @endif
         </flux:menu.group>
 
+        <flux:menu.group heading="Telegram">
+            <flux:menu.item icon="chat-bubble-left-right" wire:click="generarCodigoTelegram({{ $zona->id }})">Vincular Telegram</flux:menu.item>
+        </flux:menu.group>
+
         <flux:menu.group heading="MikroTik">
             <flux:menu.item icon="arrow-down-tray" :href="route('admin.zonas.download', ['zonaId' => $zona->id, 'fileType' => 'login'])">Descargar login.html</flux:menu.item>
             <flux:menu.item icon="arrow-down-tray" :href="route('admin.zonas.download', ['zonaId' => $zona->id, 'fileType' => 'alogin'])">Descargar alogin.html</flux:menu.item>
