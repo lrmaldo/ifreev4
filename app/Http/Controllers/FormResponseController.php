@@ -35,6 +35,8 @@ class FormResponseController extends Controller
                 'respuestas' => $request->respuestas
             ]);
 
+            \Illuminate\Support\defer(fn () => app(\App\Services\AvisoRegistroTelegram::class)->avisar($response));
+
             return response()->json([
                 'success' => true,
                 'message' => 'Respuesta guardada correctamente',

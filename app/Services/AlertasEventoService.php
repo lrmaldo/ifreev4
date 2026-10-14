@@ -22,6 +22,7 @@ class AlertasEventoService
     private const CLAVE_ERRORES = 'ifree:errores:';
     private const CLAVE_ACTIVA = 'ifree:alerta-activa:';
     private const CLAVE_RECORDADA = 'ifree:alerta-recordada:';
+    private const CLAVE_SEGUIDAS = 'ifree:alerta-seguidas:';
 
     /**
      * Lo llama el manejador de excepciones: cuenta errores por minuto.
@@ -55,8 +56,9 @@ class AlertasEventoService
         }
 
         $mensajes = [];
-        foreach ($estados as [$clave, $problema, $resuelto]) {
-            if ($mensaje = $this->transicion($clave, $problema, $resuelto)) {
+        foreach ($estados as $estado) {
+            [$clave, $problema, $resuelto] = $estado;
+            if ($mensaje = $this->transicion($clave, $problema, $resuelto, $estado[3] ?? 1)) {
                 $mensajes[] = $mensaje;
             }
         }
@@ -104,10 +106,11 @@ class AlertasEventoService
         }
 
         return [
-            ['portal-caido', $caido ? "🔴 <b>El portal no responde</b>\n{$url} {$caido}.\nLos login.html nuevos conectan directo con el trial, pero no se registran visitas ni registros." : null,
-                "✅ <b>El portal volvió a responder</b>"],
-            ['portal-lento', !$caido && $ms > $lento ? "🟠 <b>El portal está lento</b>\nTardó {$ms} ms en responder (límite {$lento} ms)." : null,
-                "✅ <b>El portal ya responde rápido</b>" . ($ms ? " ({$ms} ms)" : '')],
+            // Dos revisiones seguidas (~2 min): un tropiezo de un minuto (deploy, reinicio de PHP) no alerta
+            ['portal-caido', $caido ? "🔴 <b>El servidor de i-Free no responde</b> (todas las zonas)\n{$url} {$caido}.\nLos MikroTik con el login.html nuevo conectan directo con el trial: hay internet, pero no se cuentan visitas ni registros." : null,
+                "✅ <b>El servidor de i-Free volvió a responder</b> (todas las zonas)", 2],
+            ['portal-lento', !$caido && $ms > $lento ? "🟠 <b>El servidor de i-Free está lento</b> (todas las zonas)\nTardó {$ms} ms en responder (límite {$lento} ms)." : null,
+                "✅ <b>El servidor de i-Free ya responde rápido</b>" . ($ms ? " ({$ms} ms)" : ''), 2],
         ];
     }
 
@@ -172,12 +175,21 @@ class AlertasEventoService
      * Decide si hay que avisar: al aparecer el problema, como recordatorio si sigue,
      * o cuando se resuelve.
      */
-    private function transicion(string $clave, ?string $problema, string $resuelto): ?string
+    private function transicion(string $clave, ?string $problema, string $resuelto, int $seguidas = 1): ?string
     {
-        $activa = Cache::has(self::CLAVE_ACTIVA . $clave);
+        $activa = Cache::get(self::CLAVE_ACTIVA . $clave);
 
         if ($problema) {
-            Cache::forever(self::CLAVE_ACTIVA . $clave, now()->toIso8601String());
+            // Algunos problemas deben repetirse N revisiones seguidas antes de avisar
+            Cache::add(self::CLAVE_SEGUIDAS . $clave, 0, now()->addMinutes(30));
+            if (Cache::increment(self::CLAVE_SEGUIDAS . $clave) < $seguidas) {
+                return null;
+            }
+
+            if (!$activa) {
+                // La hora de inicio no se pisa: con ella se calcula cuánto duró
+                Cache::forever(self::CLAVE_ACTIVA . $clave, now()->toIso8601String());
+            }
             $recordar = now()->addMinutes((int) config('ifree.alertas.recordar_min'));
 
             if (!$activa) {
@@ -189,11 +201,14 @@ class AlertasEventoService
             return Cache::add(self::CLAVE_RECORDADA . $clave, true, $recordar) ? $problema . "\n<i>(sigue pasando)</i>" : null;
         }
 
+        Cache::forget(self::CLAVE_SEGUIDAS . $clave);
+
         if ($activa) {
             Cache::forget(self::CLAVE_ACTIVA . $clave);
             Cache::forget(self::CLAVE_RECORDADA . $clave);
+            $minutos = max(1, (int) round(\Carbon\Carbon::parse($activa)->diffInMinutes(now())));
 
-            return $resuelto;
+            return $resuelto . "\nDuró unos {$minutos} min.";
         }
 
         return null;

@@ -330,6 +330,9 @@ class ZonaLoginController extends Controller
                     'acepto_privacidad_at' => now(),
                 ]);
 
+                // Aviso a Telegram después de responder al celular (no lo hace esperar)
+                \Illuminate\Support\defer(fn () => app(\App\Services\AvisoRegistroTelegram::class)->avisar($formResponse));
+
                 // Actualizar/crear métrica con la referencia al formulario
                 $metricaData = [
                     'zona_id' => $zona->id,

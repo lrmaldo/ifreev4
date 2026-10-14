@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Events\HotspotMetricCreated;
 
 class HotspotMetric extends Model
 {
@@ -329,16 +328,5 @@ class HotspotMetric extends Model
             // Crear nueva métrica
             return static::create($data);
         }
-    }
-
-    /**
-     * The "booted" method of the model.
-     */
-    protected static function booted(): void
-    {
-        static::created(function (HotspotMetric $hotspotMetric) {
-            // Disparar evento cuando se crea una nueva métrica
-            HotspotMetricCreated::dispatch($hotspotMetric);
-        });
     }
 }

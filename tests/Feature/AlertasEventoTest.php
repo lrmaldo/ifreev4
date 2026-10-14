@@ -55,9 +55,18 @@ class AlertasEventoTest extends TestCase
     {
         $this->estadoPortal = 503;
 
+        // Un solo minuto caído (deploy, reinicio) no alerta
+        $this->assertSame([], $this->servicio()->revisar());
+        $this->estadoPortal = 200;
+        $this->assertSame([], $this->servicio()->revisar());
+
+        $this->estadoPortal = 503;
+        $this->assertSame([], $this->servicio()->revisar());
+        $this->travel(1)->minutes();
         $primera = $this->servicio()->revisar();
         $this->assertCount(1, $primera);
-        $this->assertStringContainsString('El portal no responde', $primera[0]);
+        $this->assertStringContainsString('El servidor de i-Free no responde', $primera[0]);
+        $this->assertStringContainsString('todas las zonas', $primera[0]);
         $this->assertStringContainsString('HTTP 503', $primera[0]);
 
         // El minuto siguiente no repite (recuerda cada 15 min)
@@ -66,8 +75,12 @@ class AlertasEventoTest extends TestCase
         $this->travel(16)->minutes();
         $this->assertStringContainsString('sigue pasando', $this->servicio()->revisar()[0]);
 
+        $this->travel(4)->minutes();
         $this->estadoPortal = 200;
-        $this->assertSame(['✅ <b>El portal volvió a responder</b>'], $this->servicio()->revisar());
+        $resuelto = $this->servicio()->revisar();
+        $this->assertCount(1, $resuelto);
+        $this->assertStringContainsString('volvió a responder', $resuelto[0]);
+        $this->assertStringContainsString('Duró unos 20 min.', $resuelto[0]);
         $this->assertSame([], $this->servicio()->revisar());
     }
 
