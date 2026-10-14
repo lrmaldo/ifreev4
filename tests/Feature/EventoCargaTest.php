@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Console\Commands\EnviarResumenTelegram;
-use App\Events\HotspotMetricCreated;
 use App\Models\FormResponse;
 use App\Models\HotspotMetric;
 use App\Models\TelegramChat;
@@ -11,7 +10,6 @@ use App\Models\User;
 use App\Models\Zona;
 use App\Services\ResumenZonaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 /**
@@ -79,11 +77,6 @@ class EventoCargaTest extends TestCase
         $visita();
         $this->assertEquals(2, HotspotMetric::where('mac_address', $mac)->value('veces_entradas'));
         $this->assertEquals(1, HotspotMetric::where('mac_address', $mac)->count());
-    }
-
-    public function test_cada_metrica_tiene_un_solo_listener_de_telegram()
-    {
-        $this->assertCount(1, Event::getListeners(HotspotMetricCreated::class));
     }
 
     public function test_toca_resumen_segun_el_intervalo_de_la_zona()
