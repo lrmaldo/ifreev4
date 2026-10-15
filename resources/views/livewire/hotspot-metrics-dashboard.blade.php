@@ -263,7 +263,7 @@
                                     <td class="whitespace-nowrap px-5 py-3 text-zinc-500 dark:text-zinc-400">{{ $metrica->created_at?->format('d/m/Y H:i') }}</td>
                                     <td class="px-5 py-3">
                                         @if ($metrica->formulario_id)
-                                            <span class="inline-flex items-center rounded-md bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-500/10 dark:text-green-300">Registrado</span>
+                                            <button type="button" wire:click="verRegistro({{ $metrica->formulario_id }})" class="inline-flex items-center gap-1 rounded-md border-0 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 shadow-none ring-1 ring-inset ring-green-600/20 hover:bg-green-100 dark:bg-green-500/10 dark:text-green-300" title="Ver lo que registró">Registrado <span aria-hidden="true">›</span></button>
                                         @else
                                             <span class="text-xs text-zinc-400">—</span>
                                         @endif
@@ -281,6 +281,41 @@
                 @endif
             @endif
         </section>
+    @endif
+
+    {{-- Lo que registró un dispositivo --}}
+    @if ($registro)
+        @php
+            $rutaRespuestas = auth()->user()->hasRole('admin')
+                ? route('admin.zona.form-responses', ['zonaId' => $registro->zona_id])
+                : route('cliente.zona.form-responses', ['zonaId' => $registro->zona_id]);
+        @endphp
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 p-4" wire:keydown.escape.window="cerrarRegistro">
+            <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-zinc-800" role="dialog" aria-modal="true" aria-labelledby="titulo-registro">
+                <h2 id="titulo-registro" class="text-lg font-semibold text-zinc-900 dark:text-white">Registro en {{ $registro->zona?->nombre }}</h2>
+                <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{{ $registro->created_at?->translatedFormat('j \d\e F Y, H:i') }} · <span class="font-mono">{{ $registro->mac_address }}</span></p>
+
+                <dl class="mt-5 divide-y divide-zinc-100 rounded-lg border border-zinc-200 dark:divide-zinc-700 dark:border-zinc-700">
+                    @forelse ($registro->respuestas_formateadas as $respuesta)
+                        <div class="grid grid-cols-3 gap-3 px-4 py-2.5 text-sm">
+                            <dt class="text-zinc-500 dark:text-zinc-400">{{ $respuesta['etiqueta'] }}</dt>
+                            <dd class="col-span-2 break-words font-medium text-zinc-900 dark:text-white">{{ is_array($respuesta['valor']) ? implode(', ', $respuesta['valor']) : $respuesta['valor'] }}</dd>
+                        </div>
+                    @empty
+                        <p class="px-4 py-6 text-center text-sm text-zinc-500">El registro no tiene respuestas guardadas.</p>
+                    @endforelse
+                </dl>
+
+                @if ($registro->acepto_privacidad_at)
+                    <p class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Aceptó el aviso de privacidad el {{ $registro->acepto_privacidad_at->format('d/m/Y H:i') }}.</p>
+                @endif
+
+                <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+                    <a href="{{ $rutaRespuestas }}" wire:navigate class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Ver todas las respuestas de la zona →</a>
+                    <button type="button" wire:click="cerrarRegistro" class="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-none hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200">Cerrar</button>
+                </div>
+            </div>
+        </div>
     @endif
 
     @can('gestionar metricas hotspot')
