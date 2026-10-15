@@ -39,6 +39,9 @@ class HotspotMetricsDashboard extends Component
     public string $order_by = 'updated_at';
     public string $order_direction = 'desc';
 
+    /** Registro (FormResponse) abierto en la ventana de detalle */
+    public ?int $registroId = null;
+
     public function mount(): void
     {
         if (!array_key_exists($this->periodo, self::PERIODOS)) {
@@ -81,6 +84,19 @@ class HotspotMetricsDashboard extends Component
         $this->resetPage();
     }
 
+    public function verRegistro(int $formResponseId, MetricasHotspotService $servicio): void
+    {
+        $registro = \App\Models\FormResponse::find($formResponseId);
+
+        // Un cliente solo abre registros de sus zonas
+        $this->registroId = $registro && $servicio->puedeVerZona(Auth::user(), $registro->zona_id) ? $registro->id : null;
+    }
+
+    public function cerrarRegistro(): void
+    {
+        $this->registroId = null;
+    }
+
     public function clearFilters(): void
     {
         $this->reset(['zona_id', 'mac_address', 'periodo', 'desde', 'hasta']);
@@ -117,6 +133,17 @@ class HotspotMetricsDashboard extends Component
         }
 
         return [now()->subDays(((int) $this->periodo) - 1)->startOfDay(), now()->endOfDay()];
+    }
+
+    private function registroAbierto(MetricasHotspotService $servicio): ?\App\Models\FormResponse
+    {
+        if (!$this->registroId) {
+            return null;
+        }
+
+        $registro = \App\Models\FormResponse::with('zona.campos.opciones')->find($this->registroId);
+
+        return $registro && $servicio->puedeVerZona(Auth::user(), $registro->zona_id) ? $registro : null;
     }
 
     public function render(MetricasHotspotService $servicio)
@@ -162,6 +189,7 @@ class HotspotMetricsDashboard extends Component
             'rankingZonas' => $this->zona_id === '' && $zonas->count() > 1 ? $servicio->rankingZonas($zonaIds, $desde, $hasta) : [],
             'dispositivos' => $dispositivos,
             'periodos' => self::PERIODOS,
+            'registro' => $this->registroAbierto($servicio),
         ]);
     }
 }

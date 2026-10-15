@@ -65,7 +65,8 @@ class FormResponse extends Model
             if ($campo) {
                 $formateadas[] = [
                     'etiqueta' => $campo->etiqueta,
-                    'valor' => $this->formatearValor($campo, $valor)
+                    'valor' => $this->formatearValor($campo, $valor),
+                    'orden' => $campo->orden,
                 ];
             } else {
                 // Si es un campo anidado (como intereses)
@@ -75,7 +76,8 @@ class FormResponse extends Model
                         if ($campoSubCampo) {
                             $formateadas[] = [
                                 'etiqueta' => $campoSubCampo->etiqueta,
-                                'valor' => $this->formatearValor($campoSubCampo, $subValor)
+                                'valor' => $this->formatearValor($campoSubCampo, $subValor),
+                                'orden' => $campoSubCampo->orden,
                             ];
                         } else {
                             // Si no se encuentra el campo, mostrar con la clave como etiqueta
@@ -95,7 +97,13 @@ class FormResponse extends Model
             }
         }
 
-        return $formateadas;
+        // En el orden del formulario (las respuestas se guardan en el orden en que llegan);
+        // las claves sin campo van al final
+        return collect($formateadas)
+            ->sortBy(fn ($r) => $r['orden'] ?? PHP_INT_MAX)
+            ->map(fn ($r) => ['etiqueta' => $r['etiqueta'], 'valor' => $r['valor']])
+            ->values()
+            ->all();
     }
 
     /**

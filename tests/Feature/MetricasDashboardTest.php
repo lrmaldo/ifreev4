@@ -207,4 +207,35 @@ class MetricasDashboardTest extends TestCase
 
         $this->actingAs($nuevo)->get('/dashboard')->assertOk()->assertSee('Bienvenido a i-Free');
     }
+    public function test_registrado_abre_lo_que_contesto_en_el_orden_del_formulario()
+    {
+        foreach ([['nombre', 'Nombre', 1], ['telefono', 'Teléfono', 2], ['edad', 'Edad', 3]] as [$campo, $etiqueta, $orden]) {
+            \App\Models\FormField::create(['zona_id' => $this->zonaCliente->id, 'campo' => $campo, 'etiqueta' => $etiqueta, 'tipo' => 'text', 'obligatorio' => true, 'orden' => $orden]);
+        }
+        // Guardado en otro orden, como llega del portal
+        $registro = FormResponse::create(['zona_id' => $this->zonaCliente->id, 'mac_address' => 'AA:01', 'respuestas' => ['edad' => '18', 'nombre' => 'Jose', 'telefono' => '2741063985'], 'formulario_completado' => true]);
+        $metrica = $this->visita($this->zonaCliente, 'AA:01', 'iPhone');
+        $metrica->forceFill(['formulario_id' => $registro->id])->saveQuietly();
+
+        $this->assertSame(['Nombre', 'Teléfono', 'Edad'], array_column($registro->fresh()->respuestas_formateadas, 'etiqueta'));
+
+        Livewire::actingAs($this->cliente)->test(HotspotMetricsDashboard::class)
+            ->assertSee('Registrado')
+            ->call('verRegistro', $registro->id)
+            ->assertSee('Registro en Cafe Rafa')
+            ->assertSeeInOrder(['Jose', '2741063985', '18'])
+            ->assertSee(route('cliente.zona.form-responses', ['zonaId' => $this->zonaCliente->id]))
+            ->call('cerrarRegistro')
+            ->assertDontSee('Registro en Cafe Rafa');
+    }
+
+    public function test_un_cliente_no_abre_registros_de_otra_zona()
+    {
+        $ajeno = FormResponse::create(['zona_id' => $this->zonaAjena->id, 'mac_address' => 'BB:01', 'respuestas' => ['nombre' => 'Persona Ajena'], 'formulario_completado' => true]);
+
+        Livewire::actingAs($this->cliente)->test(HotspotMetricsDashboard::class)
+            ->call('verRegistro', $ajeno->id)
+            ->assertSet('registroId', null)
+            ->assertDontSee('Persona Ajena');
+    }
 }
