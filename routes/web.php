@@ -138,7 +138,14 @@ Route::get('/pantalla/{token}', function (string $token) {
   ->name('evento.pantalla');
 
 Route::get('/', function () {
-    return view('welcome');
+    // Cifras reales para la portada (una consulta por hora como mucho)
+    $cifras = \Illuminate\Support\Facades\Cache::remember('portada:cifras', 3600, fn () => [
+        'zonas' => \App\Models\Zona::count(),
+        'dispositivos' => \App\Models\HotspotMetric::count(),
+        'registros' => \App\Models\FormResponse::count(),
+    ]);
+
+    return view('welcome', ['cifras' => $cifras]);
 })->name('home');
 
 Route::view('dashboard', 'dashboard')

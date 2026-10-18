@@ -1,442 +1,412 @@
+@php
+    // Cifras reales de la plataforma (ver la ruta "/"); se redondean hacia abajo
+    $abreviar = fn (int $n) => $n >= 1000 ? number_format(intdiv($n, 1000)) . ' mil' : (string) $n;
+    $whatsapp = config('ifree.whatsapp');
+@endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="es">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Ifree Hotspot - Monetiza el acceso a Internet con publicidad</title>
+        <title>i-Free Hotspot · WiFi gratis que se convierte en publicidad</title>
 
         <link rel="icon" href="{{ asset('img/Logo i-Free.png') }}" sizes="any">
-        <link rel="icon" href="{{ asset('img/Logo i-Free.png') }}" type="image/svg+xml">
         <link rel="apple-touch-icon" href="{{ asset('img/Logo i-Free.png') }}">
-        <meta name="author" content="i-Free - Portal Cautivo WiFi">
-        <meta name="description" content="Ifree Hotspot permite ofrecer acceso a internet en espacios públicos mediante publicidad. Tus usuarios obtienen conexión gratis y tú obtienes ingresos publicitarios.">
-        <meta name="keywords" content="i-Free, Portal Cautivo, WiFi, Hotspot, Acceso a Internet">
+        <meta name="author" content="i-Free · Sattlink">
+        <meta name="description" content="Ofrece internet gratis en tu negocio o evento: cada persona ve tu anuncio, deja sus datos y se conecta. Tú ves en tiempo real quién llegó.">
+        <meta name="keywords" content="i-Free, portal cautivo, WiFi gratis, hotspot, MikroTik, publicidad, eventos">
         <meta name="robots" content="index, follow">
-        <meta name="theme-color" content="#2563EB">
-        <meta property="og:title" content="Ifree Hotspot - Monetiza el acceso a Internet con publicidad" />
-        <meta property="og:description" content="Ifree Hotspot permite ofrecer acceso a internet en espacios públicos mediante publicidad. Tus usuarios obtienen conexión gratis y tú obtienes ingresos publicitarios." />
+        <meta name="theme-color" content="#0b0f19">
+        <meta property="og:title" content="i-Free Hotspot · WiFi gratis que se convierte en publicidad" />
+        <meta property="og:description" content="Cada persona que se conecta ve tu anuncio y deja sus datos. Métricas en vivo, avisos por Telegram y pantalla para eventos." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="{{ url()->current() }}" />
         <meta property="og:image" content="{{ asset('img/Logo i-Free.png') }}" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Ifree Hotspot - Monetiza el acceso a Internet con publicidad" />
-        <meta name="twitter:description" content="Ifree Hotspot permite ofrecer acceso a internet en espacios públicos mediante publicidad. Tus usuarios obtienen conexión gratis y tú obtienes ingresos publicitarios." />
-        <meta name="twitter:image" content="{{ asset('img/Logo i-Free.png') }}" />
 
-
-        <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
 
-        <!-- Styles -->
-        <!-- TailwindCSS: asegúrate que resources/css/app.css tenga las directivas @tailwind base; @tailwind components; @tailwind utilities; -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <!-- Fin TailwindCSS -->
-    </head>
-    <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] min-h-screen">
-        <!-- Navbar -->
-        <header class="fixed w-full top-0 z-50 bg-[#FDFDFC]/95 dark:bg-[#0a0a0a]/95 backdrop-blur-sm shadow-sm">
-            <div class="container mx-auto px-4 py-3">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <img src="/img/Logo-i-Free.png" alt="Ifree Hotspot" class="h-12 w-auto">
-                        <span class="text-2xl font-bold text-[#ff3f00]">Ifree Hotspot</span>
-                    </div>
-                    @if (Route::has('login'))
-                        <nav class="flex items-center gap-4">
-                            @auth
-                                <a
-                                    href="{{ url('/dashboard') }}"
-                                    class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal"
-                                >
-                                    Dashboard
-                                </a>
-                            @else
-                                <a
-                                    href="{{ route('login') }}"
-                                    class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] text-[#1b1b18] border border-transparent hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
-                                >
-                                    Log in
-                                </a>
 
-                                @if (Route::has('register'))
-                                    <a
-                                        href="{{ route('register') }}"
-                                        class="inline-block px-5 py-1.5 bg-[#ff3f00] hover:bg-[#ff5c26] text-white rounded-sm text-sm leading-normal"
-                                    >
-                                        Register
-                                    </a>
-                                @endif
-                            @endauth
-                        </nav>
-                    @endif
-                </div>
+        <style>
+            :root { --naranja: #ff3f00; --naranja-2: #ff7a45; --tinta: #0b0f19; --tinta-2: #131a2b; }
+            html { scroll-behavior: smooth; }
+            body { background: #fbfaf8; color: #16161a; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; }
+
+            /* ── Aparecer al hacer scroll ── */
+            [data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); }
+            [data-reveal].visible { opacity: 1; transform: none; }
+            [data-reveal="2"] { transition-delay: .12s; } [data-reveal="3"] { transition-delay: .24s; } [data-reveal="4"] { transition-delay: .36s; }
+            /* El hero entra solo al cargar, sin esperar al scroll */
+            [data-entrada] { animation: entrada .8s cubic-bezier(.2,.7,.2,1) both; animation-delay: var(--retraso, 0s); }
+            @keyframes entrada { from { opacity: 0; transform: translateY(24px); } }
+
+            /* ── Fondo del hero ── */
+            .hero { background: radial-gradient(1200px 600px at 85% 10%, rgba(255,63,0,.28), transparent 60%), radial-gradient(800px 500px at 0% 100%, rgba(255,122,69,.14), transparent 60%), var(--tinta); }
+            .malla { background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(ellipse at 70% 30%, #000 30%, transparent 75%); }
+            .orbe { position: absolute; border-radius: 9999px; filter: blur(60px); opacity: .55; animation: flotar 14s ease-in-out infinite; }
+            @keyframes flotar { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,-40px) scale(1.1); } }
+
+            .titulo-degradado { background: linear-gradient(90deg, #ff3f00, #ff9a6b, #ff3f00); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: brillo 6s linear infinite; }
+            @keyframes brillo { to { background-position: 200% center; } }
+
+            /* ── Teléfono: 4 escenas en un ciclo de 12 s ── */
+            .telefono { width: 280px; height: 570px; border-radius: 44px; background: #05070d; padding: 12px; box-shadow: 0 40px 80px -20px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.08) inset; position: relative; }
+            .pantalla { position: relative; width: 100%; height: 100%; border-radius: 34px; overflow: hidden; background: #fff; }
+            .muesca { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 92px; height: 24px; border-radius: 999px; background: #05070d; z-index: 5; }
+            .escena { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; animation: escena 12s infinite; }
+            .escena-2 { animation-delay: 3s; } .escena-3 { animation-delay: 6s; } .escena-4 { animation-delay: 9s; }
+            @keyframes escena { 0% { opacity: 0; transform: translateY(10px) scale(.98); } 3%, 22% { opacity: 1; transform: none; } 25%, 100% { opacity: 0; transform: translateY(-6px); } }
+
+            .ondas span { position: absolute; inset: 0; border-radius: 9999px; border: 2px solid var(--naranja); animation: onda 1.8s ease-out infinite; }
+            .ondas span:nth-child(2) { animation-delay: .6s; } .ondas span:nth-child(3) { animation-delay: 1.2s; }
+            @keyframes onda { from { transform: scale(.4); opacity: .9; } to { transform: scale(1.6); opacity: 0; } }
+
+            .anillo { stroke-dasharray: 151; animation: cuenta 12s linear infinite; animation-delay: 3s; }
+            @keyframes cuenta { 0% { stroke-dashoffset: 0; } 24% { stroke-dashoffset: 151; } 100% { stroke-dashoffset: 151; } }
+            .anuncio { animation: zoom-anuncio 12s ease-in-out infinite; animation-delay: 3s; }
+            @keyframes zoom-anuncio { 0% { transform: scale(1.12); } 24% { transform: scale(1); } 100% { transform: scale(1); } }
+
+            .tecleo { display: block; height: 10px; border-radius: 4px; background: #27272a; width: 0; animation: teclear 12s steps(14) infinite; animation-delay: 6.2s; }
+            .tecleo-2 { animation-delay: 6.9s; }
+            @keyframes teclear { 0% { width: 0; } 6% { width: 70%; } 100% { width: 70%; } }
+            .boton-presion { animation: presion 12s infinite; animation-delay: 6s; }
+            @keyframes presion { 0%, 15% { transform: scale(1); filter: none; } 17% { transform: scale(.95); filter: brightness(.9); } 19%, 100% { transform: scale(1); filter: none; } }
+
+            .palomita path { stroke-dasharray: 60; stroke-dashoffset: 60; animation: trazar 12s infinite; animation-delay: 9s; }
+            @keyframes trazar { 0%, 3% { stroke-dashoffset: 60; } 9%, 100% { stroke-dashoffset: 0; } }
+
+            /* Pasos bajo el teléfono, sincronizados con las escenas */
+            .paso-vivo { animation: paso 12s infinite; }
+            .paso-vivo:nth-child(2) { animation-delay: 3s; } .paso-vivo:nth-child(3) { animation-delay: 6s; } .paso-vivo:nth-child(4) { animation-delay: 9s; }
+            @keyframes paso { 0%, 24% { color: #fff; border-color: var(--naranja); background: rgba(255,63,0,.18); } 25%, 100% { color: rgba(255,255,255,.45); border-color: rgba(255,255,255,.12); background: transparent; } }
+
+            /* Avisos flotantes alrededor del teléfono */
+            .aviso { opacity: 0; animation: aviso 12s infinite; }
+            .aviso-a { animation-delay: 3.6s; } .aviso-b { animation-delay: 7.4s; } .aviso-c { animation-delay: 9.6s; }
+            @keyframes aviso { 0% { opacity: 0; transform: translateX(24px) scale(.96); } 4%, 20% { opacity: 1; transform: none; } 24%, 100% { opacity: 0; transform: translateX(-12px); } }
+
+            /* Línea de "Cómo funciona" y barras del panel */
+            .linea-pasos { transform: scaleX(0); transform-origin: left; transition: transform 1.4s cubic-bezier(.6,0,.2,1) .2s; }
+            .visible .linea-pasos { transform: scaleX(1); }
+            .barra { transform: scaleY(0); transform-origin: bottom; transition: transform .9s cubic-bezier(.2,.8,.2,1); }
+            .visible .barra { transform: scaleY(1); }
+
+            .punto-vivo { animation: latido 1.6s ease-in-out infinite; }
+            @keyframes latido { 0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,.6); } 50% { box-shadow: 0 0 0 8px rgba(34,197,94,0); } }
+
+            .cta-fondo { background: linear-gradient(120deg, #ff3f00, #ff6a2b, #e23300, #ff3f00); background-size: 300% 300%; animation: mover-fondo 10s ease infinite; }
+            @keyframes mover-fondo { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+            @media (prefers-reduced-motion: reduce) {
+                *, *::before, *::after { animation: none !important; transition: none !important; }
+                [data-reveal] { opacity: 1; transform: none; }
+                .escena-2, .aviso-a { opacity: 1; }
+                .anillo { stroke-dashoffset: 60; }
+                .barra, .linea-pasos { transform: none; }
+            }
+        </style>
+    </head>
+    <body class="antialiased">
+        {{-- Navegación --}}
+        <header class="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#0b0f19]/80 backdrop-blur-md">
+            <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+                <a href="{{ route('home') }}" class="flex items-center gap-2.5">
+                    <img src="/img/Logo-i-Free.png" alt="" class="h-10 w-auto">
+                    <span class="text-xl font-bold text-white">i-Free <span class="font-medium text-white/60">Hotspot</span></span>
+                </a>
+                <nav class="flex items-center gap-1 sm:gap-2">
+                    <a href="#como-funciona" class="hidden rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white md:block">Cómo funciona</a>
+                    <a href="#eventos" class="hidden rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white md:block">Eventos</a>
+                    @auth
+                        <a href="{{ url('/dashboard') }}" class="rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20">Ir al panel</a>
+                    @else
+                        <a href="{{ route('login') }}" class="rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:text-white">Iniciar sesión</a>
+                        @if (Route::has('register'))
+                            <a href="{{ route('register') }}" class="rounded-lg bg-[#ff3f00] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[#ff3f00]/30 hover:bg-[#ff5a22]">Solicitar acceso</a>
+                        @endif
+                    @endauth
+                </nav>
             </div>
         </header>
 
-        <main class="pt-16">
-            <!-- Hero principal con imagen a un lado y texto al otro -->
-            <section class="py-16 lg:py-24 container mx-auto px-4">
-                <div class="grid grid-cols-1 lg:grid-cols-2 items-center gap-12">
-                    <!-- Contenido de texto -->
-                    <div class="order-2 lg:order-1 animate-fade-in">
-                        <span class="bg-[#ff3f00]/10 text-[#ff3f00] px-4 py-1 rounded-full font-semibold mb-6 inline-block">Monetiza tus espacios</span>
-                        <h1 class="text-4xl lg:text-6xl font-extrabold mb-6 text-[#1b1b18] dark:text-white animate-slide-down">
-                            Internet gratuito <span class="text-[#ff3f00]">que genera ingresos</span>
+        <main>
+            {{-- Hero --}}
+            <section class="hero relative overflow-hidden pt-28 pb-20 text-white lg:pt-32 lg:pb-28">
+                <div class="malla pointer-events-none absolute inset-0"></div>
+                <div class="orbe left-[8%] top-[18%] h-64 w-64 bg-[#ff3f00]/40"></div>
+                <div class="orbe right-[6%] bottom-[8%] h-72 w-72 bg-[#ff7a45]/25" style="animation-delay:-6s"></div>
+
+                <div class="relative mx-auto grid max-w-7xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-[1.1fr_1fr]">
+                    <div>
+                        <p style="--retraso: 0s" data-entrada class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-sm text-white/80">
+                            <span class="punto-vivo h-2 w-2 rounded-full bg-green-500"></span>
+                            Portal cautivo para MikroTik · métricas en vivo
+                        </p>
+                        <h1 style="--retraso: 0.12s" data-entrada class="mt-6 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+                            Tu WiFi gratis,<br>
+                            <span class="titulo-degradado">convertido en publicidad</span><br>
+                            que sí se ve.
                         </h1>
-                        <p class="text-lg mb-8 text-gray-700 dark:text-gray-300 animate-fade-in-delay">
-                            Ifree Hotspot permite ofrecer acceso a internet en espacios públicos mediante publicidad.
-                            Tus usuarios obtienen conexión gratis y tú obtienes ingresos publicitarios.
+                        <p style="--retraso: 0.24s" data-entrada class="mt-6 max-w-xl text-lg leading-relaxed text-white/70">
+                            Cada persona que se conecta en tu negocio o evento ve tu anuncio, deja sus datos y navega.
+                            Tú ves en tiempo real quién llegó, y te avisamos por Telegram.
                         </p>
-                        <div class="flex flex-col sm:flex-row gap-4 animate-fade-in-delay2">
-                            <a href="{{ route('register') }}" class="bg-[#ff3f00] hover:bg-[#ff5c26] text-white font-semibold px-8 py-3 rounded-lg shadow-lg transition-all duration-300">Comenzar prueba</a>
-                            <a href="#como-funciona" class="border-2 border-[#1b1b18] dark:border-white text-[#1b1b18] dark:text-white hover:bg-[#1b1b18]/5 dark:hover:bg-white/5 font-semibold px-8 py-3 rounded-lg transition-all duration-300 flex items-center justify-center">
-                                <span>Cómo funciona</span>
-                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
+                        <div style="--retraso: 0.36s" data-entrada class="mt-8 flex flex-wrap gap-3">
+                            <a href="{{ Route::has('register') ? route('register') : route('login') }}" class="group inline-flex items-center gap-2 rounded-xl bg-[#ff3f00] px-6 py-3.5 font-semibold text-white shadow-xl shadow-[#ff3f00]/30 transition hover:-translate-y-0.5 hover:bg-[#ff5a22]">
+                                Quiero i-Free en mi negocio
+                                <svg class="h-4 w-4 transition group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
                             </a>
+                            <a href="#como-funciona" class="inline-flex items-center rounded-xl border border-white/20 px-6 py-3.5 font-semibold text-white/90 transition hover:bg-white/10">Ver cómo funciona</a>
                         </div>
 
-                        <!-- Métricas -->
-                        <div class="grid grid-cols-3 gap-4 mt-12 border-t pt-6 border-gray-200 dark:border-gray-800 animate-fade-in-delay3">
+                        <dl style="--retraso: 0.36s" data-entrada class="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/10 pt-8">
                             <div>
-                                <p class="text-3xl font-bold text-[#ff3f00]">500+</p>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Hotspots activos</p>
+                                <dt class="text-sm text-white/55">Zonas WiFi</dt>
+                                <dd class="mt-1 text-3xl font-bold tabular-nums" data-contar="{{ $cifras['zonas'] }}">{{ $cifras['zonas'] }}</dd>
                             </div>
                             <div>
-                                <p class="text-3xl font-bold text-[#ff3f00]">10k+</p>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Usuarios diarios</p>
+                                <dt class="text-sm text-white/55">Dispositivos conectados</dt>
+                                <dd class="mt-1 text-3xl font-bold tabular-nums">{{ $abreviar($cifras['dispositivos']) }}+</dd>
                             </div>
                             <div>
-                                <p class="text-3xl font-bold text-[#ff3f00]">98%</p>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Satisfacción</p>
+                                <dt class="text-sm text-white/55">Registros captados</dt>
+                                <dd class="mt-1 text-3xl font-bold tabular-nums">{{ $abreviar($cifras['registros']) }}+</dd>
                             </div>
-                        </div>
+                        </dl>
                     </div>
 
-                    <!-- Mockup de dispositivos -->
-                    <div class="order-1 lg:order-2 relative animate-float">
-                        <!-- Laptop mockup -->
-                        <div class="relative mx-auto w-full max-w-md">
-                            <div class="relative rounded-t-xl bg-[#1b1b18] dark:bg-gray-900 w-full aspect-[16/10] shadow-xl overflow-hidden">
-                                <div class="absolute inset-0 p-2">
-                                    <!-- Panel de administración -->
-                                    <div class="w-full h-full rounded-lg bg-white dark:bg-gray-800 overflow-hidden">
-                                        <div class="h-8 bg-gray-100 dark:bg-gray-900 flex items-center px-3">
-                                            <div class="flex space-x-1.5">
-                                                <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                                                <div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
-                                                <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-                                            </div>
-                                        </div>
-                                        <div class="p-2 flex h-[calc(100%-2rem)]">
-                                            <!-- Sidebar -->
-                                            <div class="w-1/4 bg-gray-50 dark:bg-gray-900 rounded-md p-2">
-                                                <div class="flex items-center gap-2 p-1 mb-4">
-                                                    <div class="w-6 h-6 bg-[#ff3f00] rounded-md"></div>
-                                                    <div class="text-xs font-bold">Dashboard</div>
-                                                </div>
-                                                <div class="space-y-2">
-                                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-                                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
-                                                </div>
-                                            </div>
-                                            <!-- Main content -->
-                                            <div class="w-3/4 pl-2">
-                                                <div class="h-32 bg-[#ff3f00]/10 rounded-md mb-2 flex items-center justify-center">
-                                                    <div class="w-24 h-16 bg-[#ff3f00] rounded-md"></div>
-                                                </div>
-                                                <div class="grid grid-cols-2 gap-2 mb-2">
-                                                    <div class="h-16 bg-gray-100 dark:bg-gray-700 rounded-md"></div>
-                                                    <div class="h-16 bg-gray-100 dark:bg-gray-700 rounded-md"></div>
-                                                </div>
-                                                <div class="h-20 bg-gray-100 dark:bg-gray-700 rounded-md"></div>
-                                            </div>
+                    {{-- Teléfono animado: el recorrido real del visitante --}}
+                    <div class="relative mx-auto" style="--retraso: 0.24s" data-entrada aria-label="Animación: el celular se conecta, ve un anuncio, se registra y queda conectado" role="img">
+                        <div class="telefono">
+                            <div class="muesca"></div>
+                            <div class="pantalla">
+                                {{-- 1. Se conecta al WiFi --}}
+                                <div class="escena escena-1 items-center justify-center bg-gradient-to-b from-orange-50 to-white px-6 text-center">
+                                    <div class="ondas relative flex h-28 w-28 items-center justify-center">
+                                        <span></span><span></span><span></span>
+                                        <div class="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#ff3f00] text-white shadow-lg">
+                                            <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0114 0M8.5 16.1a6 6 0 017 0M12 20h.01M1.4 9a16 16 0 0121.2 0"/></svg>
                                         </div>
                                     </div>
+                                    <p class="mt-8 text-lg font-bold text-zinc-900">WiFi Gratis</p>
+                                    <p class="mt-1 text-sm text-zinc-500">Conectándote a <strong class="text-zinc-700">Café Central</strong>…</p>
+                                </div>
+
+                                {{-- 2. Ve el anuncio con cuenta regresiva --}}
+                                <div class="escena escena-2 bg-zinc-950">
+                                    <div class="relative h-[62%] overflow-hidden">
+                                        <div class="anuncio absolute inset-0 bg-gradient-to-br from-[#ff3f00] via-[#ff7a45] to-[#ffb38f]"></div>
+                                        <div class="absolute inset-0 flex flex-col justify-end p-6 text-white">
+                                            <p class="text-xs font-semibold uppercase tracking-widest text-white/80">Hoy en Café Central</p>
+                                            <p class="mt-1 text-4xl font-black leading-none">2×1 en<br>capuchinos</p>
+                                            <p class="mt-2 text-sm text-white/85">Muestra esta pantalla en caja</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-1 flex-col items-center justify-center gap-3 text-white">
+                                        <svg class="h-16 w-16 -rotate-90" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="5"/><circle class="anillo" cx="28" cy="28" r="24" fill="none" stroke="#ff3f00" stroke-width="5" stroke-linecap="round"/></svg>
+                                        <p class="text-sm text-white/70">Tu internet inicia en unos segundos</p>
+                                    </div>
+                                </div>
+
+                                {{-- 3. Deja sus datos --}}
+                                <div class="escena escena-3 bg-white px-6 pt-14">
+                                    <p class="text-xl font-bold text-zinc-900">Un último paso</p>
+                                    <p class="mt-1 text-sm text-zinc-500">Regístrate para navegar gratis</p>
+                                    <div class="mt-6 space-y-4">
+                                        <div><p class="mb-1.5 text-xs font-medium text-zinc-500">Nombre</p><div class="rounded-xl border border-zinc-200 px-3 py-3"><span class="tecleo"></span></div></div>
+                                        <div><p class="mb-1.5 text-xs font-medium text-zinc-500">Teléfono</p><div class="rounded-xl border border-zinc-200 px-3 py-3"><span class="tecleo tecleo-2"></span></div></div>
+                                        <label class="flex items-start gap-2 text-xs text-zinc-500"><span class="mt-0.5 h-4 w-4 shrink-0 rounded border-2 border-[#ff3f00] bg-[#ff3f00]"></span>Acepto el aviso de privacidad</label>
+                                    </div>
+                                    <div class="boton-presion mt-6 rounded-xl bg-[#ff3f00] py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-[#ff3f00]/30">Conectarme</div>
+                                </div>
+
+                                {{-- 4. Conectado --}}
+                                <div class="escena escena-4 items-center justify-center bg-gradient-to-b from-green-50 to-white text-center">
+                                    <svg class="palomita h-24 w-24" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24" fill="#22c55e"/><path d="M15 27l7 7 15-15" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    <p class="mt-6 text-2xl font-bold text-zinc-900">¡Conectado!</p>
+                                    <p class="mt-1 text-sm text-zinc-500">Disfruta tu internet gratis</p>
                                 </div>
                             </div>
-                            <div class="h-3 bg-[#1b1b18] dark:bg-gray-900 rounded-b-xl"></div>
-                            <div class="h-1 bg-[#1b1b18]/80 dark:bg-gray-800 rounded-b-xl w-4/5 mx-auto"></div>
                         </div>
 
-                        <!-- Phone mockup - hotspot login -->
-                        <div class="absolute -bottom-10 -right-4 md:right-0 w-48 h-96 bg-[#1b1b18] dark:bg-gray-900 rounded-xl shadow-lg border-4 border-[#1b1b18] dark:border-gray-900 overflow-hidden animate-float-delayed">
-                            <div class="absolute top-0 w-24 h-6 bg-[#1b1b18] dark:bg-gray-900 left-1/2 transform -translate-x-1/2 rounded-b-xl"></div>
-                            <div class="w-full h-full bg-white dark:bg-gray-800 p-1">
-                                <!-- Pantalla de conexión WiFi -->
-                                <div class="h-full rounded bg-gray-100 dark:bg-gray-700 flex flex-col">
-                                    <!-- Banner de publicidad -->
-                                    <div class="bg-[#ff3f00] h-24 flex items-center justify-center text-white p-1">
-                                        <div class="text-center text-xs font-bold">PUBLICIDAD</div>
-                                    </div>
-                                    <!-- Contenido -->
-                                    <div class="flex-1 flex flex-col items-center justify-center p-2 space-y-3">
-                                        <div class="w-12 h-12 rounded-full bg-[#ff3f00]/20 flex items-center justify-center">
-                                            <svg class="w-6 h-6 text-[#ff3f00]" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/>
-                                            </svg>
-                                        </div>
-                                        <div class="space-y-2 w-full">
-                                            <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-                                            <div class="h-6 bg-[#ff3f00] rounded-lg w-3/4 mx-auto"></div>
-                                        </div>
-                                        <div class="text-[7px] text-center text-gray-500">Ver anuncio para continuar</div>
-                                        <div class="h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full w-3/4 mx-auto overflow-hidden">
-                                            <div class="h-full bg-[#ff3f00] w-2/3"></div>
-                                        </div>
-                                    </div>
+                        {{-- Lo que pasa del lado del negocio --}}
+                        <div class="aviso aviso-a absolute -left-28 top-24 hidden w-56 rounded-2xl border border-white/10 bg-white/95 p-3 text-zinc-800 shadow-2xl sm:block">
+                            <p class="text-xs font-semibold text-zinc-500">Métricas · en vivo</p>
+                            <p class="mt-0.5 text-sm font-semibold">👁 +1 vista del anuncio</p>
+                        </div>
+                        <div class="aviso aviso-b absolute -right-36 top-[58%] hidden w-60 rounded-2xl border border-white/10 bg-white/95 p-3 text-zinc-800 shadow-2xl sm:block">
+                            <p class="flex items-center gap-1.5 text-xs font-semibold text-sky-600"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.6l-3.1 14.8c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.6 13.2 1.9 11.7c-1-.3-1-1 .2-1.5L20.6 3c.9-.3 1.6.2 1.3 1.6z"/></svg> Telegram</p>
+                            <p class="mt-0.5 text-sm font-semibold">📝 Nuevo registro · Ana G.</p>
+                        </div>
+                        <div class="aviso aviso-c absolute -left-20 bottom-28 hidden w-52 rounded-2xl border border-white/10 bg-white/95 p-3 text-zinc-800 shadow-2xl sm:block">
+                            <p class="text-xs font-semibold text-zinc-500">Hoy</p>
+                            <p class="mt-0.5 flex items-center gap-2 text-sm font-semibold"><span class="punto-vivo h-2 w-2 rounded-full bg-green-500"></span>58 conectados ahora</p>
+                        </div>
+
+                        <ol class="mt-6 grid grid-cols-4 gap-2 text-center text-[11px] font-semibold">
+                            <li class="paso-vivo rounded-lg border px-1 py-1.5">Se conecta</li>
+                            <li class="paso-vivo rounded-lg border px-1 py-1.5">Ve tu anuncio</li>
+                            <li class="paso-vivo rounded-lg border px-1 py-1.5">Se registra</li>
+                            <li class="paso-vivo rounded-lg border px-1 py-1.5">Navega</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
+            {{-- Cómo funciona --}}
+            <section id="como-funciona" class="scroll-mt-20 py-20 lg:py-28">
+                <div class="mx-auto max-w-7xl px-4 sm:px-6">
+                    <div class="max-w-2xl" data-reveal>
+                        <p class="text-sm font-semibold uppercase tracking-widest text-[#ff3f00]">Cómo funciona</p>
+                        <h2 class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Funciona con el MikroTik que ya tienes</h2>
+                        <p class="mt-4 text-lg text-zinc-600">Sin apps ni equipos nuevos: subimos un archivo a tu router y tu WiFi empieza a trabajar para ti.</p>
+                    </div>
+
+                    <div class="relative mt-14" data-reveal="2">
+                        <div class="absolute left-0 right-0 top-7 hidden h-0.5 bg-zinc-200 md:block"><div class="linea-pasos h-full bg-[#ff3f00]"></div></div>
+                        <div class="grid gap-10 md:grid-cols-3">
+                            @foreach ([
+                                ['1', 'Conectamos tu hotspot', 'Configuramos tu MikroTik con el portal de i-Free. Tus APs siguen igual.'],
+                                ['2', 'Sube tus anuncios', 'Imágenes o videos con fechas, días y prioridad. Se muestran durante la cuenta regresiva.'],
+                                ['3', 'Mira quién llegó', 'Visitas, registros y dispositivos en tiempo real, avisos por Telegram y exportación a Excel.'],
+                            ] as [$numero, $titulo, $texto])
+                                <div class="relative">
+                                    <div class="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0b0f19] text-xl font-bold text-white shadow-lg ring-4 ring-[#fbfaf8]">{{ $numero }}</div>
+                                    <h3 class="mt-5 text-xl font-semibold">{{ $titulo }}</h3>
+                                    <p class="mt-2 text-zinc-600">{{ $texto }}</p>
                                 </div>
-                            </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Cómo funciona - Pasos ilustrados -->
-            <section id="como-funciona" class="py-16 bg-gray-50 dark:bg-gray-900">
-                <div class="container mx-auto px-4">
-                    <div class="text-center mb-12 animate-fade-in-delay4">
-                        <span class="text-[#ff3f00] font-semibold">Proceso simple</span>
-                        <h2 class="text-3xl md:text-4xl font-bold">¿Cómo funciona Ifree Hotspot?</h2>
-                        <p class="mt-4 text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-                            Un sistema fácil para ofrecer internet y monetizar tu espacio en 3 simples pasos
-                        </p>
+            {{-- El panel --}}
+            <section class="bg-white py-20 lg:py-28">
+                <div class="mx-auto grid max-w-7xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-2">
+                    <div data-reveal>
+                        <p class="text-sm font-semibold uppercase tracking-widest text-[#ff3f00]">Tu panel</p>
+                        <h2 class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Sabes cuánta gente vio tu anuncio. Hoy, no a fin de mes.</h2>
+                        <ul class="mt-8 space-y-4 text-zinc-700">
+                            @foreach (['Visitas, dispositivos nuevos y registros por día, comparados con el periodo anterior.', 'Cada registro con nombre y teléfono, listo para exportar a CSV.', 'Avisos por Telegram al instante o en resumen cada pocos minutos.', 'Varias zonas y varios clientes, cada uno ve solo lo suyo.'] as $punto)
+                                <li class="flex gap-3"><svg class="mt-0.5 h-5 w-5 shrink-0 text-[#ff3f00]" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.6l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>{{ $punto }}</li>
+                            @endforeach
+                        </ul>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 animate-fade-in-delay5">
-                        <!-- Paso 1 -->
-                        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow hover:shadow-lg transition-all">
-                            <div class="w-12 h-12 bg-[#ff3f00]/20 rounded-full flex items-center justify-center text-[#ff3f00] mb-4">1</div>
-                            <h3 class="font-bold text-xl mb-2">Configura tu Hotspot</h3>
-                            <p class="text-gray-600 dark:text-gray-400 mb-4">Conecta un router Mikrotik y configúralo en minutos con nuestra interfaz intuitiva.</p>
-                            <div class="h-40 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
-                                <!-- Ilustración simplificada de router -->
-                                <svg class="w-24 h-24 text-[#ff3f00]/70" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M20 6h-8l-2-2H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V6h5.17l2 2H20v10zm-6-3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0-5c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                                </svg>
+                    <div data-reveal="2" class="rounded-3xl border border-zinc-200 bg-[#fbfaf8] p-6 shadow-xl shadow-zinc-200/60" aria-hidden="true">
+                        <div class="grid grid-cols-3 gap-3">
+                            @foreach ([['Visitas hoy', '1,284', '▲ 18%'], ['Registros', '342', '▲ 9%'], ['Conectados', '58', 'ahora']] as [$t, $v, $c])
+                                <div class="rounded-2xl bg-white p-4 shadow-sm">
+                                    <p class="text-xs text-zinc-500">{{ $t }}</p>
+                                    <p class="mt-1 text-2xl font-bold tabular-nums">{{ $v }}</p>
+                                    <p class="text-xs font-medium text-green-600">{{ $c }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="mt-4 rounded-2xl bg-white p-4 shadow-sm">
+                            <p class="text-sm font-semibold">Últimos 14 días</p>
+                            <div class="mt-4 flex h-36 items-end gap-1.5">
+                                @foreach ([30, 42, 38, 55, 48, 62, 58, 45, 70, 66, 80, 74, 92, 100] as $i => $alto)
+                                    <div class="barra flex-1 rounded-t-md {{ $i === 13 ? 'bg-[#ff3f00]' : 'bg-[#ff3f00]/25' }}" style="height: {{ $alto }}%; transition-delay: {{ $i * 45 }}ms"></div>
+                                @endforeach
                             </div>
                         </div>
-
-                        <!-- Paso 2 -->
-                        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow hover:shadow-lg transition-all">
-                            <div class="w-12 h-12 bg-[#ff3f00]/20 rounded-full flex items-center justify-center text-[#ff3f00] mb-4">2</div>
-                            <h3 class="font-bold text-xl mb-2">Sube tu publicidad</h3>
-                            <p class="text-gray-600 dark:text-gray-400 mb-4">Agrega imágenes, videos o formularios que tus usuarios verán antes de acceder a internet.</p>
-                            <div class="h-40 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
-                                <!-- Ilustración de subida de contenido -->
-                                <svg class="w-24 h-24 text-[#ff3f00]/70" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
-                                </svg>
-                            </div>
-                        </div>
-
-                        <!-- Paso 3 -->
-                        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow hover:shadow-lg transition-all">
-                            <div class="w-12 h-12 bg-[#ff3f00]/20 rounded-full flex items-center justify-center text-[#ff3f00] mb-4">3</div>
-                            <h3 class="font-bold text-xl mb-2">Genera ingresos</h3>
-                            <p class="text-gray-600 dark:text-gray-400 mb-4">Comienza a recibir ingresos por la visualización de publicidad mientras ofreces internet gratuito.</p>
-                            <div class="h-40 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
-                                <!-- Ilustración de ganancias -->
-                                <svg class="w-24 h-24 text-[#ff3f00]/70" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
-                                </svg>
-                            </div>
-                        </div>
+                        <p class="mt-3 text-center text-xs text-zinc-400">Datos de ejemplo</p>
                     </div>
                 </div>
             </section>
 
-            <!-- Ejemplo de pantallas -->
-            <section class="py-16 container mx-auto px-4">
-                <div class="text-center mb-12">
-                    <span class="text-[#ff3f00] font-semibold">Visualiza el potencial</span>
-                    <h2 class="text-3xl md:text-4xl font-bold">Pantallas de ejemplo</h2>
-                    <p class="mt-4 text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-                        Así es como tus usuarios interactuarán con el servicio
-                    </p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <!-- Pantalla de conexión -->
-                    <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg">
-                        <div class="h-6 bg-gray-100 dark:bg-gray-700 flex items-center px-4">
-                            <div class="w-2 h-2 rounded-full bg-red-500 mr-1"></div>
-                            <div class="w-2 h-2 rounded-full bg-yellow-500 mr-1"></div>
-                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                        </div>
-                        <div class="p-4 border-b">
-                            <div class="flex justify-center mb-4">
-                                <svg class="w-16 h-16 text-[#ff3f00]" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/>
-                                </svg>
-                            </div>
-                            <h3 class="text-xl font-bold text-center mb-2">¡Bienvenido a WiFi Gratis!</h3>
-                            <p class="text-center text-gray-600 dark:text-gray-400 text-sm">
-                                Conecta a internet viendo un breve anuncio
-                            </p>
-                        </div>
-                        <div class="p-4">
-                            <div class="bg-[#ff3f00]/10 rounded-lg p-4 mb-4">
-                                <div class="h-24 bg-[#ff3f00] rounded flex items-center justify-center text-white font-bold">
-                                    ESPACIO PUBLICITARIO
-                                </div>
-                            </div>
-                            <button class="w-full bg-[#ff3f00] hover:bg-[#ff5c26] text-white py-2 rounded-lg font-bold">
-                                Ver anuncio para conectar
-                            </button>
-                        </div>
+            {{-- Eventos --}}
+            <section id="eventos" class="scroll-mt-20 relative overflow-hidden bg-[#0b0f19] py-20 text-white lg:py-28">
+                <div class="malla pointer-events-none absolute inset-0 opacity-60"></div>
+                <div class="relative mx-auto max-w-7xl px-4 sm:px-6">
+                    <div class="max-w-2xl" data-reveal>
+                        <p class="text-sm font-semibold uppercase tracking-widest text-[#ff7a45]">Para eventos y expos</p>
+                        <h2 class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Convierte el WiFi del evento en el centro del stand</h2>
+                        <p class="mt-4 text-lg text-white/70">Aforo en vivo en una pantalla grande, rifas entre quienes se registran y avisos si algo falla.</p>
                     </div>
-
-                    <!-- Pantalla de cuenta regresiva -->
-                    <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg">
-                        <div class="h-6 bg-gray-100 dark:bg-gray-700 flex items-center px-4">
-                            <div class="w-2 h-2 rounded-full bg-red-500 mr-1"></div>
-                            <div class="w-2 h-2 rounded-full bg-yellow-500 mr-1"></div>
-                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                        </div>
-                        <div class="p-4">
-                            <div class="flex justify-center mb-4">
-                                <div class="w-24 h-24 rounded-full border-4 border-[#ff3f00] flex items-center justify-center">
-                                    <span class="text-3xl font-bold text-[#ff3f00]">0:30</span>
-                                </div>
+                    <div class="mt-12 grid gap-5 md:grid-cols-3">
+                        @foreach ([
+                            ['📺', 'Pantalla en vivo', 'Conectados ahora, registros del día y llegadas por hora en la TV del stand, con el anuncio del patrocinador.'],
+                            ['🎁', 'Rifa en pantalla', 'Un sorteo animado entre los asistentes registrados. Cada quien participa una vez.'],
+                            ['🛟', 'Sin caídas', 'Si el servidor no responde, el WiFi conecta directo y te avisamos por Telegram.'],
+                        ] as $i => [$icono, $titulo, $texto])
+                            <div data-reveal="{{ $i + 2 }}" class="rounded-2xl border border-white/10 bg-white/[.04] p-6 transition hover:-translate-y-1 hover:border-[#ff3f00]/60 hover:bg-white/[.07]">
+                                <p class="text-3xl" aria-hidden="true">{{ $icono }}</p>
+                                <h3 class="mt-4 text-lg font-semibold">{{ $titulo }}</h3>
+                                <p class="mt-2 text-sm leading-relaxed text-white/65">{{ $texto }}</p>
                             </div>
-                            <h3 class="text-xl font-bold text-center mb-2">¡Anuncio completado!</h3>
-                            <p class="text-center text-gray-600 dark:text-gray-400 text-sm mb-4">
-                                Serás conectado automáticamente en 30 segundos
-                            </p>
-                            <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                <div class="h-full bg-[#ff3f00] w-3/4"></div>
-                            </div>
-                            <p class="text-center text-xs mt-2 text-gray-500">Tiempo restante: 30 segundos</p>
-                        </div>
-                        <div class="p-4 bg-gray-100 dark:bg-gray-700">
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-600 dark:text-gray-300">Tiempo de acceso:</span>
-                                <span class="font-bold">10 minutos</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Panel de administrador -->
-                    <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg">
-                        <div class="h-6 bg-gray-100 dark:bg-gray-700 flex items-center px-4">
-                            <div class="w-2 h-2 rounded-full bg-red-500 mr-1"></div>
-                            <div class="w-2 h-2 rounded-full bg-yellow-500 mr-1"></div>
-                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                        </div>
-                        <div class="p-4 border-b">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 bg-[#ff3f00] rounded-full"></div>
-                                <div>
-                                    <h3 class="font-bold text-sm">Panel de administración</h3>
-                                    <p class="text-xs text-gray-600 dark:text-gray-400">Administrador</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="p-4">
-                            <div class="grid grid-cols-2 gap-4 mb-4">
-                                <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Usuarios activos</p>
-                                    <p class="text-xl font-bold">247</p>
-                                </div>
-                                <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Impresiones</p>
-                                    <p class="text-xl font-bold">1,893</p>
-                                </div>
-                            </div>
-                            <div class="h-28 bg-gray-100 dark:bg-gray-700 rounded-lg mb-4 p-2">
-                                <div class="flex h-full items-end justify-between px-2">
-                                    <div class="w-[10%] h-[30%] bg-[#ff3f00]"></div>
-                                    <div class="w-[10%] h-[45%] bg-[#ff3f00]"></div>
-                                    <div class="w-[10%] h-[60%] bg-[#ff3f00]"></div>
-                                    <div class="w-[10%] h-[40%] bg-[#ff3f00]"></div>
-                                    <div class="w-[10%] h-[75%] bg-[#ff3f00]"></div>
-                                    <div class="w-[10%] h-[65%] bg-[#ff3f00]"></div>
-                                    <div class="w-[10%] h-[85%] bg-[#ff3f00]"></div>
-                                </div>
-                            </div>
-                            <div class="bg-[#ff3f00]/10 p-2 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <p class="text-sm font-bold">Ingresos del mes</p>
-                                    <p class="text-[#ff3f00] font-bold">$1,245</p>
-                                </div>
-                            </div>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
             </section>
 
-            <!-- CTA -->
-            <section class="py-16 bg-[#ff3f00]">
-                <div class="container mx-auto px-4 text-center">
-                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">¿Listo para monetizar tu hotspot?</h2>
-                    <p class="text-white/90 max-w-2xl mx-auto mb-8">
-                        Únete a cientos de negocios que ya están generando ingresos extra ofreciendo internet gratuito a sus clientes
-                    </p>
-                    <a href="{{ route('register') }}" class="inline-block px-8 py-3 bg-white text-[#ff3f00] font-bold rounded-lg shadow-lg hover:bg-gray-100 transition-colors duration-300">
-                        Comenzar ahora
-                    </a>
+            {{-- Llamado final --}}
+            <section class="cta-fondo py-20 text-white">
+                <div class="mx-auto max-w-3xl px-4 text-center" data-reveal>
+                    <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">¿Listo para que tu WiFi trabaje para ti?</h2>
+                    <p class="mx-auto mt-4 max-w-xl text-lg text-white/85">Solicita tu acceso: el equipo de Sattlink revisa tu solicitud y te ayuda a conectar tu primer hotspot.</p>
+                    <div class="mt-8 flex flex-wrap justify-center gap-3">
+                        <a href="{{ Route::has('register') ? route('register') : route('login') }}" class="rounded-xl bg-white px-7 py-3.5 font-semibold text-[#ff3f00] shadow-xl transition hover:-translate-y-0.5">Solicitar acceso</a>
+                        @if ($whatsapp)
+                            <a href="https://wa.me/{{ $whatsapp }}" target="_blank" rel="noopener" class="rounded-xl border border-white/40 px-7 py-3.5 font-semibold text-white transition hover:bg-white/10">Hablar por WhatsApp</a>
+                        @endif
+                    </div>
                 </div>
             </section>
         </main>
 
-        <!-- Footer -->
-        <footer class="bg-gray-100 dark:bg-gray-900 py-8">
-            <div class="container mx-auto px-4">
-                <div class="flex flex-col md:flex-row justify-between items-center">
-                    <div class="flex items-center gap-3 mb-4 md:mb-0">
-                        <img src="/img/Logo-i-Free.png" alt="Ifree Hotspot" class="h-10 w-auto">
-                        <span class="font-bold text-gray-800 dark:text-white">Ifree Hotspot</span>
-                    </div>
-
-                    <div class="text-sm text-gray-600 dark:text-gray-400">
-                        &copy; {{ date('Y') }} Ifree Hotspot. Todos los derechos reservados.
-                    </div>
+        <footer class="bg-[#0b0f19] py-10 text-white/60">
+            <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 text-sm sm:flex-row sm:px-6">
+                <div class="flex items-center gap-2.5">
+                    <img src="/img/Logo-i-Free.png" alt="" class="h-8 w-auto">
+                    <span class="font-semibold text-white">i-Free Hotspot</span>
+                    <span>· un servicio de Sattlink</span>
                 </div>
+                <p>&copy; {{ date('Y') }} i-Free. Todos los derechos reservados.</p>
             </div>
         </footer>
 
-        <!-- Botón flotante de WhatsApp mejorado -->
-        <div class="fixed bottom-6 right-6 z-50 group">
-            <!-- Pulso animado -->
-            <div class="absolute -inset-4 bg-[#25D366] rounded-full opacity-30 animate-pulse-slow group-hover:opacity-40"></div>
-
-            <!-- Contenedor principal con texto -->
-            <a href="https://wa.me/5491123456789" target="_blank"
-               class="flex items-center gap-2 bg-[#25D366] hover:bg-[#20c65e] text-white rounded-full shadow-lg pl-2 pr-5 py-2.5 transition-all duration-300 group-hover:shadow-xl">
-                <!-- Logotipo oficial de WhatsApp -->
-                <div class="relative flex items-center justify-center">
-                    <div class="flex items-center justify-center w-8 h-8 bg-white rounded-full shadow-inner">
-                        <svg class="w-5 h-5" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">
-                            <path d="M44.8 89.5c23.1 0 41.8-18.7 41.8-41.8S67.9 5.9 44.8 5.9 3.1 24.6 3.1 47.7s18.7 41.8 41.8 41.8zm.1-84.1c23.3 0 42.3 19 42.3 42.3S68.2 90 44.9 90 2.6 71 2.6 47.7 21.6 5.4 44.9 5.4z" fill="#25D366"/>
-                            <path d="M61.4 53.5c-.7-.3-4.1-2-4.8-2.2-.7-.2-1.1-.3-1.6.3-.5.6-1.8 2.2-2.2 2.7-.4.5-.8.5-1.5.2-.7-.3-2.9-1.1-5.5-3.4-2-1.8-3.4-4-3.8-4.7-.4-.7 0-1 .3-1.3.3-.3.7-.8 1-1.2.3-.4.4-.7.6-1.1.2-.4.1-.8 0-1.2-.1-.3-1.6-3.8-2.1-5.2-.6-1.4-1.1-1.2-1.6-1.2-.4 0-.8 0-1.3 0s-1.2.2-1.8.9c-.6.7-2.3 2.2-2.3 5.5 0 3.3 2.4 6.5 2.7 6.9.3.4 4.9 7.5 11.9 10.5 1.7.7 3 1.1 4 1.5 1.7.5 3.2.4 4.4.3 1.3-.2 4.1-1.7 4.7-3.3.6-1.6.6-3 .4-3.3-.2-.3-.6-.5-1.3-.8zm-12.4 17c-3.8 0-7.4-1-10.6-3l-.8-.5-7.8 2 2.1-7.5-.5-.8c-2.1-3.3-3.2-7.2-3.2-11.2 0-11.6 9.4-21 21-21s21 9.4 21 21c0 11.6-9.5 21-21 21zm0-38.2c-9.5 0-17.2 7.7-17.2 17.2 0 3.7 1.2 7.3 3.4 10.2l.5.8-2.2 8 8.2-2.1.8.5c2.9 1.7 6.2 2.7 9.5 2.7 9.5 0 17.2-7.7 17.2-17.2.1-9.5-7.6-17.1-17.1-17.1z" fill="#25D366"/>
-                        </svg>
-                    </div>
-                </div>
-
-                <!-- Texto -->
-                <span class="font-medium text-sm whitespace-nowrap">¿Necesitas ayuda?</span>
+        @if ($whatsapp)
+            <a href="https://wa.me/{{ $whatsapp }}" target="_blank" rel="noopener" class="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-[#25D366] py-3 pl-3 pr-5 font-semibold text-white shadow-xl shadow-black/20 transition hover:-translate-y-0.5" aria-label="Escríbenos por WhatsApp">
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18.2a8.2 8.2 0 01-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1112 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 00-.7.3 3 3 0 00-.9 2.2 5.2 5.2 0 001.1 2.7 11.8 11.8 0 004.5 4c1.7.7 2.3.8 3.2.7a2.7 2.7 0 001.8-1.3 2.2 2.2 0 00.2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg>
+                <span class="hidden text-sm sm:inline">¿Hablamos?</span>
             </a>
+        @endif
 
-            <!-- Tooltip que aparece al pasar el mouse -->
-            <div class="absolute bottom-full right-0 mb-3 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 transform opacity-0 scale-95 transition-all duration-300 pointer-events-none group-hover:opacity-100 group-hover:scale-100">
-                <p class="text-sm text-gray-700 dark:text-gray-300 mb-1">¡Contáctanos por WhatsApp!</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Respuesta inmediata</p>
-                <!-- Flecha del tooltip -->
-                <div class="absolute bottom-0 right-6 transform translate-y-1/2 rotate-45 w-3 h-3 bg-white dark:bg-gray-800"></div>
-            </div>
-        </div>
+        <script>
+            (function () {
+                var animar = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        <!-- Animaciones adicionales para el nuevo diseño -->
-        <style>
-        @keyframes float-delayed { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .animate-float-delayed { animation: float-delayed 3s ease-in-out infinite; animation-delay: 0.5s; }
-        @keyframes pulse-slow { 0%, 100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.6; } }
-        .animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
-        </style>
+                // Aparecer al entrar en pantalla
+                var observador = 'IntersectionObserver' in window ? new IntersectionObserver(function (entradas) {
+                    entradas.forEach(function (e) {
+                        if (e.isIntersecting) { e.target.classList.add('visible'); observador.unobserve(e.target); }
+                    });
+                }, { threshold: 0.15 }) : null;
+                document.querySelectorAll('[data-reveal]').forEach(function (el) {
+                    observador && animar ? observador.observe(el) : el.classList.add('visible');
+                });
+
+                // Contadores que suben desde cero
+                document.querySelectorAll('[data-contar]').forEach(function (el) {
+                    var fin = parseInt(el.getAttribute('data-contar'), 10) || 0;
+                    if (!animar || fin < 2) { return; }
+                    var inicio = null;
+                    el.textContent = '0';
+                    function paso(t) {
+                        inicio = inicio || t;
+                        var p = Math.min((t - inicio) / 1400, 1);
+                        el.textContent = Math.round(fin * (1 - Math.pow(1 - p, 3))).toLocaleString('es-MX');
+                        if (p < 1) { requestAnimationFrame(paso); }
+                    }
+                    setTimeout(function () { requestAnimationFrame(paso); }, 600);
+                });
+            })();
+        </script>
     </body>
 </html>
