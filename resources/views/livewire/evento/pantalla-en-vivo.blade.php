@@ -43,7 +43,7 @@
             min-height: 100vh; padding: clamp(16px, 2vw, 40px); color: var(--texto-1);
             font-family: 'Poppins', 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
             background: radial-gradient(ellipse at top, #13306b 0%, var(--fondo) 60%);
-            display: grid; grid-template-rows: auto auto 1fr auto auto; gap: clamp(12px, 1.6vw, 28px);
+            display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto auto; gap: clamp(10px, min(1.6vw, 2.2vh), 28px);
         }
         .pev-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
         .pev-logo { height: clamp(36px, 4vw, 72px); width: auto; }
@@ -60,9 +60,9 @@
         .pev-reloj { display: block; margin-top: 4px; color: var(--texto-2); font-variant-numeric: tabular-nums; font-size: clamp(12px, 1vw, 20px); }
 
         .pev-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(10px, 1.2vw, 24px); }
-        .pev-tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: 16px; padding: clamp(14px, 1.4vw, 28px); }
+        .pev-tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: 16px; padding: clamp(12px, min(1.4vw, 2.4vh), 28px); }
         .pev-kpi-etiqueta { display: flex; align-items: center; gap: 8px; color: var(--texto-2); font-size: clamp(12px, 1.05vw, 22px); font-weight: 500; }
-        .pev-kpi-valor { display: block; margin-top: 6px; font-size: clamp(40px, 5.2vw, 112px); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+        .pev-kpi-valor { display: block; margin-top: 6px; font-size: clamp(34px, min(5.2vw, 9vh), 112px); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
         .pev-kpi-nota { display: block; margin-top: 8px; color: var(--texto-3); font-size: clamp(11px, .8vw, 16px); }
         .pev-kpi--vivo .pev-kpi-valor { color: var(--oro); }
         .pev-punto { width: 10px; height: 10px; border-radius: 50%; background: var(--vivo); box-shadow: 0 0 0 0 rgba(47, 209, 124, .7); animation: pev-latido 1.8s infinite; }
@@ -71,9 +71,9 @@
         .pev-centro { display: grid; grid-template-columns: 2fr 1fr; gap: clamp(10px, 1.2vw, 24px); min-height: 0; }
         .pev-columna { display: grid; grid-template-rows: auto 1fr; gap: clamp(10px, 1.2vw, 24px); min-height: 0; }
         .pev-tarjeta h2 { margin: 0 0 4px; font-size: clamp(14px, 1.2vw, 26px); font-weight: 600; }
-        .pev-subtitulo { margin: 0 0 16px; color: var(--texto-3); font-size: clamp(11px, .85vw, 17px); }
+        .pev-subtitulo { margin: 0 0 clamp(8px, 1.4vh, 16px); color: var(--texto-3); font-size: clamp(11px, .85vw, 17px); }
 
-        .pev-grafica { display: flex; flex-direction: column; height: 100%; min-height: 220px; }
+        .pev-grafica { display: flex; flex-direction: column; height: 100%; min-height: 180px; }
         .pev-columnas { flex: 1; display: flex; align-items: flex-end; gap: 2px; border-bottom: 1px solid var(--texto-3); padding-top: 28px; }
         .pev-hora { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; }
         .pev-barra { width: 100%; max-width: 24px; min-height: 2px; background: var(--oro); border-radius: 4px 4px 0 0; transition: height .6s ease; }
@@ -85,18 +85,21 @@
         .pev-ejes span { flex: 1; text-align: center; color: var(--texto-3); font-size: clamp(9px, .75vw, 15px); }
         .pev-vacio { flex: 1; display: grid; place-items: center; color: var(--texto-3); font-size: clamp(13px, 1vw, 20px); }
 
-        .pev-apilada { display: flex; gap: 2px; height: 24px; }
+        .pev-apilada { display: flex; gap: 2px; height: clamp(12px, 2vh, 24px); }
         .pev-apilada span { height: 100%; transition: width .6s ease; }
         .pev-apilada span:first-child { border-radius: 4px 0 0 4px; }
         .pev-apilada span:last-child { border-radius: 0 4px 4px 0; }
         .pev-apilada span:only-child { border-radius: 4px; }
-        .pev-leyenda { display: grid; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
-        .pev-leyenda li { display: flex; align-items: center; gap: 10px; color: var(--texto-2); font-size: clamp(12px, 1vw, 20px); }
-        .pev-leyenda b { margin-left: auto; color: var(--texto-1); font-variant-numeric: tabular-nums; }
+        .pev-leyenda { display: flex; flex-wrap: wrap; gap: 6px clamp(12px, 1.4vw, 28px); margin: clamp(8px, 1.4vh, 16px) 0 0; padding: 0; list-style: none; }
+        .pev-leyenda li { display: flex; align-items: center; gap: 8px; color: var(--texto-2); font-size: clamp(12px, 1vw, 20px); }
+        .pev-leyenda b { color: var(--texto-1); font-variant-numeric: tabular-nums; }
         .pev-muestra { width: 12px; height: 12px; border-radius: 3px; flex: none; }
 
-        .pev-feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
-        .pev-feed li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--superficie-2); font-size: clamp(13px, 1.05vw, 22px); animation: pev-entra .5s ease both; }
+        .pev-registros { display: flex; flex-direction: column; }
+        .pev-registros h2 { margin-bottom: clamp(8px, 1.4vh, 14px); }
+        .pev-feed { flex: 1; min-height: 0; overflow: hidden; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); align-content: start; gap: clamp(6px, 1vh, 10px); -webkit-mask-image: linear-gradient(#000 75%, transparent); mask-image: linear-gradient(#000 75%, transparent); }
+        .pev-feed li { flex: none; display: flex; align-items: center; gap: 12px; padding: clamp(6px, 1.1vh, 10px) 12px; border-radius: 10px; background: var(--superficie-2); font-size: clamp(13px, min(1.05vw, 2.2vh), 22px); animation: pev-entra .5s ease both; }
+        .pev-feed li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pev-feed li span { margin-left: auto; color: var(--texto-3); font-size: .8em; }
         @keyframes pev-entra { from { opacity: 0; transform: translateY(-8px); } }
 
@@ -105,10 +108,10 @@
         .pev-socios-titulo { flex: none; color: var(--texto-2); font-size: clamp(11px, .85vw, 17px); font-weight: 600; text-transform: uppercase; letter-spacing: .12em; }
         .pev-cinta { flex: 1; min-width: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
         .pev-cinta-pista { display: flex; gap: clamp(8px, .8vw, 16px); width: max-content; animation: pev-cinta var(--duracion, 120s) linear infinite; }
-        .pev-socio { --alto-socio: clamp(44px, 3.6vw, 72px); flex: none; display: grid; place-items: center; height: var(--alto-socio); overflow: hidden; padding: 0 clamp(10px, .9vw, 18px); border-radius: 10px; background: #fff; }
+        .pev-socio { --alto-socio: clamp(36px, min(3.6vw, 6.5vh), 72px); flex: none; display: grid; place-items: center; height: var(--alto-socio); overflow: hidden; padding: 0 clamp(10px, .9vw, 18px); border-radius: 10px; background: #fff; }
         .pev-socio img { display: block; max-height: calc(var(--alto-socio) * .72); max-width: clamp(80px, 7vw, 150px); object-fit: contain; }
         @keyframes pev-cinta { to { transform: translateX(calc(-50% - clamp(4px, .4vw, 8px))); } }
-        .pev-pie { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: clamp(12px, 1.2vw, 22px) clamp(16px, 1.6vw, 32px); border-radius: 16px; background: linear-gradient(90deg, #b8860b, var(--oro)); color: #1a1300; }
+        .pev-pie { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: clamp(10px, min(1.2vw, 2vh), 22px) clamp(16px, 1.6vw, 32px); border-radius: 16px; background: linear-gradient(90deg, #b8860b, var(--oro)); color: #1a1300; }
         .pev-pie strong { font-size: clamp(14px, 1.4vw, 30px); }
         .pev-pie p { margin: 0; font-size: clamp(12px, 1vw, 20px); }
         .pev-ganadores { text-align: right; }
@@ -138,7 +141,17 @@
             .pev-centro > .pev-tarjeta, .pev-columna > .pev-tarjeta { min-height: 0; overflow: hidden; }
             .pev-columna { grid-template-rows: auto minmax(0, 1fr); }
         }
+        @media (min-width: 901px) and (max-height: 900px) {
+            .pev-centro { grid-template-columns: 1.4fr 1fr; }
+            .pev-kpi-nota { display: none; }
+            .pev-titulo p { margin-top: 2px; }
+        }
+        @media (min-width: 901px) and (max-height: 700px) {
+            .pev-subtitulo { display: none; }
+            .pev-logo { height: clamp(30px, 6vh, 56px); }
+        }
         @media (max-width: 900px) {
+            .pev-feed { max-height: 60vh; }
             .pev-kpis { grid-template-columns: repeat(2, 1fr); }
             .pev-centro { grid-template-columns: 1fr; }
             .pev-pie { flex-direction: column; text-align: center; }
@@ -225,8 +238,7 @@
         <div class="pev-columna">
             {{-- Plataformas --}}
             <div class="pev-tarjeta">
-                <h2>Dispositivos por plataforma</h2>
-                <p class="pev-subtitulo">Hoy</p>
+                <h2>Dispositivos por plataforma <span style="color: var(--texto-3); font-weight: 400">· hoy</span></h2>
                 <div class="pev-apilada" role="img" aria-label="Android {{ $plataformas['android'] }}, iPhone {{ $plataformas['iphone'] }}, otros {{ $plataformas['otros'] }}">
                     @foreach ($series as $s)
                         @if ($plataformas[$s['clave']] > 0)
@@ -246,7 +258,7 @@
             </div>
 
             {{-- Últimos registros --}}
-            <div class="pev-tarjeta">
+            <div class="pev-tarjeta pev-registros">
                 <h2>Últimos registros</h2>
                 @if (count($stats['ultimosRegistros'] ?? []))
                     <ul class="pev-feed">
