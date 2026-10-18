@@ -15,10 +15,10 @@ class DashboardTest extends TestCase
         $this->get('/dashboard')->assertRedirect('/login');
     }
 
-    public function test_authenticated_users_can_visit_the_dashboard(): void
+    public function test_a_user_without_role_waits_for_approval(): void
     {
-        $this->actingAs($user = User::factory()->create());
+        $this->actingAs(User::factory()->create());
 
-        $this->get('/dashboard')->assertStatus(200);
+        $this->get('/dashboard')->assertRedirect(route('cuenta.pendiente'));
     }
 }
