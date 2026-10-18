@@ -38,7 +38,7 @@ class AdminUsuariosTest extends TestCase
         $this->actingAs($this->admin)->get('/admin/users')
             ->assertOk()
             ->assertSee('Ana Cliente')
-            ->assertSee('Sin rol')
+            ->assertSee('Por aprobar')
             ->assertSee(route('admin.users.crear'));
 
         Livewire::actingAs($this->admin)->test(ListadoUsuarios::class)

@@ -14,6 +14,12 @@ return [
     'respaldo_timeout' => (int) env('IFREE_RESPALDO_TIMEOUT', 6),
 
     /*
+    | WhatsApp de contacto de la portada (solo dígitos, con lada: 5212345678901).
+    | Vacío = no se muestra el botón.
+    */
+    'whatsapp' => preg_replace('/\D/', '', (string) env('IFREE_WHATSAPP', '')),
+
+    /*
     | Alertas por Telegram durante eventos (comando evento:vigilar, cada minuto).
     | chats: IDs separados por coma (p. ej. el grupo de operación de Sattlink). Si se deja
     | vacío, se avisa a los chats de las zonas con tema "evento".

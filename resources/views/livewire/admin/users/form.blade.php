@@ -83,7 +83,7 @@
                 @endforeach
                 @error('roles') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                 @if (empty($roles))
-                    <p class="text-sm text-amber-700 dark:text-amber-400">Sin rol, esta persona podrá iniciar sesión pero no verá ninguna sección.</p>
+                    <p class="text-sm text-amber-700 dark:text-amber-400">Sin rol, la cuenta queda en revisión: al entrar solo verá el aviso de cuenta en revisión.</p>
                 @endif
             </div>
         </section>

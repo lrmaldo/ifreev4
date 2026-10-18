@@ -36,13 +36,9 @@ class Register extends Component
 
         $user = User::create($validated);
 
-        // Asignar el rol de cliente automáticamente
-        if (class_exists(\Spatie\Permission\Models\Role::class)) {
-            $clienteRole = \Spatie\Permission\Models\Role::where('name', 'cliente')->first();
-            if ($clienteRole) {
-                $user->assignRole($clienteRole);
-            }
-        }
+        // Sin rol: la cuenta queda en revisión hasta que un admin la apruebe en Usuarios.
+        // (Antes recibía el rol cliente al instante y podía crear zonas y campañas.)
+        \Illuminate\Support\defer(fn () => app(\App\Services\AvisoCuentaNueva::class)->avisar($user));
 
         event(new Registered($user));
 

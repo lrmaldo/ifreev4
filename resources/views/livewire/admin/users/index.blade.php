@@ -51,7 +51,7 @@
             @endforeach
             @if ($sinRol > 0)
                 <button type="button" wire:click="$set('filtroRol', 'sin_rol')" class="{{ $chip }} {{ $filtroRol === 'sin_rol' ? $chipActivo : $chipInactivo }}">
-                    Sin rol <span class="opacity-70">{{ $sinRol }}</span>
+                    Por aprobar <span class="opacity-70">{{ $sinRol }}</span>
                 </button>
             @endif
             @if ($hayFiltros)
@@ -89,7 +89,8 @@
                                     @forelse ($usuario->roles as $rol)
                                         <span class="{{ $badge }} {{ $colorRol[$rol->name] ?? $colorRolDefecto }}">{{ ucfirst($rol->name) }}</span>
                                     @empty
-                                        <span class="{{ $badge }} bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-500/10 dark:text-red-300" title="Sin rol no puede usar el panel">Sin rol</span>
+                                        <span class="{{ $badge }} bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-300" title="Sin rol: solo ve la página de cuenta en revisión">Por aprobar</span>
+                                        <button type="button" wire:click="aprobar({{ $usuario->id }})" wire:confirm="¿Dar acceso a {{ $usuario->name }} como cliente?" class="rounded-md border-0 bg-transparent px-1 py-0 text-xs font-medium text-indigo-600 shadow-none hover:text-indigo-500">Aprobar como cliente</button>
                                     @endforelse
                                 </div>
                             </td>
@@ -123,7 +124,8 @@
                         @forelse ($usuario->roles as $rol)
                             <span class="{{ $badge }} {{ $colorRol[$rol->name] ?? $colorRolDefecto }}">{{ ucfirst($rol->name) }}</span>
                         @empty
-                            <span class="{{ $badge }} bg-red-50 text-red-700 ring-red-600/20">Sin rol</span>
+                            <span class="{{ $badge }} bg-amber-50 text-amber-800 ring-amber-600/20">Por aprobar</span>
+                            <button type="button" wire:click="aprobar({{ $usuario->id }})" wire:confirm="¿Dar acceso a {{ $usuario->name }} como cliente?" class="rounded-md border-0 bg-transparent px-1 py-0 text-xs font-medium text-indigo-600 shadow-none">Aprobar como cliente</button>
                         @endforelse
                         @if ($usuario->cliente)
                             <span class="text-xs text-zinc-500">· {{ $usuario->cliente->nombre }}</span>

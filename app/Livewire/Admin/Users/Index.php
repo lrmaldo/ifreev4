@@ -40,6 +40,21 @@ class Index extends Component
         $this->resetPage();
     }
 
+    /**
+     * Da acceso a una cuenta del registro público (queda sin rol hasta aprobarla).
+     */
+    public function aprobar(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+
+        if ($user->roles()->exists() || !Role::where('name', 'cliente')->exists()) {
+            return;
+        }
+
+        $user->assignRole('cliente');
+        session()->flash('message', "{$user->name} ya puede entrar como cliente.");
+    }
+
     public function confirmarEliminar(int $userId): void
     {
         $this->eliminandoId = $userId;

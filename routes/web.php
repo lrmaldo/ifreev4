@@ -138,14 +138,26 @@ Route::get('/pantalla/{token}', function (string $token) {
   ->name('evento.pantalla');
 
 Route::get('/', function () {
-    return view('welcome');
+    // Cifras reales para la portada (una consulta por hora como mucho)
+    $cifras = \Illuminate\Support\Facades\Cache::remember('portada:cifras', 3600, fn () => [
+        'zonas' => \App\Models\Zona::count(),
+        'dispositivos' => \App\Models\HotspotMetric::count(),
+        'registros' => \App\Models\FormResponse::count(),
+    ]);
+
+    return view('welcome', ['cifras' => $cifras]);
 })->name('home');
 
 Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'cuenta.aprobada'])
     ->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
+    // Cuenta creada desde el registro público, todavía sin aprobar
+    Route::get('cuenta/pendiente', function () {
+        return auth()->user()->roles()->exists() ? redirect()->route('dashboard') : view('cuenta-pendiente');
+    })->name('cuenta.pendiente');
+
     Route::redirect('settings', 'settings/profile');
 
     Route::get('settings/profile', Profile::class)->name('settings.profile');
@@ -265,10 +277,6 @@ Route::middleware(['auth'])->group(function () {
 
 });
 
-// Ruta de prueba para mostrar el dashboard de administración con Tailwind
-Route::get('/test-dashboard', function() {
-    return view('test-dashboard');
-})->name('test.dashboard');
 
 // Rutas para el webhook de Telegram
 // Nota: La ruta principal del webhook es manejada por Telegraph::telegraph() más abajo en este archivo
