@@ -1,12 +1,12 @@
 <div class="space-y-6">
     <!-- Header -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h2 class="text-2xl font-bold text-gray-900">Respuestas del Formulario</h2>
                 <p class="text-gray-600 mt-1">Zona: <span class="font-semibold text-primary-600">{{ $zona->nombre }}</span></p>
             </div>
-            <div class="flex items-center space-x-2">
+            <div class="flex flex-wrap items-center gap-2">
                 <flux:button
                     wire:click="exportToExcel"
                     variant="primary"
@@ -81,7 +81,7 @@
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         @if($respuestas->count() > 0)
             <!-- Desktop view -->
-            <div class="block lg:block overflow-x-auto">
+            <div class="relative block overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>

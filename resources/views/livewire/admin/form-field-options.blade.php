@@ -52,7 +52,7 @@
                 <h4 class="text-md font-medium text-gray-700 mb-2">Opciones actuales</h4>
 
                 @if (count($opciones) > 0)
-                    <div class="overflow-x-auto">
+                    <div class="relative overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>

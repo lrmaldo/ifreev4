@@ -23,7 +23,7 @@
     $colorPlataforma = ['Android' => 'bg-emerald-500', 'iPhone / iPad' => 'bg-zinc-700 dark:bg-zinc-300', 'Windows' => 'bg-sky-500', 'Mac' => 'bg-violet-500', 'Otros' => 'bg-zinc-300 dark:bg-zinc-600'];
 @endphp
 
-<div class="w-full space-y-6">
+<div class="w-full min-w-0 space-y-6">
     {{-- Encabezado --}}
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -86,7 +86,7 @@
         {{-- Indicadores principales --}}
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
             @foreach ($principales as $kpi)
-                <div class="{{ $tarjeta }} p-5" title="{{ $kpi['ayuda'] }}">
+                <div class="{{ $tarjeta }} min-w-0 p-4 sm:p-5" title="{{ $kpi['ayuda'] }}">
                     <p class="text-sm text-zinc-500 dark:text-zinc-400">{{ $kpi['titulo'] }}</p>
                     <p class="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-zinc-900 dark:text-white">{{ $kpi['valor'] }}</p>
                     @if ($kpi['clave'] && $periodo !== 'rango')
@@ -145,8 +145,8 @@
         @endif
 
         {{-- Desgloses --}}
-        <div class="grid gap-4 lg:grid-cols-3">
-            <section class="{{ $tarjeta }} p-5">
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <section class="{{ $tarjeta }} min-w-0 p-5">
                 <h2 class="mb-4 text-base font-semibold text-zinc-900 dark:text-white">Plataformas</h2>
                 @if (empty($plataformas))
                     <p class="text-sm text-zinc-500">Sin dispositivos en este periodo.</p>
@@ -168,7 +168,7 @@
             </section>
 
             @foreach (['Dispositivos más comunes' => $topDispositivos, 'Navegadores' => $topNavegadores] as $titulo => $lista)
-                <section class="{{ $tarjeta }} p-5">
+                <section class="{{ $tarjeta }} min-w-0 p-5">
                     <h2 class="mb-4 text-base font-semibold text-zinc-900 dark:text-white">{{ $titulo }}</h2>
                     @if (empty($lista))
                         <p class="text-sm text-zinc-500">Sin datos en este periodo.</p>
@@ -178,7 +178,7 @@
                             @foreach ($lista as $fila)
                                 <li>
                                     <div class="mb-1 flex justify-between gap-2">
-                                        <span class="truncate text-zinc-700 dark:text-zinc-200" title="{{ $fila['nombre'] }}">{{ $fila['nombre'] }}</span>
+                                        <span class="min-w-0 truncate text-zinc-700 dark:text-zinc-200" title="{{ $fila['nombre'] }}">{{ $fila['nombre'] }}</span>
                                         <span class="shrink-0 tabular-nums text-zinc-500">{{ $nf($fila['total']) }}</span>
                                     </div>
                                     <div class="h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-700"><div class="h-1.5 rounded-full bg-indigo-500" style="width: {{ $fila['total'] / $maxLista * 100 }}%"></div></div>
@@ -230,7 +230,7 @@
             @if ($dispositivos->isEmpty())
                 <p class="px-5 py-12 text-center text-sm text-zinc-500">{{ $mac_address ? 'Ninguna MAC coincide con la búsqueda.' : 'Sin dispositivos en este periodo.' }}</p>
             @else
-                <div class="overflow-x-auto">
+                <div class="relative overflow-x-auto">
                     <table class="min-w-full divide-y divide-zinc-200 text-sm dark:divide-zinc-700">
                         <thead class="bg-zinc-50 dark:bg-zinc-800/60">
                             <tr class="text-left text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
