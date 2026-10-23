@@ -158,6 +158,9 @@
                     <flux:navlist.item icon="presentation-chart-bar" :href="route('admin.campanas.index')" :current="request()->routeIs('admin.campanas.*')" wire:navigate>
                         Campañas
                     </flux:navlist.item>
+                    <flux:navlist.item icon="chart-bar" :href="route('admin.hotspot-metrics.index')" :current="request()->routeIs('admin.hotspot-metrics.*')" wire:navigate>
+                        Métricas
+                    </flux:navlist.item>
                     <flux:navlist.item icon="chat-bubble-left-right" :href="route('admin.telegram.index')" :current="request()->routeIs('admin.telegram.*')" wire:navigate>
                         Telegram
                     </flux:navlist.item>

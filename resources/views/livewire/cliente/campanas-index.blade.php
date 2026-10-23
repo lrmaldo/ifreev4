@@ -51,7 +51,7 @@
         </div>
 
         <!-- Tabla de Campañas -->
-        <div class="overflow-x-auto">
+        <div class="relative overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
                 <thead class="bg-gray-50 dark:bg-zinc-800">
                     <tr>
