@@ -23,6 +23,13 @@
             </div>
         @else
             <div class="px-4 py-5 sm:px-6">
+                <div class="mb-6 flex flex-wrap items-center gap-4">
+                    <button wire:click="cargarEstados" wire:loading.attr="disabled" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Cargar estados de México
+                    </button>
+                    <span class="text-sm text-gray-500">Agrega los 32 estados y "Fuera de México"; no repite los que ya existan.</span>
+                </div>
+
                 <div class="mb-6">
                     <h4 class="text-md font-medium text-gray-700 mb-2">Nueva opción</h4>
                     <div class="flex flex-wrap gap-4">

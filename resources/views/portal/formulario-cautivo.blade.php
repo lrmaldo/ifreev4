@@ -1553,7 +1553,17 @@
                         }, 200);
                         @endif
                     } else {
-                        alert(data.message || 'Error al enviar el formulario');
+                        // Si el servidor dice qué campo está mal, el aviso sale junto a ese campo
+                        const clave = Object.keys(data.errors || {})[0] || '';
+                        const campo = clave.startsWith('respuestas.')
+                            ? portalForm?.querySelector(`[name="form[${CSS.escape(clave.slice(11))}]"]`)
+                            : document.getElementById(clave);
+                        if (campo && campo.reportValidity) {
+                            campo.setCustomValidity(data.message);
+                            campo.reportValidity();
+                        } else {
+                            alert(data.message || 'Error al enviar el formulario');
+                        }
                         // Restaurar botón
                         buttonText.textContent = 'Conectar';
                         loadingSpinner.classList.add('hidden');
@@ -1569,6 +1579,24 @@
                     submitBtn.disabled = false;
                 });
             }
+
+            // Mensajes claros en lugar de "el formato no coincide" del navegador
+            portalForm?.querySelectorAll('input').forEach(input => {
+                input.addEventListener('invalid', () => {
+                    if (input.dataset.error && !input.validity.valueMissing && !input.validity.customError) {
+                        input.setCustomValidity(input.dataset.error);
+                    }
+                });
+                input.addEventListener('input', () => {
+                    input.setCustomValidity('');
+                    // Teléfono: solo dígitos; "+52 55 1234 5678" queda en 5512345678
+                    if (input.type === 'tel') {
+                        let digitos = input.value.replace(/\D/g, '');
+                        if (digitos.length > 10 && digitos.startsWith('52')) digitos = digitos.replace(/^521?/, '');
+                        input.value = digitos.slice(0, 10);
+                    }
+                });
+            });
 
             // Manejar envío del formulario principal
             if (portalForm) {
@@ -1621,7 +1649,6 @@
                         }
                     });
 
-                    console.log('Respuestas recopiladas:', respuestas);
                     enviarFormulario(respuestas);
                 });
             }

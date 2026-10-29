@@ -67,7 +67,7 @@ class EventoCargaTest extends TestCase
 
             // Lo que hace el JavaScript del portal en el celular
             $this->postJson('/hotspot-metrics/track', ['tipo_visual' => 'carrusel'], $headers)->assertOk();
-            $this->postJson('/zona/formulario/responder', ['respuestas' => ['nombre' => 'Ana'], 'acepta_privacidad' => 1], $headers)->assertOk();
+            $this->postJson('/zona/formulario/responder', ['respuestas' => ['nombre' => 'Ana López'], 'acepta_privacidad' => 1], $headers)->assertOk();
             $this->postJson('/hotspot-metrics/update', ['duracion_visual' => 15], $headers)->assertOk();
         };
 

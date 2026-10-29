@@ -24,6 +24,11 @@ class FormResponseController extends Controller
             'formulario_completado' => 'boolean'
         ]);
 
+        // Mismo formato que el portal (teléfono, correo, nombre); aquí los obligatorios no se exigían
+        $respuestas = app(\App\Services\ValidacionPortal::class)->validar(
+            Zona::find($request->zona_id)->campos()->with('opciones')->get(), $request->respuestas, exigirObligatorios: false
+        );
+
         try {
             $response = FormResponse::create([
                 'zona_id' => $request->zona_id,
@@ -32,7 +37,7 @@ class FormResponseController extends Controller
                 'navegador' => $request->navegador,
                 'tiempo_activo' => $request->tiempo_activo ?? 0,
                 'formulario_completado' => $request->formulario_completado ?? false,
-                'respuestas' => $request->respuestas
+                'respuestas' => $respuestas
             ]);
 
             \Illuminate\Support\defer(fn () => app(\App\Services\AvisoRegistroTelegram::class)->avisar($response));

@@ -70,6 +70,42 @@ class FormFieldOptions extends Component
         ]);
     }
 
+    public const ESTADOS_MEXICO = [
+        'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua',
+        'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Estado de México', 'Guanajuato', 'Guerrero',
+        'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro',
+        'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz',
+        'Yucatán', 'Zacatecas', 'Fuera de México',
+    ];
+
+    /** Agrega los 32 estados (y "Fuera de México") sin repetir los que ya estén. */
+    public function cargarEstados()
+    {
+        $existentes = $this->formField->opciones()->pluck('valor')->all();
+        $orden = (int) $this->formField->opciones()->max('orden');
+        $agregados = 0;
+
+        foreach (self::ESTADOS_MEXICO as $estado) {
+            if (! in_array($estado, $existentes, true)) {
+                FormFieldOption::create([
+                    'form_field_id' => $this->formField->id,
+                    'valor' => $estado,
+                    'etiqueta' => $estado,
+                    'orden' => ++$orden,
+                ]);
+                $agregados++;
+            }
+        }
+
+        $this->formField->load('opciones');
+        $this->cargarOpciones();
+
+        $this->dispatch('notify', [
+            'type' => 'success',
+            'message' => $agregados ? "Se agregaron {$agregados} estados" : 'Los estados ya estaban cargados',
+        ]);
+    }
+
     public function actualizarOpcion($id)
     {
         $this->validate([

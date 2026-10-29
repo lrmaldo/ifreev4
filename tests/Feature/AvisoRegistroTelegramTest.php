@@ -30,7 +30,7 @@ class AvisoRegistroTelegramTest extends TestCase
             'nombre' => 'InterTB', 'user_id' => User::factory()->create()->id, 'tipo_registro' => 'formulario',
             'tipo_autenticacion_mikrotik' => 'sin_autenticacion', 'segundos' => 15,
         ]);
-        FormField::create(['zona_id' => $this->zona->id, 'campo' => 'nombre', 'etiqueta' => 'Nombre', 'tipo' => 'text', 'obligatorio' => true, 'orden' => 1]);
+        FormField::create(['zona_id' => $this->zona->id, 'campo' => 'empresa', 'etiqueta' => 'Empresa', 'tipo' => 'text', 'obligatorio' => true, 'orden' => 1]);
 
         $chat = TelegramChat::create(['chat_id' => '-640379024', 'nombre' => 'i-free Avisos', 'tipo' => 'group', 'activo' => true]);
         $chat->zonas()->attach($this->zona->id);
@@ -39,7 +39,7 @@ class AvisoRegistroTelegramTest extends TestCase
     private function registrarse(string $mac = 'AA:BB:CC:DD:EE:01')
     {
         return $this->withoutDefer()->postJson('/zona/formulario/responder', [
-            'respuestas' => ['nombre' => 'Ana <López>'],
+            'respuestas' => ['empresa' => 'Tacos <López>'],
             'acepta_privacidad' => 1,
         ], ['X-Portal-Token' => PortalToken::generar($this->zona->id, $mac)]);
     }
@@ -52,7 +52,7 @@ class AvisoRegistroTelegramTest extends TestCase
             return str_contains($peticion->url(), '/sendMessage')
                 && $peticion['chat_id'] === '-640379024'
                 && str_contains($peticion['text'], 'Nuevo registro · InterTB')
-                && str_contains($peticion['text'], '<b>Nombre:</b> Ana &lt;López&gt;') // escapado para el HTML de Telegram
+                && str_contains($peticion['text'], '<b>Empresa:</b> Tacos &lt;López&gt;') // escapado para el HTML de Telegram
                 && str_contains($peticion['text'], 'Registros hoy: <b>1</b>');
         });
     }

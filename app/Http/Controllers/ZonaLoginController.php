@@ -305,19 +305,12 @@ class ZonaLoginController extends Controller
         try {
             $zona = \App\Models\Zona::findOrFail($request->zona_id);
 
-            // Validar campos obligatorios del formulario y la aceptación del aviso de privacidad
-            $reglas = ['acepta_privacidad' => 'accepted'];
-            foreach ($zona->campos()->where('obligatorio', true)->get() as $campo) {
-                if ($campo->tipo !== 'checkbox') {
-                    $reglas["respuestas.{$campo->campo}"] = 'required';
-                }
-            }
+            // Campos obligatorios, formato (teléfono, correo, nombre) y aviso de privacidad
+            $respuestas = app(\App\Services\ValidacionPortal::class)
+                ->validar($zona->campos()->with('opciones')->orderBy('orden')->get(), (array) ($request->respuestas ?? []));
+            $request->validate(['acepta_privacidad' => 'accepted'], ['accepted' => 'Acepta el aviso de privacidad para continuar.']);
 
-            if (!empty($reglas)) {
-                $request->validate($reglas);
-            }
-
-            \DB::transaction(function () use ($request, $zona) {
+            \DB::transaction(function () use ($request, $zona, $respuestas) {
                 // Guardar respuesta del formulario
                 $formResponse = \App\Models\FormResponse::create([
                     'zona_id' => $zona->id,
@@ -326,7 +319,7 @@ class ZonaLoginController extends Controller
                     'navegador' => $request->navegador,
                     'tiempo_activo' => $request->tiempo_activo ?? 0,
                     'formulario_completado' => true,
-                    'respuestas' => $request->respuestas ?? [],
+                    'respuestas' => $respuestas,
                     'acepto_privacidad_at' => now(),
                 ]);
 
@@ -358,7 +351,7 @@ class ZonaLoginController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Por favor complete los campos obligatorios',
+                'message' => collect($e->errors())->flatten()->first() ?? 'Por favor complete los campos obligatorios',
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {

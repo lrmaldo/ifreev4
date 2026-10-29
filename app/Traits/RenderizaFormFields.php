@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\FormField;
+use App\Services\ValidacionPortal;
 
 trait RenderizaFormFields
 {
@@ -40,7 +41,8 @@ trait RenderizaFormFields
             case 'email':
             case 'tel':
             case 'number':
-                $html .= '<input type="' . $campo->tipo . '" id="' . $id . '" name="' . $nombre . '" value="' . $valor . '" ' . $required .
+                $html .= '<input type="' . $campo->tipo . '" id="' . $id . '" name="' . $nombre . '" value="' . e($valor) . '" ' . $required .
+                        $this->atributosValidacion($campo) .
                         ' class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">';
                 break;
 
@@ -115,6 +117,31 @@ trait RenderizaFormFields
         $html .= '</div>';
 
         return $html;
+    }
+
+    /**
+     * Teclado, autollenado y formato que el navegador revisa antes de enviar
+     * (el servidor vuelve a revisar con ValidacionPortal).
+     */
+    protected function atributosValidacion(FormField $campo): string
+    {
+        $atributos = match (true) {
+            $campo->tipo === 'tel' => [
+                'inputmode' => 'numeric', 'autocomplete' => 'tel-national',
+                'pattern' => ValidacionPortal::PATRON_TELEFONO, 'data-error' => ValidacionPortal::MENSAJE_TELEFONO,
+            ],
+            $campo->tipo === 'email' => [
+                'inputmode' => 'email', 'autocomplete' => 'email', 'autocapitalize' => 'off', 'spellcheck' => 'false',
+                'data-error' => ValidacionPortal::MENSAJE_CORREO,
+            ],
+            ValidacionPortal::esNombre($campo) => [
+                'autocomplete' => 'name', 'autocapitalize' => 'words',
+                'pattern' => ValidacionPortal::PATRON_NOMBRE, 'data-error' => ValidacionPortal::MENSAJE_NOMBRE,
+            ],
+            default => [],
+        };
+
+        return collect($atributos)->map(fn ($v, $k) => ' ' . $k . '="' . e($v) . '"')->implode('');
     }
 
     /**
