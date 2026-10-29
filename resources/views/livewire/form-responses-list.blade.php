@@ -130,12 +130,23 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4">
-                                    <button
-                                        class="text-primary-600 hover:text-primary-700 text-sm font-medium transition-colors duration-150 hover:underline"
-                                        onclick="toggleRespuestas({{ $respuesta->id }})"
-                                    >
-                                        Ver respuestas
-                                    </button>
+                                    <div class="flex space-x-2">
+                                        <button
+                                            class="text-primary-600 hover:text-primary-700 text-sm font-medium transition-colors duration-150 hover:underline"
+                                            onclick="toggleRespuestas({{ $respuesta->id }})"
+                                        >
+                                            Ver respuestas
+                                        </button>
+                                        @hasrole('admin')
+                                        <button
+                                            class="text-red-600 hover:text-red-900 text-sm font-medium"
+                                            wire:click="eliminar({{ $respuesta->id }})"
+                                            wire:confirm="¿Eliminar este registro? No se puede deshacer."
+                                        >
+                                            Eliminar
+                                        </button>
+                                        @endhasrole
+                                    </div>
                                 </td>
                             </tr>
                             <!-- Fila expandible con respuestas -->

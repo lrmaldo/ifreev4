@@ -53,6 +53,19 @@ class FormResponsesList extends Component
         $this->resetPage();
     }
 
+    /**
+     * Borra un registro basura (solo admin). Esa MAC vuelve a ver el formulario
+     * la próxima vez que se conecte.
+     */
+    public function eliminar($id)
+    {
+        abort_unless(auth()->user()?->hasRole('admin'), 403);
+
+        $respuesta = FormResponse::where('zona_id', $this->zona->id)->findOrFail($id);
+        \App\Models\HotspotMetric::where('formulario_id', $respuesta->id)->update(['formulario_id' => null]);
+        $respuesta->delete();
+    }
+
     public function render()
     {
         $query = FormResponse::where('zona_id', $this->zona->id)
