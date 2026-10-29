@@ -20,6 +20,12 @@ return [
     'whatsapp' => preg_replace('/\D/', '', (string) env('IFREE_WHATSAPP', '')),
 
     /*
+    | Revisar en DNS que el dominio del correo del portal exista (gmail.com, hotmail.com y
+    | otros conocidos no se consultan). Apagar si el servidor no tiene salida a DNS.
+    */
+    'validar_correo_dns' => (bool) env('IFREE_VALIDAR_CORREO_DNS', true),
+
+    /*
     | Alertas por Telegram durante eventos (comando evento:vigilar, cada minuto).
     | chats: IDs separados por coma (p. ej. el grupo de operación de Sattlink). Si se deja
     | vacío, se avisa a los chats de las zonas con tema "evento".
