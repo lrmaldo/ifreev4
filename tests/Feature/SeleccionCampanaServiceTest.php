@@ -179,6 +179,22 @@ class SeleccionCampanaServiceTest extends TestCase
         $this->assertSame('', $resultado['videoUrl']);
     }
 
+    public function test_el_carrusel_no_abre_siempre_con_la_misma_imagen()
+    {
+        $campanas = collect(range(1, 5))->map(fn ($i) => $this->crearCampana(['archivo_path' => "c{$i}.jpg"]));
+
+        $primeras = collect(range(1, 40))
+            ->map(fn () => $this->servicio->seleccionarDe($campanas, 'aleatorio', 'video')['imagenes'][0])
+            ->unique();
+
+        // Con 5 imágenes y 40 visitas, que todas abran igual sería 1 en ~10^28
+        $this->assertGreaterThan(1, $primeras->count());
+
+        $resultado = $this->servicio->seleccionarDe($campanas, 'aleatorio', 'video');
+        $this->assertCount(5, $resultado['imagenes']);
+        $this->assertStringEndsWith($resultado['campana']->archivo_path, $resultado['imagenes'][0]); // la métrica apunta a la primera que se ve
+    }
+
     public function test_sin_campanas_no_selecciona_nada()
     {
         $resultado = $this->servicio->seleccionarDe(collect(), 'aleatorio');

@@ -87,10 +87,11 @@ class SeleccionCampanaService
             ];
         }
 
-        // En modo prioridad el carrusel solo muestra las imágenes con la mejor prioridad
-        $seleccionadas = $modo === 'prioridad'
+        // En modo prioridad el carrusel solo muestra las imágenes con la mejor prioridad.
+        // Se barajan para que no abra siempre con la misma campaña en cada visita.
+        $seleccionadas = ($modo === 'prioridad'
             ? $imagenes->where('prioridad', $imagenes->min('prioridad'))
-            : $imagenes;
+            : $imagenes)->shuffle();
 
         return [
             'tipo' => 'imagen',
