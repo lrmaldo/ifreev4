@@ -49,6 +49,7 @@ class EventoEnVivoService
             ],
             'llegadasPorHora' => $this->llegadasPorHora($zona),
             'ultimosRegistros' => $this->ultimosRegistros($zona),
+            'aps' => app(AccessPointsService::class)->resumenZona($zona),
         ];
     }
 

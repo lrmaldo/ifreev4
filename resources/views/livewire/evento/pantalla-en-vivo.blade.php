@@ -94,6 +94,7 @@
         .pev-leyenda li { display: flex; align-items: center; gap: 8px; color: var(--texto-2); font-size: clamp(12px, 1vw, 20px); }
         .pev-leyenda b { color: var(--texto-1); font-variant-numeric: tabular-nums; }
         .pev-muestra { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+        .pev-aps { padding-top: clamp(6px, 1vh, 12px); border-top: 1px solid var(--borde); }
 
         .pev-registros { display: flex; flex-direction: column; }
         .pev-registros h2 { margin-bottom: clamp(8px, 1.4vh, 14px); }
@@ -255,6 +256,18 @@
                         </li>
                     @endforeach
                 </ul>
+                @if (count($stats['aps'] ?? []))
+                    {{-- Clientes WiFi por access point (SNMP, aps:sondear) --}}
+                    <ul class="pev-leyenda pev-aps" aria-label="Clientes WiFi por access point">
+                        @foreach ($stats['aps'] as $ap)
+                            <li>
+                                <span class="pev-muestra" style="background: {{ $ap['en_linea'] ? 'var(--oro)' : 'var(--texto-3)' }}"></span>
+                                {{ $ap['nombre'] }}
+                                <b>{{ $ap['en_linea'] ? number_format($ap['clientes']) : '—' }}</b>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
             </div>
 
             {{-- Últimos registros --}}

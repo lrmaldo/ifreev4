@@ -231,6 +231,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/telegram', function() {
             return view('admin.telegram');
         })->name('admin.telegram.index');
+
+        // Access points por SNMP: clientes y tráfico (los lee aps:sondear cada minuto)
+        Route::get('/aps', \App\Livewire\Admin\Aps\Index::class)->name('admin.aps.index');
     });    // Rutas para clientes y admins (acceso a zonas)
     Route::middleware(['role:cliente|admin'])->group(function () {
         Route::get('/zonas', function() {

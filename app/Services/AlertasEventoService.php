@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AccessPoint;
 use App\Models\FormResponse;
 use App\Models\HotspotMetric;
 use App\Models\MetricaDetalle;
@@ -53,6 +54,10 @@ class AlertasEventoService
         foreach (Zona::where('portal_tema', 'evento')->get() as $zona) {
             $estados[] = $this->revisarVisitas($zona);
             $estados[] = $this->revisarRegistros($zona);
+        }
+
+        foreach (AccessPoint::where('activo', true)->get() as $ap) {
+            array_push($estados, ...$this->revisarAp($ap));
         }
 
         $mensajes = [];
@@ -169,6 +174,27 @@ class AlertasEventoService
                 ? "🟠 <b>{$this->e($zona->nombre)}: nadie se registra</b>\n{$nuevos} dispositivos nuevos en {$minutos} min y 0 registros. Revisa el formulario del portal."
                 : null,
             "✅ <b>{$this->e($zona->nombre)}</b>: vuelven a llegar registros"];
+    }
+
+    /**
+     * Un access point dejó de responder por SNMP o tiene demasiados clientes.
+     */
+    private function revisarAp(AccessPoint $ap): array
+    {
+        $nombre = $this->e($ap->nombre);
+        $limite = (int) config('ifree.alertas.ap_max_clientes');
+        // Sin sondeo reciente (aps:sondear no corre) no se sabe nada: no se alerta ni se da por resuelto
+        if (!$ap->ultimo_sondeo_at?->gt(now()->subMinutes(3))) {
+            return [];
+        }
+
+        return [
+            // Dos revisiones seguidas: un paquete perdido no alerta
+            ["ap-caido-{$ap->id}", !$ap->en_linea ? "🔴 <b>AP {$nombre} no responde</b>\n" . $this->e((string) $ap->ultimo_error) . "\nRevisa corriente, cable o el MikroTik." : null,
+                "✅ <b>AP {$nombre}</b> volvió a responder ({$ap->clientes} clientes)", 2],
+            ["ap-saturado-{$ap->id}", $ap->en_linea && $ap->clientes >= $limite ? "🟠 <b>AP {$nombre} con {$ap->clientes} clientes</b>\nPasó el límite de {$limite}. Puede ir lento." : null,
+                "✅ <b>AP {$nombre}</b> bajó a {$ap->clientes} clientes", 2],
+        ];
     }
 
     /**
