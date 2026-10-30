@@ -985,6 +985,9 @@
         /* Encabezado con logos y marca "EXPO MX-ISP 2026" (como en wisp.mx) */
         .marca-evento { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
         .marca-evento-logo { height: 36px; width: auto; }
+        .marca-evento-ifree { display: inline-flex; align-items: center; gap: 6px; }
+        .marca-evento-logo-blanco { filter: brightness(0) invert(1); }
+        .marca-evento-by { font-size: 11px; font-weight: 600; line-height: 1.1; color: #ffffff; letter-spacing: .02em; white-space: nowrap; }
         .marca-evento-titulo { display: inline-flex; align-items: center; gap: 4px; font-family: 'Plus Jakarta Sans', 'Poppins', sans-serif; font-weight: 900; font-size: 24px; line-height: 1; letter-spacing: -.04em; color: #ffffff; }
         .marca-evento-expo { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 8px; letter-spacing: .16em; }
         .marca-evento-mxisp { background: linear-gradient(#ffd75a, #dbac2f 35%, #e0922e 75%, #cf7818); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
