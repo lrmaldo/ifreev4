@@ -1,5 +1,6 @@
 {{-- Carrusel de socios para el portal (logos mini, ~230 KB en total) --}}
-@php $socios = \App\Support\SociosEvento::lista(mini: true); @endphp
+{{-- Orden al azar en cada visita, para que no abra siempre el mismo socio --}}
+@php $socios = collect(\App\Support\SociosEvento::lista(mini: true))->shuffle()->all(); @endphp
 @if (count($socios))
     <style>
         .portal-socios { max-width: 500px; margin: 0 auto 24px; padding: 0 16px; }
