@@ -41,6 +41,9 @@
                 <flux:navbar.item icon="chat-bubble-left-right" :href="route('admin.telegram.index')" :current="request()->routeIs('admin.telegram.*')" wire:navigate>
                     Telegram
                 </flux:navbar.item>
+                <flux:navbar.item icon="wifi" :href="route('admin.aps.index')" :current="request()->routeIs('admin.aps.*')" wire:navigate>
+                    Access points
+                </flux:navbar.item>
                 @endhasrole
 
                 @hasrole('cliente')
@@ -163,6 +166,9 @@
                     </flux:navlist.item>
                     <flux:navlist.item icon="chat-bubble-left-right" :href="route('admin.telegram.index')" :current="request()->routeIs('admin.telegram.*')" wire:navigate>
                         Telegram
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="wifi" :href="route('admin.aps.index')" :current="request()->routeIs('admin.aps.*')" wire:navigate>
+                        Access points
                     </flux:navlist.item>
                     @endhasrole
 

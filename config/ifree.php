@@ -40,6 +40,7 @@ return [
         'sin_registros_min' => 20,     // minutos con dispositivos nuevos...
         'sin_registros_nuevos' => 15,  // ...al menos estos, y ningún registro
         'recordar_min' => 15,          // cada cuánto se recuerda un problema que sigue
+        'ap_max_clientes' => (int) env('IFREE_ALERTA_AP_CLIENTES', 100), // un AP con más clientes avisa
     ],
 
     /*

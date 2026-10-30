@@ -14,3 +14,6 @@ Schedule::command('telegram:resumen-zonas')->everyMinute()->withoutOverlapping()
 
 // Alertas por Telegram durante eventos: portal caído o lento, errores, zonas sin visitas o sin registros
 Schedule::command('evento:vigilar')->everyMinute()->withoutOverlapping();
+
+// Clientes y tráfico de los access points por SNMP (Admin → Access points)
+Schedule::command('aps:sondear')->everyMinute()->withoutOverlapping();
