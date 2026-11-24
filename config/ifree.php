@@ -53,7 +53,7 @@ return [
             'titulo' => 'Expo MX-ISP 2026',
             'lugar' => 'Tec de Monterrey, Campus Santa Fe · CDMX',
             'fechas' => '30 y 31 de octubre de 2026',
-            'desde' => '2026-10-30 00:00:00',
+            'desde' => '2026-10-29 00:00:00', // el 29 hubo registros durante el montaje
             'hasta' => '2026-10-31 23:59:59',
             'organizador' => 'WISPMX',
         ],
