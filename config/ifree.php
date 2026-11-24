@@ -44,6 +44,22 @@ return [
     ],
 
     /*
+    | Páginas públicas de resultados de eventos (/casos/{slug}): solo muestran totales.
+    | Para agregar otro evento, copiar el bloque con su zona y sus fechas.
+    */
+    'casos' => [
+        'expo-mx-isp-2026' => [
+            'zona_id' => (int) env('IFREE_CASO_EXPO_ZONA', 15),
+            'titulo' => 'Expo MX-ISP 2026',
+            'lugar' => 'Tec de Monterrey, Campus Santa Fe · CDMX',
+            'fechas' => '30 y 31 de octubre de 2026',
+            'desde' => '2026-10-30 00:00:00',
+            'hasta' => '2026-10-31 23:59:59',
+            'organizador' => 'WISPMX',
+        ],
+    ],
+
+    /*
     | Responsable de los datos personales que se recaban en el portal cautivo cuando
     | la zona no pertenece a un cliente con nombre comercial. Revisar con su abogado.
     */
