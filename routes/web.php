@@ -137,6 +137,12 @@ Route::get('/pantalla/{token}', function (string $token) {
   ->middleware('throttle:60,1')
   ->name('evento.pantalla');
 
+// Resultados públicos de eventos (config ifree.casos) y solicitud de demo
+Route::get('/casos/{slug}', [\App\Http\Controllers\CasoEventoController::class, 'show'])->name('casos.show');
+Route::post('/casos/{slug}/demo', [\App\Http\Controllers\CasoEventoController::class, 'solicitarDemo'])
+    ->middleware('throttle:5,10')
+    ->name('casos.demo');
+
 Route::get('/', function () {
     // Cifras reales para la portada (una consulta por hora como mucho)
     $cifras = \Illuminate\Support\Facades\Cache::remember('portada:cifras', 3600, fn () => [
